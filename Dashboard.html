@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vel Fin Corp - Main Dashboard</title>
+    <style>
+        :root {
+            --primary-navy: #0B1D3A;
+            --accent-gold: #C5A059;
+            --bg-light: #F4F6F9;
+            --text-dark: #333333;
+            --green: #198754;
+            --red: #DC3545;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary-navy);
+            margin-bottom: 30px;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(11, 29, 58, 0.08);
+            border-top: 4px solid var(--primary-navy);
+            text-align: center;
+        }
+        .card.green { border-top-color: var(--green); }
+        .card.red { border-top-color: var(--red); }
+        .card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .card .value {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--primary-navy);
+        }
+        .card.green .value { color: var(--green); }
+        .card.red .value { color: var(--red); }
+        .section-title {
+            color: var(--primary-navy);
+            border-bottom: 2px solid var(--accent-gold);
+            padding-bottom: 8px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .nav-links a {
+            background-color: var(--primary-navy);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav-links a:hover {
+            background-color: var(--accent-gold);
+            color: var(--primary-navy);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>VEL FIN CORP - MAIN DASHBOARD</h2>
+
+    <h3 class="section-title">Personal Loan Dashboard</h3>
+    <div class="dashboard-grid">
+        <div class="card green">
+            <h3>Total Active Loans Amount</h3>
+            <div class="value">₹840,000.00</div>
+        </div>
+        <div class="card green">
+            <h3>Total Amount Collected</h3>
+            <div class="value">₹146,600.00</div>
+        </div>
+        <div class="card red">
+            <h3>Remaining Balance Amount</h3>
+            <div class="value">₹693,400.00</div>
+        </div>
+        <div class="card green">
+            <h3>Total Active Loans</h3>
+            <div class="value">25</div>
+        </div>
+    </div>
+
+    <h3 class="section-title">Credit Vault Dashboard</h3>
+    <div class="dashboard-grid">
+        <div class="card green">
+            <h3>Total Active Credit Vault Amount</h3>
+            <div class="value">₹679,685.55</div>
+        </div>
+        <div class="card green">
+            <h3>Total Amount Collected</h3>
+            <div class="value">₹122,777.95</div>
+        </div>
+        <div class="card green">
+            <h3>Total Active Credit Vault Loans</h3>
+            <div class="value">35</div>
+        </div>
+        <div class="card red">
+            <h3>Remaining Balance</h3>
+            <div class="value">₹679,685.55</div>
+        </div>
+    </div>
+
+    <div class="nav-links">
+        <a href="creditvault-report.html">Credit Vault Report</a>
+        <a href="personalloan-report.html">Personal Loan Report</a>
+        <a href="allpayments-report.html">All Payments Report</a>
+    </div>
+</div>
+
+</body>
+</html>
