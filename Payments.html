@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vel Fin Corp - Payment Collection</title>
+    <style>
+        :root {
+            --primary-navy: #0B1D3A;
+            --accent-gold: #C5A059;
+            --bg-light: #F4F6F9;
+            --text-dark: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(11, 29, 58, 0.1);
+            border-top: 5px solid var(--primary-navy);
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary-navy);
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-navy);
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            border-color: var(--accent-gold);
+            outline: none;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input {
+            width: auto;
+        }
+        .btn-submit {
+            background-color: var(--primary-navy);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-submit:hover {
+            background-color: var(--accent-gold);
+            color: var(--primary-navy);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>VEL FIN CORP</h2>
+    <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px;">Payment Collection & Receipt</h3>
+
+    <form id="paymentForm" onsubmit="return validatePayment(event)">
+        
+        <div class="form-group">
+            <label>Borrowers Name *</label>
+            <select id="Borrowers_Name" required>
+                <option value="">-Select Borrower-</option>
+                <option value="cust1">Sample Customer 1</option>
+                <option value="cust2">Sample Customer 2</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Personal Loan</label>
+            <select id="Personal_Loan">
+                <option value="">-Select Personal Loan-</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Credit Vault</label>
+            <select id="Credit_Vault">
+                <option value="">-Select Credit Vault Loan-</option>
+            </select>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="Pre_Create_Loan">
+            <label for="Pre_Create_Loan" style="margin-bottom: 0;">Pre Close Loan</label>
+        </div>
+
+        <div class="form-group">
+            <label>Paid Amount (₹) *</label>
+            <input type="number" id="Paid_Amount" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+            <label>Balance Amount (₹)</label>
+            <input type="number" id="Balance_Amount" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Paid Installment *</label>
+            <input type="number" id="Paid_Installment" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Remaining Installment *</label>
+            <input type="number" id="Remaining_Installment" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Delayed Details *</label>
+            <input type="text" id="Delayed_Details" value="0 Days" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Date *</label>
+            <input type="date" id="Date_field" required>
+        </div>
+
+        <div class="form-group">
+            <label>Status *</label>
+            <input type="text" id="Status" readonly placeholder="ACTIVE / CLOSED">
+        </div>
+
+        <button type="submit" class="btn-submit">Submit Payment</button>
+    </form>
+</div>
+
+<script>
+    // Set current date automatically
+    document.getElementById('Date_field').valueAsDate = new Date();
+
+    function validatePayment(event) {
+        const paidAmt = parseFloat(document.getElementById('Paid_Amount').value) || 0;
+        if (paidAmt <= 0) {
+            alert("தயவுசெய்து சரியான செலுத்தும் தொகையை உள்ளிடவும்!");
+            event.preventDefault();
+            return false;
+        }
+
+        alert("Payment recorded and WhatsApp receipt triggered successfully!");
+        return true;
+    }
+</script>
+
+</body>
+</html>
