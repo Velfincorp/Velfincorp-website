@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vel Fin Corp - Borrower Registration & Loan Application</title>
+    <style>
+        :root {
+            --primary-navy: #0B1D3A;
+            --accent-gold: #C5A059;
+            --accent-red: #D9534F;
+            --bg-light: #F4F6F9;
+            --text-dark: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(11, 29, 58, 0.1);
+            border-top: 5px solid var(--primary-navy);
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary-navy);
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-navy);
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            border-color: var(--accent-gold);
+            outline: none;
+        }
+        .btn-submit {
+            background-color: var(--primary-navy);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-submit:hover {
+            background-color: var(--accent-gold);
+            color: var(--primary-navy);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>VEL FIN CORP</h2>
+    <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px;">Borrower Registration & Loan Application</h3>
+
+    <form id="borrowerForm" onsubmit="return validateForm(event)">
+        
+        <div class="form-group hidden" id="serialNoGroup">
+            <label>Serial No</label>
+            <input type="text" id="Serial_No" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Borrower ID *</label>
+            <input type="text" id="Borrower_ID" readonly placeholder="Auto-generated (e.g., VFC/001/2026)">
+        </div>
+
+        <div class="form-group">
+            <label>Primary Phone Number *</label>
+            <input type="text" id="Phone_Number" maxlength="10" placeholder="10 digit mobile number" required>
+        </div>
+
+        <div class="form-group">
+            <label>Additional Contact Number (Nominee)</label>
+            <input type="text" id="Nominee_Contact_Number" maxlength="10" placeholder="10 digit number">
+        </div>
+
+        <div class="form-group">
+            <label>Aadhar Number *</label>
+            <input type="text" id="Aadhar_Number" placeholder="12 digit Aadhar number" maxlength="14" required>
+        </div>
+
+        <div class="form-group">
+            <label>PAN Number *</label>
+            <input type="text" id="PAN_NUMBER" placeholder="ABCDE1234F" maxlength="10" required>
+        </div>
+
+        <div class="form-group">
+            <label>Payment Method *</label>
+            <select id="Payment_Method" onchange="handlePaymentMethod()" required>
+                <option value="">-Select Payment Method-</option>
+                <option value="UPI">UPI</option>
+                <option value="e - NACH">e - NACH</option>
+            </select>
+        </div>
+
+        <!-- UPI Fields -->
+        <div class="form-group hidden" id="upiGroup">
+            <label>UPI ID *</label>
+            <input type="text" id="UPI_ID" placeholder="username@upi">
+        </div>
+
+        <!-- Bank Fields for e-NACH -->
+        <div id="bankFields" class="hidden">
+            <div class="form-group">
+                <label>Bank Name *</label>
+                <input type="text" id="Bank_Name">
+            </div>
+            <div class="form-group">
+                <label>Account Holder Name *</label>
+                <input type="text" id="Account_Holder_Name">
+            </div>
+            <div class="form-group">
+                <label>Bank Account Number *</label>
+                <input type="password" id="Bank_Account_Number">
+            </div>
+            <div class="form-group">
+                <label>Confirm Bank Account Number *</label>
+                <input type="text" id="Confirm_Bank_Account_Number">
+            </div>
+            <div class="form-group">
+                <label>IFSC Code *</label>
+                <input type="text" id="IFSC_CODE" maxlength="11" placeholder="11 character IFSC">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">Submit Application</button>
+    </form>
+</div>
+
+<script>
+    // Payment Method Toggle Logic
+    function handlePaymentMethod() {
+        const method = document.getElementById('Payment_Method').value;
+        const upiGroup = document.getElementById('upiGroup');
+        const bankFields = document.getElementById('bankFields');
+
+        if (method === 'UPI') {
+            upiGroup.classList.remove('hidden');
+            bankFields.classList.add('hidden');
+        } else if (method === 'e - NACH') {
+            upiGroup.classList.add('hidden');
+            bankFields.classList.remove('hidden');
+        } else {
+            upiGroup.classList.add('hidden');
+            bankFields.classList.add('hidden');
+        }
+    }
+
+    // Auto-format PAN to Uppercase
+    document.getElementById('PAN_NUMBER').addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+
+    // Auto-format Aadhar with spaces
+    document.getElementById('Aadhar_Number').addEventListener('input', function() {
+        let num = this.value.replace(/\D/g, '');
+        if (num.length > 12) num = num.slice(0, 12);
+        if (num.length > 8) {
+            this.value = num.slice(0, 4) + ' ' + num.slice(4, 8) + ' ' + num.slice(8, 12);
+        } else if (num.length > 4) {
+            this.value = num.slice(0, 4) + ' ' + num.slice(4);
+        } else {
+            this.value = num;
+        }
+    });
+
+    // Main Validation Function
+    function validateForm(event) {
+        // 1. Phone Number Validation
+        const phone = document.getElementById('Phone_Number').value.trim();
+        if (phone.length !== 10 || isNaN(phone)) {
+            alert("Please enter a valid 10-digit primary phone number.");
+            event.preventDefault();
+            return false;
+        }
+
+        // 2. Nominee Phone Validation
+        const nomineePhone = document.getElementById('Nominee_Contact_Number').value.trim();
+        if (nomineePhone !== "") {
+            if (nomineePhone.length !== 10 || isNaN(nomineePhone)) {
+                alert("Please enter a valid 10-digit additional contact number.");
+                event.preventDefault();
+                return false;
+            }
+            if (nomineePhone === phone) {
+                alert("Additional Contact Number-ல் வேறு ஒரு புதிய எண்ண을 உள்ளிடவும். (Phone Number அல்லது WhatsApp Number-ஐ மீண்டும் கொடுக்கக் கூடாது)");
+                event.preventDefault();
+                return false;
+            }
+        }
+
+        // 3. Aadhar Validation
+        const aadhar = document.getElementById('Aadhar_Number').value.replace(/\s/g, '');
+        if (aadhar.length !== 12) {
+            alert("தவறு! ஆதார் எண் சரியாக 12 இலக்கங்கள் இருக்க வேண்டும்.");
+            event.preventDefault();
+            return false;
+        }
+
+        // 4. Payment Method Specific Validations
+        const method = document.getElementById('Payment_Method').value;
+        if (method === 'UPI') {
+            const upiId = document.getElementById('UPI_ID').value.trim();
+            if (upiId === "") {
+                alert("தயவுசெய்து கஸ்டமரின் UPI ID-ஐ உள்ளிடவும்!");
+                event.preventDefault();
+                return false;
+            }
+        } else if (method === 'e - NACH') {
+            const bankName = document.getElementById('Bank_Name').value.trim();
+            const holder = document.getElementById('Account_Holder_Name').value.trim();
+            const accNum = document.getElementById('Bank_Account_Number').value.trim();
+            const confirmAcc = document.getElementById('Confirm_Bank_Account_Number').value.trim();
+            const ifsc = document.getElementById('IFSC_CODE').value.trim();
+
+            if (!bankName || !holder || !accNum || !confirmAcc || !ifsc) {
+                alert("தயவுசெய்து அனைத்து பேங்க் விவரங்களையும் முழுமையாக நிரப்பவும்!");
+                event.preventDefault();
+                return false;
+            }
+            if (accNum !== confirmAcc) {
+                alert("வங்கிக் கணக்கு எண்கள் இரண்டும் ஒன்றாக இல்லை!");
+                event.preventDefault();
+                return false;
+            }
+            if (ifsc.length !== 11) {
+                alert("தவறான IFSC கோடு! 11 இலக்கமாக இருக்க வேண்டும்.");
+                event.preventDefault();
+                return false;
+            }
+        }
+
+        alert("Application validated successfully! Ready for submission.");
+        return true;
+    }
+</script>
+
+</body>
+</html>
