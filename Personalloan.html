@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vel Fin Corp - Personal Loan Application</title>
+    <style>
+        :root {
+            --primary-navy: #0B1D3A;
+            --accent-gold: #C5A059;
+            --bg-light: #F4F6F9;
+            --text-dark: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(11, 29, 58, 0.1);
+            border-top: 5px solid var(--primary-navy);
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary-navy);
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-navy);
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            border-color: var(--accent-gold);
+            outline: none;
+        }
+        .btn-submit {
+            background-color: var(--primary-navy);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-submit:hover {
+            background-color: var(--accent-gold);
+            color: var(--primary-navy);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>VEL FIN CORP</h2>
+    <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px;">Personal Loan Application</h3>
+
+    <form id="personalLoanForm" onsubmit="return validatePersonalLoan(event)">
+        
+        <div class="form-group">
+            <label>Loan ID *</label>
+            <input type="text" id="Loan_ID" readonly placeholder="Auto-generated (e.g., VPL/001/2026)">
+        </div>
+
+        <div class="form-group">
+            <label>Loan Type (Repayment Frequency) *</label>
+            <select id="Loan_Type" onchange="calculatePersonalLoan()" required>
+                <option value="">-Select Type-</option>
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Tenure *</label>
+            <input type="number" id="Tenure" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Loan Amount (?) *</label>
+            <input type="number" id="Loan_Amount" oninput="calculatePersonalLoan()" required>
+        </div>
+
+        <div class="form-group">
+            <label>Disbursed Amount (?)</label>
+            <input type="number" id="Disbursed_Amount" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Document Charge (?)</label>
+            <input type="number" id="Document_Charge" readonly value="50">
+        </div>
+
+        <div class="form-group">
+            <label>Installment Amount (?)</label>
+            <input type="number" id="Installment_Amount" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Status</label>
+            <input type="text" id="Status" value="ACTIVE" readonly>
+        </div>
+
+        <button type="submit" class="btn-submit">Submit Personal Loan</button>
+    </form>
+</div>
+
+<script>
+    // Auto-generate Loan ID and calculations on load/change
+    window.onload = function() {
+        const year = new Date().getFullYear();
+        document.getElementById('Loan_ID').value = "VPL/001/" + year;
+    };
+
+    function calculatePersonalLoan() {
+        const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
+        const loanType = document.getElementById('Loan_Type').value;
+
+        if (loanAmount > 0) {
+            // 15% Deduction
+            const deduction = loanAmount * 0.15;
+            const disbursed = loanAmount - deduction;
+            document.getElementById('Disbursed_Amount').value = disbursed.toFixed(2);
+            document.getElementById('Document_Charge').value = 50;
+
+            let tenure = 10;
+            let installment = 0;
+
+            if (loanType === "Weekly") {
+                tenure = 10;
+                installment = loanAmount * 0.10;
+            } else if (loanType === "Daily") {
+                tenure = 100;
+                installment = loanAmount / 100;
+            } else if (loanType === "Monthly") {
+                tenure = 5;
+                installment = loanAmount / 5;
+            }
+
+            document.getElementById('Tenure').value = tenure;
+            document.getElementById('Installment_Amount').value = installment.toFixed(2);
+        }
+    }
+
+    function validatePersonalLoan(event) {
+        const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
+        if (loanAmount <= 0) {
+            alert("?????????? ?????? ???? ?????? ??????????!");
+            event.preventDefault();
+            return false;
+        }
+
+        alert("Personal Loan application validated and submitted successfully!");
+        return true;
+    }
+</script>
+
+</body>
+</html>
