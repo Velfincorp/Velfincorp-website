@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vel Fin Corp - Credit Vault (Loan Application)</title>
+    <style>
+        :root {
+            --primary-navy: #0B1D3A;
+            --accent-gold: #C5A059;
+            --bg-light: #F4F6F9;
+            --text-dark: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(11, 29, 58, 0.1);
+            border-top: 5px solid var(--primary-navy);
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary-navy);
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-navy);
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            border-color: var(--accent-gold);
+            outline: none;
+        }
+        .btn-submit {
+            background-color: var(--primary-navy);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-submit:hover {
+            background-color: var(--accent-gold);
+            color: var(--primary-navy);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>VEL FIN CORP</h2>
+    <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px;">Credit Vault - Loan Application</h3>
+
+    <form id="creditVaultForm" onsubmit="return validateCreditVault(event)">
+        
+        <div class="form-group">
+            <label>Loan Type *</label>
+            <select id="Loan_Type" onchange="handleLoanTypeChange()" required>
+                <option value="">-Select Loan Type-</option>
+                <option value="Mobile">Mobile</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Furniture">Furniture</option>
+                <option value="Personal Loan">Personal Loan</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Loan ID</label>
+            <input type="text" id="Loan_ID" readonly placeholder="Auto-generated (e.g., VML-001/2026)">
+        </div>
+
+        <div class="form-group">
+            <label>Product Name *</label>
+            <input type="text" id="Product_Name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Product Value (?) *</label>
+            <input type="number" id="Product_Value" oninput="calculateLoanDetails()" required>
+        </div>
+
+        <!-- IMEI fields for Mobile -->
+        <div class="form-group hidden" id="imei1Group">
+            <label>IMEI 1 *</label>
+            <input type="text" id="IMEI_1">
+        </div>
+
+        <div class="form-group hidden" id="imei2Group">
+            <label>IMEI 2 *</label>
+            <input type="text" id="IMEI_2">
+        </div>
+
+        <!-- Serial Number field for Electrical/Furniture -->
+        <div class="form-group hidden" id="serialNoGroup">
+            <label>Serial No *</label>
+            <input type="text" id="Serial_No">
+        </div>
+
+        <div class="form-group">
+            <label>Standard Down Payment (30%)</label>
+            <input type="number" id="Standard_Down_Payment" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Customer Down Payment (?) *</label>
+            <input type="number" id="Customer_Down_Payment" oninput="calculateLoanDetails()" required>
+        </div>
+
+        <div class="form-group">
+            <label>Tenure Weeks</label>
+            <select id="Tenure_Weeks" onchange="calculateLoanDetails()">
+                <option value="10">10 Weeks</option>
+                <option value="15">15 Weeks</option>
+                <option value="20">20 Weeks</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Weekly EMI Amount (?)</label>
+            <input type="number" id="Weekly_EMI_Amount" readonly>
+        </div>
+
+        <button type="submit" class="btn-submit">Submit Loan Application</button>
+    </form>
+</div>
+
+<script>
+    // Show/Hide Fields based on Loan Type
+    function handleLoanTypeChange() {
+        const loanType = document.getElementById('Loan_Type').value;
+        const imei1Group = document.getElementById('imei1Group');
+        const imei2Group = document.getElementById('imei2Group');
+        const serialNoGroup = document.getElementById('serialNoGroup');
+        
+        // Auto-generate ID prefix simulation
+        const year = new Date().getFullYear();
+        let prefix = "VEL";
+        if (loanType === "Mobile") prefix = "VML";
+        else if (loanType === "Electrical") prefix = "VEL";
+        else if (loanType === "Furniture") prefix = "VFL";
+        else if (loanType === "Personal Loan") prefix = "VPL";
+        
+        document.getElementById('Loan_ID').value = prefix + "-001/" + year;
+
+        if (loanType === 'Mobile') {
+            imei1Group.classList.remove('hidden');
+            imei2Group.classList.remove('hidden');
+            serialNoGroup.classList.add('hidden');
+        } else if (loanType === 'Electrical' || loanType === 'Furniture') {
+            imei1Group.classList.add('hidden');
+            imei2Group.classList.add('hidden');
+            serialNoGroup.classList.remove('hidden');
+        } else {
+            imei1Group.classList.add('hidden');
+            imei2Group.classList.add('hidden');
+            serialNoGroup.classList.add('hidden');
+        }
+        
+        calculateLoanDetails();
+    }
+
+    // Auto-Calculation Logic matching Zoho Deluge workflows
+    function calculateLoanDetails() {
+        const productVal = parseFloat(document.getElementById('Product_Value').value) || 0;
+        const tenure = parseInt(document.getElementById('Tenure_Weeks').value) || 10;
+        const loanType = document.getElementById('Loan_Type').value;
+
+        if (productVal > 0) {
+            const stdDownPayment = productVal * 0.30;
+            document.getElementById('Standard_Down_Payment').value = stdDownPayment.toFixed(2);
+            
+            let custDownPayment = document.getElementById('Customer_Down_Payment').value;
+            if (!custDownPayment) {
+                custDownPayment = stdDownPayment;
+                document.getElementById('Customer_Down_Payment').value = stdDownPayment.toFixed(2);
+            } else {
+                custDownPayment = parseFloat(custDownPayment);
+            }
+
+            // Minimum 25% validation check
+            const minAllowedDown = productVal * 0.25;
+            if (custDownPayment < minAllowedDown) {
+                // Alert handled gracefully
+            }
+
+            // Fees calculation
+            let setupFee = productVal * 0.04;
+            let processingFee = productVal * 0.025;
+            if (loanType === "Electrical" || loanType === "Furniture") {
+                setupFee = productVal * 0.03;
+            }
+
+            const balance = productVal - custDownPayment;
+            const totalCharges = setupFee + processingFee;
+            const adjustedPrincipal = balance + totalCharges;
+
+            let emi = 0;
+            if (tenure === 10) {
+                emi = (balance * 2722.0) / 23100.0;
+            } else if (tenure === 15) {
+                emi = (balance * 1889.0) / 23100.0;
+            } else if (tenure === 20) {
+                emi = (balance * 1551.0) / 23100.0;
+            } else {
+                emi = adjustedPrincipal / tenure;
+            }
+
+            document.getElementById('Weekly_EMI_Amount').value = emi.toFixed(2);
+        }
+    }
+
+    // Form Submission Validation
+    function validateCreditVault(event) {
+        const loanType = document.getElementById('Loan_Type').value;
+        const productVal = parseFloat(document.getElementById('Product_Value').value) || 0;
+        const custDownPayment = parseFloat(document.getElementById('Customer_Down_Payment').value) || 0;
+
+        // Minimum Down payment check (25%)
+        const minAllowedDown = productVal * 0.25;
+        if (custDownPayment < minAllowedDown) {
+            alert("?????: ??????? ????? ???????? 25%-???? ?????????????! ????????????? ?" + minAllowedDown.toFixed(2) + " ??????????? ????????.");
+            event.preventDefault();
+            return false;
+        }
+
+        if (loanType === 'Mobile') {
+            const imei1 = document.getElementById('IMEI_1').value.trim();
+            const imei2 = document.getElementById('IMEI_2').value.trim();
+            if (!imei1) {
+                alert("Please enter IMEI - 1");
+                event.preventDefault();
+                return false;
+            }
+            if (!imei2) {
+                alert("Please enter IMEI - 2");
+                event.preventDefault();
+                return false;
+            }
+        } else if (loanType === 'Electrical' || loanType === 'Furniture') {
+            const serialNo = document.getElementById('Serial_No').value.trim();
+            if (!serialNo) {
+                alert("Please enter Serial Number");
+                event.preventDefault();
+                return false;
+            }
+        }
+
+        alert("Credit Vault Loan Application validated successfully!");
+        return true;
+    }
+</script>
+
+</body>
+</html>
