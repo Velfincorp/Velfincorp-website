@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vel Fin Corp - Select Loan Category</title>
+    <style>
+        :root {
+            --primary-navy: #0B1D3A;
+            --accent-gold: #C5A059;
+            --bg-light: #F4F6F9;
+            --text-dark: #333333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(11, 29, 58, 0.1);
+            border-top: 5px solid var(--primary-navy);
+            text-align: center;
+        }
+        h2 {
+            color: var(--primary-navy);
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .btn-option {
+            background-color: var(--primary-navy);
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        .btn-option:hover {
+            background-color: var(--accent-gold);
+            color: var(--primary-navy);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>VEL FIN CORP</h2>
+    <p>பாரோவர் பதிவு வெற்றிகரமாக முடிந்தது! அடுத்ததாக தேவையான லோன் வகையைத் தேர்ந்தெடுக்கவும்:</p>
+
+    <button class="btn-option" onclick="selectLoan('creditvault')">Credit Vault (Product Loans: Mobile / Electronics / Furniture)</button>
+    <button class="btn-option" onclick="selectLoan('personalloan')">Personal Loan (Daily / Weekly / Monthly)</button>
+</div>
+
+<script>
+    function selectLoan(type) {
+        if (type === 'creditvault') {
+            // Credit Vault பக்கத்திற்கு செல்ல
+            window.location.href = 'Creditvault.html';
+        } else if (type === 'personalloan') {
+            // Personal Loan பக்கத்திற்கு செல்ல (Coming soon or next page)
+            alert("Personal Loan ப்பிரிவு விரைவில் இணைக்கப்படும்.");
+        }
+    }
+</script>
+
+</body>
+</html>
