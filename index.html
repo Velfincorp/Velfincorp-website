@@ -5,14 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vel Fin Corp - Trust, Finance & Prosperity</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --navy: #0F1D36;
             --gold: #C5A059;
+            --red: #C53030;
             --bg-color: #F8F9FB;
             --text-main: #2D3748;
             --white: #FFFFFF;
+            
+            /* Fibonacci Spacing Scale */
+            --fib-xs: 8px;
+            --fib-sm: 13px;
+            --fib-md: 21px;
+            --fib-lg: 34px;
+            --fib-xl: 55px;
+            --fib-xxl: 89px;
         }
+        
         body {
             font-family: 'Manrope', Arial, sans-serif;
             background-color: var(--bg-color);
@@ -20,28 +31,55 @@
             margin: 0;
             padding: 0;
         }
-        /* Top Navigation Bar */
+
+        /* Navigation Bar with Fibonacci Proportions */
         nav {
             background-color: var(--navy);
             color: var(--white);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 18px 40px;
+            padding: var(--fib-md) var(--fib-xxl);
             border-bottom: 3px solid var(--gold);
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.15);
         }
-        .logo-area {
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: var(--fib-sm);
+        }
+
+        .nav-logo {
+            height: 45px;
+            width: auto;
+            border-radius: 4px;
+            border: 1px solid var(--gold);
+        }
+
+        .logo-text-area {
             font-family: 'Cinzel', serif;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             color: var(--gold);
             letter-spacing: 1.5px;
+            line-height: 1.1;
         }
+
+        .logo-subtext {
+            font-size: 9px;
+            color: #E2E8F0;
+            letter-spacing: 2px;
+            font-family: 'Manrope', sans-serif;
+            text-transform: uppercase;
+        }
+
         .nav-links {
             display: flex;
-            gap: 25px;
+            gap: var(--fib-lg);
             align-items: center;
         }
+
         .nav-links a {
             color: var(--white);
             text-decoration: none;
@@ -49,103 +87,177 @@
             font-size: 14px;
             transition: 0.3s;
         }
+
         .nav-links a:hover {
             color: var(--gold);
         }
+
         .btn-login-nav {
             background-color: var(--gold);
             color: var(--navy);
-            padding: 8px 18px;
+            padding: var(--fib-xs) var(--fib-md);
             border-radius: 4px;
             font-weight: bold;
+            box-shadow: 0 2px 10px rgba(197, 160, 89, 0.3);
         }
-        /* Hero Section */
+
+        .btn-login-nav:hover {
+            background-color: var(--white);
+            color: var(--navy);
+        }
+
+        /* Hero Section - Fibonacci Golden Ratio Layout */
         .hero {
             text-align: center;
-            padding: 100px 20px;
-            background: linear-gradient(rgba(15, 29, 54, 0.9), rgba(15, 29, 54, 0.9)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80');
+            padding: var(--fib-xxl) var(--fib-lg);
+            background: linear-gradient(rgba(15, 29, 54, 0.92), rgba(15, 29, 54, 0.92)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80');
             background-size: cover;
             background-position: center;
             color: var(--white);
+            border-bottom: 5px solid var(--gold);
         }
+
+        .hero-logo-badge {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 3px solid var(--gold);
+            object-fit: cover;
+            margin-bottom: var(--fib-md);
+            box-shadow: 0 0 25px rgba(197, 160, 89, 0.4);
+            background: var(--white);
+            padding: 4px;
+        }
+
         .hero h1 {
             font-family: 'Cinzel', serif;
-            font-size: 46px;
+            font-size: 42px;
             color: var(--gold);
-            margin-bottom: 15px;
-            letter-spacing: 1px;
+            margin-bottom: var(--fib-sm);
+            letter-spacing: 1.5px;
         }
+
         .hero p {
-            font-size: 18px;
-            max-width: 700px;
-            margin: 0 auto 35px auto;
+            font-size: 17px;
+            max-width: 750px;
+            margin: 0 auto var(--fib-xl) auto;
             color: #cbd5e1;
-            line-height: 1.7;
+            line-height: 1.8;
         }
+
         .btn-cta {
             background-color: var(--gold);
             color: var(--navy);
-            padding: 14px 35px;
+            padding: var(--fib-sm) var(--fib-xl);
             font-size: 16px;
             font-weight: bold;
             border-radius: 6px;
             text-decoration: none;
             transition: 0.3s;
             display: inline-block;
+            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
         }
+
         .btn-cta:hover {
             background-color: var(--white);
+            transform: translateY(-2px);
         }
-        /* Features / Services Section */
+
+        /* Features / Services Section with Fibonacci Grid */
         .features {
-            max-width: 1150px;
-            margin: 60px auto;
+            max-width: 1200px;
+            margin: var(--fib-xxl) auto;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 30px;
-            padding: 0 20px;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--fib-lg);
+            padding: 0 var(--fib-md);
         }
+
         .feature-card {
             background: var(--white);
-            padding: 40px 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08);
-            border-top: 4px solid var(--navy);
+            padding: var(--fib-xl) var(--fib-lg);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(15, 29, 54, 0.06);
+            border-top: 5px solid var(--navy);
+            transition: 0.3s;
         }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(15, 29, 54, 0.1);
+            border-top-color: var(--gold);
+        }
+
+        .feature-card i {
+            font-size: 32px;
+            color: var(--gold);
+            margin-bottom: var(--fib-md);
+        }
+
         .feature-card h3 {
             color: var(--navy);
             font-family: 'Cinzel', serif;
-            margin-bottom: 15px;
+            margin-bottom: var(--fib-sm);
             font-size: 20px;
         }
+
         .feature-card p {
             color: #475569;
             font-size: 14px;
-            line-height: 1.7;
-        }
-        /* Footer */
-        footer {
-            background-color: var(--navy);
-            color: var(--white);
-            text-align: center;
-            padding: 35px 20px;
-            margin-top: 80px;
-            font-size: 13px;
-            border-top: 2px solid var(--gold);
             line-height: 1.8;
         }
+
+        /* Professional Footer */
+        footer {
+            background-color: var(--navy);
+            color: #E2E8F0;
+            text-align: center;
+            padding: var(--fib-xxl) var(--fib-md);
+            margin-top: var(--fib-xxl);
+            border-top: 3px solid var(--gold);
+            line-height: 1.9;
+        }
+
+        .footer-content {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
         footer strong {
             color: var(--gold);
-            font-size: 16px;
+            font-size: 20px;
             font-family: 'Cinzel', serif;
+            display: block;
+            margin-bottom: var(--fib-md);
+            letter-spacing: 1px;
+        }
+
+        .footer-info-item {
+            margin-bottom: var(--fib-xs);
+            font-size: 14px;
+        }
+
+        .footer-bottom {
+            margin-top: var(--fib-xl);
+            padding-top: var(--fib-md);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            color: #94A3B8;
         }
     </style>
 </head>
 <body>
 
-    <!-- Navigation Bar -->
+    <!-- Navigation Bar with Logo -->
     <nav>
-        <div class="logo-area">VEL FIN CORP</div>
+        <div class="brand-container">
+            <!-- உங்கள் லோகோ படப் பெயர் இங்கு கொடுக்கப்பட்டுள்ளது -->
+            <img src="logo.png" alt="Vel Fin Corp Logo" class="nav-logo">
+            <div>
+                <div class="logo-text-area">VEL FIN CORP</div>
+                <div class="logo-subtext">Trust • Finance • Prosperity</div>
+            </div>
+        </div>
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="contact.html">Contact Us</a>
@@ -153,24 +265,28 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Hero Section with Centralized Emblem & Fibonacci Scaling -->
     <div class="hero">
+        <img src="logo.png" alt="Vel Fin Corp Emblem" class="hero-logo-badge">
         <h1>VEL FIN CORP</h1>
         <p>Empowering your financial growth through structured credit solutions, asset financing, and transparent corporate loan management systems.</p>
-        <a href="login.html" class="btn-cta">Access Portal</a>
+        <a href="login.html" class="btn-cta">Access Secure Portal</a>
     </div>
 
-    <!-- Services / Features -->
+    <!-- Services Section -->
     <div class="features">
         <div class="feature-card">
+            <i class="fas fa-vault"></i>
             <h3>Credit Vault (Product Financing)</h3>
             <p>Comprehensive Buy Now Pay Later (BNPL) and structured installment programs customized for consumer electronics, smartphones, home appliances, and furniture retail partners with automated tracking.</p>
         </div>
         <div class="feature-card">
+            <i class="fas fa-hand-holding-usd"></i>
             <h3>Personal Loans & Liquidity</h3>
             <p>Flexible short-term and medium-term personal financing facilities designed to address urgent capital requirements and structured via predictable daily, weekly, or monthly repayment schedules.</p>
         </div>
         <div class="feature-card">
+            <i class="fas fa-chart-line"></i>
             <h3>Enterprise Portfolio Management</h3>
             <p>Advanced digital accounting and ledger frameworks ensuring end-to-end transparency across active loan distributions, repayment collections, delinquency tracking, and automated receipt processing.</p>
         </div>
@@ -178,11 +294,15 @@
 
     <!-- Footer -->
     <footer>
-        <p><strong>VEL FIN CORP</strong><br>
-        GSTIN: 33BIEPP8028C3ZF<br>
-        Registered Office: 31/11, Jeeva Nagar, Pappireddipatti, Dharmapuri, Tamil Nadu - 636905<br>
-        Helpline: +91 9486886293 | Email: support@velfincorp.com<br>
-        &copy; 2026 Vel Fin Corp. All Rights Reserved. | Corporate Finance Division</p>
+        <div class="footer-content">
+            <strong>VEL FIN CORP</strong>
+            <div class="footer-info-item"><i class="fas fa-file-invoice"></i> GSTIN: 33BIEPP8028C3ZF</div>
+            <div class="footer-info-item"><i class="fas fa-map-marker-alt"></i> Registered Office: 31/11, Jeeva Nagar, Pappireddipatti, Dharmapuri, Tamil Nadu - 636905</div>
+            <div class="footer-info-item"><i class="fas fa-phone-alt"></i> Helpline: +91 9486886293 | <i class="fas fa-envelope"></i> Email: support@velfincorp.com</div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 Vel Fin Corp. All Rights Reserved. | Corporate Finance Division
+        </div>
     </footer>
 
 </body>
