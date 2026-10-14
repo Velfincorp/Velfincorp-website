@@ -42,25 +42,27 @@
 
     <div class="container">
         <h2>Contact Corporate Support</h2>
-        <form onsubmit="alert('Your message has been successfully submitted. Our team will contact you shortly.'); return false;">
+        
+        <!-- Formspree மூலம் நேராக உங்களது மின்னஞ்சலுக்கு என்கொயரி அனுப்பும் வசதி -->
+        <form action="https://formspree.io/f/xlgppjyw" method="POST">
             <div class="form-group">
                 <label>Full Name *</label>
-                <input type="text" required placeholder="Enter your name">
+                <input type="text" name="name" required placeholder="Enter your name">
             </div>
             <div class="form-group">
                 <label>Mobile / WhatsApp Number *</label>
-                <input type="tel" required placeholder="10-digit mobile number">
+                <input type="tel" name="phone" required placeholder="10-digit mobile number">
             </div>
             <div class="form-group">
                 <label>Inquiry / Message *</label>
-                <textarea rows="4" required placeholder="Enter your financial inquiry details here..."></textarea>
+                <textarea name="message" rows="4" required placeholder="Enter your financial inquiry details here..."></textarea>
             </div>
             <button type="submit" class="btn-submit">Submit Inquiry</button>
         </form>
 
         <div class="contact-info">
             <p><strong>Vel Fin Corp Headquarters</strong><br>
-            Address: 31/11, Jeeva Nagar, Pappireddipatti Co-op Building, Dharmapuri, Tamil Nadu - 636905<br>
+            Address: 31/11, Jeeva Nagar, Pappireddipatti, Dharmapuri, Tamil Nadu - 636905<br>
             Helpline: +91 9486886293 | Email: support@velfincorp.com</p>
         </div>
     </div>
