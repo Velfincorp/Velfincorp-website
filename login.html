@@ -19,9 +19,59 @@
             color: var(--text-main);
             margin: 0;
             display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        /* Navbar with Logo */
+        nav {
+            background-color: var(--navy);
+            color: var(--white);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            border-bottom: 3px solid var(--gold);
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.15);
+        }
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+        .nav-logo {
+            height: 48px;
+            width: 48px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            background: var(--white);
+            padding: 2px;
+        }
+        .logo-text-area {
+            font-family: 'Cinzel', serif;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--gold);
+            letter-spacing: 1.5px;
+            line-height: 1.1;
+        }
+        .logo-subtext {
+            font-size: 9px;
+            color: #E2E8F0;
+            letter-spacing: 2px;
+            font-family: 'Manrope', sans-serif;
+            text-transform: uppercase;
+        }
+        .nav-links { display: flex; gap: 25px; align-items: center; }
+        .nav-links a { color: var(--white); text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.3s; }
+        .nav-links a:hover { color: var(--gold); }
+
+        .login-wrapper {
+            display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            flex: 1;
+            padding: 30px 20px;
         }
         .login-card {
             background: var(--white);
@@ -99,37 +149,52 @@
 </head>
 <body>
 
-    <div class="login-card">
-        <div class="logo-title">VEL FIN CORP</div>
-        <div class="sub-title">Secure Enterprise Portal Login</div>
-
-        <form id="loginForm" onsubmit="handleLogin(event)">
-            
-            <div class="form-group">
-                <label>Select User Role *</label>
-                <select id="userRole" required onchange="updatePlaceholder()">
-                    <option value="">- Select Role -</option>
-                    <option value="admin">Administrator (Admin)</option>
-                    <option value="staff">Office Staff / Collection</option>
-                    <option value="retailer">Retailer / Partner</option>
-                    <option value="borrower">Borrower / Customer</option>
-                </select>
+    <nav>
+        <div class="brand-container">
+            <img src="velfincorp-logo.jpeg" alt="Vel Fin Corp Logo" class="nav-logo">
+            <div>
+                <div class="logo-text-area">VEL FIN CORP</div>
+                <div class="logo-subtext">Trust • Finance • Prosperity</div>
             </div>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="contact.html">Contact Us</a>
+        </div>
+    </nav>
 
-            <div class="form-group">
-                <label id="usernameLabel">Username / ID / Mobile *</label>
-                <input type="text" id="username" required placeholder="Enter ID or mobile number">
-            </div>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="logo-title">VEL FIN CORP</div>
+            <div class="sub-title">Secure Enterprise Portal Login</div>
 
-            <div class="form-group">
-                <label>Password / PIN *</label>
-                <input type="password" id="password" required placeholder="Enter password">
-            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Select User Role *</label>
+                    <select id="userRole" required onchange="updatePlaceholder()">
+                        <option value="">- Select Role -</option>
+                        <option value="admin">Administrator (Admin)</option>
+                        <option value="staff">Office Staff / Collection</option>
+                        <option value="retailer">Retailer / Partner</option>
+                        <option value="borrower">Borrower / Customer</option>
+                    </select>
+                </div>
 
-            <button type="submit" class="btn-login">Secure Login</button>
-        </form>
+                <div class="form-group">
+                    <label id="usernameLabel">Username / ID / Mobile *</label>
+                    <input type="text" id="username" required placeholder="Enter ID or mobile number">
+                </div>
 
-        <a href="index.html" class="back-home">&larr; Back to Home Page</a>
+                <div class="form-group">
+                    <label>Password / PIN *</label>
+                    <input type="password" id="password" required placeholder="Enter password">
+                </div>
+
+                <button type="submit" class="btn-login">Secure Login</button>
+            </form>
+
+            <a href="index.html" class="back-home">&larr; Back to Home Page</a>
+        </div>
     </div>
 
     <script>
@@ -170,7 +235,7 @@
             else if (role === 'borrower') {
                 if (user.length === 10) {
                     alert("Customer Portal Access Granted!");
-                    window.location.href = "Payments.html";
+                    window.location.href = "payments.html";
                 } else {
                     alert("Please enter a valid 10-digit mobile number!");
                 }
