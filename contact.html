@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vel Fin Corp - Contact Us</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0F1D36;
+            --gold: #C5A059;
+            --bg-color: #F8F9FB;
+            --text-main: #2D3748;
+            --white: #FFFFFF;
+        }
+        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; }
+        nav { background-color: var(--navy); color: var(--white); display: flex; justify-content: space-between; align-items: center; padding: 18px 40px; border-bottom: 3px solid var(--gold); }
+        .logo-area { font-family: 'Cinzel', serif; font-size: 24px; font-weight: bold; color: var(--gold); }
+        .nav-links { display: flex; gap: 25px; align-items: center; }
+        .nav-links a { color: var(--white); text-decoration: none; font-weight: 600; font-size: 14px; }
+        .nav-links a:hover { color: var(--gold); }
+        .container { max-width: 750px; margin: 50px auto; background: var(--white); padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(15,29,54,0.08); border-top: 5px solid var(--navy); }
+        h2 { font-family: 'Cinzel', serif; color: var(--navy); text-align: center; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--navy); font-size: 13px; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        .btn-submit { background-color: var(--navy); color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; }
+        .btn-submit:hover { background-color: var(--gold); color: var(--navy); }
+        .contact-info { margin-top: 35px; text-align: center; font-size: 14px; color: #475569; line-height: 1.8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo-area">VEL FIN CORP</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="contact.html" style="color: var(--gold);">Contact Us</a>
+            <a href="login.html" style="background: var(--gold); color: var(--navy); padding: 8px 18px; border-radius: 4px;">Secure Login</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Contact Corporate Support</h2>
+        <form onsubmit="alert('Your message has been successfully submitted. Our team will contact you shortly.'); return false;">
+            <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" required placeholder="Enter your name">
+            </div>
+            <div class="form-group">
+                <label>Mobile / WhatsApp Number *</label>
+                <input type="tel" required placeholder="10-digit mobile number">
+            </div>
+            <div class="form-group">
+                <label>Inquiry / Message *</label>
+                <textarea rows="4" required placeholder="Enter your financial inquiry details here..."></textarea>
+            </div>
+            <button type="submit" class="btn-submit">Submit Inquiry</button>
+        </form>
+
+        <div class="contact-info">
+            <p><strong>Vel Fin Corp Headquarters</strong><br>
+            Address: 31/11, Jeeva Nagar, Pappireddipatti Co-op Building, Dharmapuri, Tamil Nadu - 636905<br>
+            Helpline: +91 9486886293 | Email: support@velfincorp.com</p>
+        </div>
+    </div>
+
+</body>
+</html>
