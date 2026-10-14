@@ -181,22 +181,47 @@
             display: flex;
             gap: 15px;
             margin-top: 15px;
+            flex-wrap: wrap;
         }
         .form-row input, .form-row select {
             flex: 1;
+            min-width: 200px;
             padding: 10px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 14px;
         }
+        .permissions-group {
+            width: 100%;
+            margin-top: 15px;
+            padding: 15px;
+            background: #F1F5F9;
+            border-radius: 6px;
+        }
+        .permissions-group label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 20px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--navy);
+            cursor: pointer;
+        }
+        .permissions-group input[type="checkbox"] {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+        }
         .btn-add-user {
             background-color: var(--navy);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 25px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
+            margin-top: 15px;
         }
         .btn-add-user:hover {
             background-color: var(--gold);
@@ -270,19 +295,31 @@
             </div>
         </div>
 
-        <!-- Admin Role & Password Generation Panel -->
+        <!-- Admin Role & Permission Control Panel -->
         <div class="admin-control-box">
-            <h3><i class="fas fa-user-shield"></i> Admin Access & Staff/Retailer Password Management</h3>
-            <p style="font-size: 13px; color: #64748b;">Generate credentials and assign roles for Staff, Collectors, or Retailers directly from here.</p>
+            <h3><i class="fas fa-user-shield"></i> Staff/Retailer Password & Module Access Management</h3>
+            <p style="font-size: 13px; color: #64748b;">Enter mobile number as Username, generate password, and select specific page access permissions.</p>
+            
             <div class="form-row">
-                <input type="text" id="newUserId" placeholder="User ID / Mobile (e.g., STF002)">
-                <input type="password" id="newUserPass" placeholder="Temporary Password">
+                <input type="text" id="newUserId" placeholder="Mobile Number (e.g., 9486886293)">
+                <input type="text" id="newUserPass" placeholder="Generated Password (e.g., Vel@2026)">
                 <select id="newUserRole">
                     <option value="staff">Staff / Collection Agent</option>
                     <option value="retailer">Retailer / Partner</option>
                 </select>
-                <button class="btn-add-user" onclick="generateCredential()">Create Access</button>
             </div>
+
+            <!-- Page Permission Checkboxes -->
+            <div class="permissions-group">
+                <div style="font-weight: bold; font-size: 13px; color: var(--navy); margin-bottom: 8px;">Select Allowed Access Modules:</div>
+                <label><input type="checkbox" name="perm" value="borrowers details.html"> Borrower Details</label>
+                <label><input type="checkbox" name="perm" value="creditvault.html"> Loan Entry Form</label>
+                <label><input type="checkbox" name="perm" value="creditvault-report.html"> Credit Vault Report</label>
+                <label><input type="checkbox" name="perm" value="personalloan-report.html"> Personal Loan Report</label>
+                <label><input type="checkbox" name="perm" value="allpayments-report.html"> All Payments Report</label>
+            </div>
+
+            <button class="btn-add-user" onclick="generateCredential()">Create User Access & Save</button>
         </div>
     </div>
 
@@ -292,19 +329,39 @@
             const userPass = document.getElementById('newUserPass').value.trim();
             const userRole = document.getElementById('newUserRole').value;
 
+            // Gather checked permissions
+            const checkboxes = document.querySelectorAll('input[name="perm"]:checked');
+            let permissions = [];
+            checkboxes.forEach((checkbox) => {
+                permissions.push(checkbox.value);
+            });
+
             if(!userId || !userPass) {
-                alert("Please enter User ID and Password!");
+                alert("Please enter Mobile Number (Username) and Password!");
                 return;
             }
 
-            // LocalStorage-ல் சேமிக்கும் லாஜிக்
+            if(userId.length !== 10) {
+                alert("Please enter a valid 10-digit mobile number as Username!");
+                return;
+            }
+
+            // Save user credentials and permissions into localStorage
             let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
-            users.push({ id: userId, pass: userPass, role: userRole });
+            users.push({ 
+                id: userId, 
+                pass: userPass, 
+                role: userRole, 
+                permissions: permissions 
+            });
             localStorage.setItem('velfincorp_users', JSON.stringify(users));
 
-            alert(`Successfully created access for ${userId} as ${userRole.toUpperCase()}`);
+            alert(`Access successfully created for Mobile: ${userId} with ${permissions.length} module permissions!`);
+            
+            // Reset form fields
             document.getElementById('newUserId').value = '';
             document.getElementById('newUserPass').value = '';
+            checkboxes.forEach(cb => cb.checked = false);
         }
     </script>
 
