@@ -61,15 +61,16 @@
         }
         .sidebar-menu {
             list-style: none;
-            padding: 20px 0;
+            padding: 15px 0;
             margin: 0;
             flex: 1;
+            overflow-y: auto;
         }
         .sidebar-menu li a {
             display: flex;
             align-items: center;
             gap: 15px;
-            padding: 14px 25px;
+            padding: 12px 25px;
             color: #cbd5e1;
             text-decoration: none;
             font-size: 14px;
@@ -241,6 +242,7 @@
             <li><a href="dashboard.html" class="active"><i class="fas fa-home"></i> Main Dashboard</a></li>
             <li><a href="borrowers details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
             <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Loan Entry Form</a></li>
+            <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
@@ -314,6 +316,7 @@
                 <div style="font-weight: bold; font-size: 13px; color: var(--navy); margin-bottom: 8px;">Select Allowed Access Modules:</div>
                 <label><input type="checkbox" name="perm" value="borrowers details.html"> Borrower Details</label>
                 <label><input type="checkbox" name="perm" value="creditvault.html"> Loan Entry Form</label>
+                <label><input type="checkbox" name="perm" value="payments.html"> Payment Collection</label>
                 <label><input type="checkbox" name="perm" value="creditvault-report.html"> Credit Vault Report</label>
                 <label><input type="checkbox" name="perm" value="personalloan-report.html"> Personal Loan Report</label>
                 <label><input type="checkbox" name="perm" value="allpayments-report.html"> All Payments Report</label>
