@@ -9,7 +9,6 @@
         :root {
             --navy: #0F1D36;
             --gold: #C5A059;
-            --red: #B33939;
             --bg-color: #F8F9FB;
             --text-main: #2D3748;
             --white: #FFFFFF;
@@ -28,19 +27,20 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 40px;
+            padding: 18px 40px;
             border-bottom: 3px solid var(--gold);
         }
         .logo-area {
             font-family: 'Cinzel', serif;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
             color: var(--gold);
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
         }
         .nav-links {
             display: flex;
             gap: 25px;
+            align-items: center;
         }
         .nav-links a {
             color: var(--white);
@@ -52,31 +52,40 @@
         .nav-links a:hover {
             color: var(--gold);
         }
+        .btn-admin {
+            background-color: var(--gold);
+            color: var(--navy);
+            padding: 8px 18px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
         /* Hero Section */
         .hero {
             text-align: center;
-            padding: 80px 20px;
-            background: linear-gradient(rgba(15, 29, 54, 0.85), rgba(15, 29, 54, 0.85)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80');
+            padding: 90px 20px;
+            background: linear-gradient(rgba(15, 29, 54, 0.9), rgba(15, 29, 54, 0.9)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80');
             background-size: cover;
             background-position: center;
             color: var(--white);
         }
         .hero h1 {
             font-family: 'Cinzel', serif;
-            font-size: 40px;
+            font-size: 42px;
             color: var(--gold);
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
         }
         .hero p {
             font-size: 18px;
-            max-width: 600px;
-            margin: 0 auto 30px auto;
-            color: #e2e8f0;
+            max-width: 650px;
+            margin: 0 auto 35px auto;
+            color: #cbd5e1;
+            line-height: 1.6;
         }
         .btn-cta {
             background-color: var(--gold);
             color: var(--navy);
-            padding: 12px 30px;
+            padding: 14px 35px;
             font-size: 16px;
             font-weight: bold;
             border-radius: 6px;
@@ -90,15 +99,15 @@
         /* Features / Services Section */
         .features {
             max-width: 1100px;
-            margin: 50px auto;
+            margin: 60px auto;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 30px;
             padding: 0 20px;
         }
         .feature-card {
             background: var(--white);
-            padding: 30px;
+            padding: 35px 30px;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(15, 29, 54, 0.08);
             border-top: 4px solid var(--navy);
@@ -108,16 +117,28 @@
             color: var(--navy);
             font-family: 'Cinzel', serif;
             margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .feature-card p {
+            color: #475569;
+            font-size: 14px;
+            line-height: 1.6;
         }
         /* Footer */
         footer {
             background-color: var(--navy);
             color: var(--white);
             text-align: center;
-            padding: 20px;
-            margin-top: 60px;
+            padding: 30px 20px;
+            margin-top: 80px;
             font-size: 13px;
             border-top: 2px solid var(--gold);
+            line-height: 1.8;
+        }
+        footer strong {
+            color: var(--gold);
+            font-size: 15px;
+            font-family: 'Cinzel', serif;
         }
     </style>
 </head>
@@ -127,39 +148,42 @@
     <nav>
         <div class="logo-area">VEL FIN CORP</div>
         <div class="nav-links">
-            <a href="index.html">முகப்பு (Home)</a>
-            <a href="profile.html">நிறுவனப் பிரொஃபைல் (Profile)</a>
-            <a href="contact.html">தொடர்புக்கு (Contact)</a>
-            <a href="dashboard.html" style="background: var(--gold); color: var(--navy); padding: 6px 15px; border-radius: 4px;">அட்மின் போர்டல் (Admin)</a>
+            <a href="index.html">முகப்பு</a>
+            <a href="contact.html">தொடர்புக்கு</a>
+            <a href="dashboard.html" class="btn-admin">அட்மின் போர்டல்</a>
         </div>
     </nav>
 
     <!-- Hero Section -->
     <div class="hero">
-        <h1>நம்பகமான நிதிச் சேவை & பொருள் கடன்</h1>
-        <p>மொபைல் போன்கள், வீட்டு உபயோகப் பொருட்கள் மற்றும் தனிநபர் கடன்களுக்கான எளிமையான பைனான்ஸ் மற்றும் உடனடி வாட்ஸ்அப் அறிவிப்பு வசதி.</p>
+        <h1>VEL FIN CORP</h1>
+        <p>வாடிக்கையாளர்களின் தேவைகளுக்கான நம்பகமான நிதிச் சேவைகள், பொருள் கடன் மற்றும் எளிய தவணை முறை நிதித் தீர்வுகள்.</p>
         <a href="Borrowers details.html" class="btn-cta">புதிய பாரோவர் பதிவு செய்ய</a>
     </div>
 
     <!-- Services / Features -->
     <div class="features">
         <div class="feature-card">
-            <h3>Credit Vault (Product Loans)</h3>
-            <p>மொபைல், எலக்ட்ரானிக்ஸ் மற்றும் பர்னிச்சர் பொருட்களுக்கு 30% டவுன் பேமெண்ட் உடன் எளிய வாராந்திர EMI வசதி.</p>
+            <h3>Credit Vault</h3>
+            <p>மொபைல் போன்கள், எலக்ட்ரானிக்ஸ் மற்றும் வீட்டு உபயோகப் பொருட்களுக்கான எளிய வாராந்திர தவணை முறை பொருள் கடன் சேவைகள்.</p>
         </div>
         <div class="feature-card">
             <h3>Personal Loans</h3>
-            <p>தினசரி, வாராந்திர மற்றும் மாத தவணை முறையில் அவசரத் தேவைகளுக்கான துரித தனிநபர் கடன் உதவிகள்.</p>
+            <p>வாடிக்கையாளர்களின் அவசர மற்றும் அத்தியாவசியத் தேவைகளுக்கான தினசரி, வாராந்திர மற்றும் மாதத் தவணை தனிநபர் கடன்கள்.</p>
         </div>
         <div class="feature-card">
-            <h3>Automated WhatsApp Alerts</h3>
-            <p>MSG91 API ஒருங்கிணைப்பு மூலம் தவணை நினைவூட்டல் மற்றும் பேமெண்ட் ரசீதுகள் உடனுக்குடன் வாடிக்கையாளருக்கு அனுப்பப்படும்.</p>
+            <h3>Secure Management</h3>
+            <p>நிறுவனத்தின் நிதிப் பரிமாற்றங்கள், லோன் கணக்கீடுகள் மற்றும் தவணை வசூல்களைத் துல்லியமாக நிர்வகிக்கும் நவீன கட்டமைப்பு.</p>
         </div>
     </div>
 
     <!-- Footer -->
     <footer>
-        <p>&copy; 2026 Vel Fin Corp. All Rights Reserved. | Trust • Finance • Prosperity</p>
+        <p><strong>VEL FIN CORP</strong><br>
+        GSTIN: 33BIEPP8028C3ZF<br>
+        முகவரி: 31/11, ஜீவா நகர், பாப்பிரெட்டிப்பட்டி கூட்டுறவு கட்டிடம், தருமபுரி, தமிழ்நாடு - 636905<br>
+        போன்: 9486886293 | மின்னஞ்சல்: support@velfincorp.com<br>
+        &copy; 2026 Vel Fin Corp. All Rights Reserved.</p>
     </footer>
 
 </body>
