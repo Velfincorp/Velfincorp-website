@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vel Fin Corp - Contact Us</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons இணைத்தல் -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --navy: #0F1D36;
@@ -13,20 +15,64 @@
             --text-main: #2D3748;
             --white: #FFFFFF;
         }
-        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; }
+        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh;}
         nav { background-color: var(--navy); color: var(--white); display: flex; justify-content: space-between; align-items: center; padding: 18px 40px; border-bottom: 3px solid var(--gold); }
-        .logo-area { font-family: 'Cinzel', serif; font-size: 24px; font-weight: bold; color: var(--gold); }
+        .logo-area { font-family: 'Cinzel', serif; font-size: 24px; font-weight: bold; color: var(--gold); letter-spacing: 1.5px; }
         .nav-links { display: flex; gap: 25px; align-items: center; }
-        .nav-links a { color: var(--white); text-decoration: none; font-weight: 600; font-size: 14px; }
+        .nav-links a { color: var(--white); text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.3s; }
         .nav-links a:hover { color: var(--gold); }
-        .container { max-width: 750px; margin: 50px auto; background: var(--white); padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(15,29,54,0.08); border-top: 5px solid var(--navy); }
-        h2 { font-family: 'Cinzel', serif; color: var(--navy); text-align: center; margin-bottom: 25px; }
+        .container { max-width: 750px; margin: 50px auto; background: var(--white); padding: 40px; border-radius: 10px; box-shadow: 0 6px 25px rgba(15,29,54,0.08); border-top: 6px solid var(--navy); flex: 1; }
+        h2 { font-family: 'Cinzel', serif; color: var(--navy); text-align: center; margin-bottom: 30px; font-size: 28px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--navy); font-size: 13px; }
-        input, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        .btn-submit { background-color: var(--navy); color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; }
+        input, textarea { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; transition: 0.3s; }
+        input:focus, textarea:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.1); }
+        .btn-submit { background-color: var(--navy); color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; transition: 0.3s; }
         .btn-submit:hover { background-color: var(--gold); color: var(--navy); }
-        .contact-info { margin-top: 35px; text-align: center; font-size: 14px; color: #475569; line-height: 1.8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+        
+        /* மேம்படுத்தப்பட்ட Footer Style */
+        footer {
+            background-color: var(--navy);
+            color: #E2E8F0;
+            text-align: center;
+            padding: 50px 20px;
+            margin-top: auto;
+            font-size: 14px;
+            border-top: 3px solid var(--gold);
+            line-height: 1.8;
+        }
+        footer strong {
+            color: var(--gold);
+            font-size: 18px;
+            font-family: 'Cinzel', serif;
+            display: block;
+            margin-bottom: 15px;
+        }
+        .footer-contact-details {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .footer-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .footer-item i {
+            color: var(--gold);
+            width: 20px;
+            text-align: center;
+        }
+        .footer-bottom-text {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+            color: #94A3B8;
+        }
     </style>
 </head>
 <body>
@@ -36,7 +82,7 @@
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="contact.html" style="color: var(--gold);">Contact Us</a>
-            <a href="login.html" style="background: var(--gold); color: var(--navy); padding: 8px 18px; border-radius: 4px;">Secure Login</a>
+            <a href="login.html" style="background: var(--gold); color: var(--navy); padding: 8px 18px; border-radius: 4px; font-weight: bold;">Secure Login</a>
         </div>
     </nav>
 
@@ -47,7 +93,7 @@
         <form action="https://formspree.io/f/xlgppjyw" method="POST">
             <div class="form-group">
                 <label>Full Name *</label>
-                <input type="text" name="name" required placeholder="Enter your name">
+                <input type="text" name="name" required placeholder="Enter your full name">
             </div>
             <div class="form-group">
                 <label>Mobile / WhatsApp Number *</label>
@@ -55,17 +101,36 @@
             </div>
             <div class="form-group">
                 <label>Inquiry / Message *</label>
-                <textarea name="message" rows="4" required placeholder="Enter your financial inquiry details here..."></textarea>
+                <textarea name="message" rows="5" required placeholder="Describe your financial inquiry details here..."></textarea>
             </div>
             <button type="submit" class="btn-submit">Submit Inquiry</button>
         </form>
-
-        <div class="contact-info">
-            <p><strong>Vel Fin Corp Headquarters</strong><br>
-            Address: 31/11, Jeeva Nagar, Pappireddipatti, Dharmapuri, Tamil Nadu - 636905<br>
-            Helpline: +91 9486886293 | Email: support@velfincorp.com</p>
-        </div>
     </div>
+
+    <!-- மேம்படுத்தப்பட்ட Footer -->
+    <footer>
+        <div class="footer-contact-details">
+            <strong>VEL FIN CORP HEADQUARTERS</strong>
+            
+            <div class="footer-item">
+                <i class="fas fa-map-marker-alt"></i> 
+                <span>31/11, Jeeva Nagar, Pappireddipatti, Dharmapuri, Tamil Nadu - 636905</span>
+            </div>
+            
+            <div class="footer-item">
+                <i class="fas fa-phone-alt"></i> 
+                <span>Helpline: +91 9486886293</span>
+            </div>
+            
+            <div class="footer-item">
+                <i class="fas fa-envelope"></i> 
+                <span>Email: support@velfincorp.com</span>
+            </div>
+        </div>
+        <div class="footer-bottom-text">
+            &copy; 2026 Vel Fin Corp. All Rights Reserved. | Corporate Finance Division
+        </div>
+    </footer>
 
 </body>
 </html>
