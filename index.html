@@ -32,7 +32,7 @@
             padding: 0;
         }
 
-        /* Navigation Bar with Fibonacci Proportions */
+        /* Navigation Bar */
         nav {
             background-color: var(--navy);
             color: var(--white);
@@ -51,10 +51,13 @@
         }
 
         .nav-logo {
-            height: 45px;
-            width: auto;
-            border-radius: 4px;
-            border: 1px solid var(--gold);
+            height: 48px;
+            width: 48px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            background: var(--white);
+            padding: 2px;
         }
 
         .logo-text-area {
@@ -106,7 +109,7 @@
             color: var(--navy);
         }
 
-        /* Hero Section - Fibonacci Golden Ratio Layout */
+        /* Hero Section */
         .hero {
             text-align: center;
             padding: var(--fib-xxl) var(--fib-lg);
@@ -118,13 +121,13 @@
         }
 
         .hero-logo-badge {
-            width: 110px;
-            height: 110px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             border: 3px solid var(--gold);
             object-fit: cover;
             margin-bottom: var(--fib-md);
-            box-shadow: 0 0 25px rgba(197, 160, 89, 0.4);
+            box-shadow: 0 0 30px rgba(197, 160, 89, 0.5);
             background: var(--white);
             padding: 4px;
         }
@@ -163,7 +166,7 @@
             transform: translateY(-2px);
         }
 
-        /* Features / Services Section with Fibonacci Grid */
+        /* Features / Services Section */
         .features {
             max-width: 1200px;
             margin: var(--fib-xxl) auto;
@@ -248,11 +251,10 @@
 </head>
 <body>
 
-    <!-- Navigation Bar with Logo -->
+    <!-- Navigation Bar -->
     <nav>
         <div class="brand-container">
-            <!-- உங்கள் லோகோ படப் பெயர் இங்கு கொடுக்கப்பட்டுள்ளது -->
-            <img src="logo.png" alt="Vel Fin Corp Logo" class="nav-logo">
+            <img src="velfincorp-logo.jpeg" alt="Vel Fin Corp Logo" class="nav-logo">
             <div>
                 <div class="logo-text-area">VEL FIN CORP</div>
                 <div class="logo-subtext">Trust • Finance • Prosperity</div>
@@ -265,9 +267,9 @@
         </div>
     </nav>
 
-    <!-- Hero Section with Centralized Emblem & Fibonacci Scaling -->
+    <!-- Hero Section -->
     <div class="hero">
-        <img src="logo.png" alt="Vel Fin Corp Emblem" class="hero-logo-badge">
+        <img src="velfincorp-logo.jpeg" alt="Vel Fin Corp Emblem" class="hero-logo-badge">
         <h1>VEL FIN CORP</h1>
         <p>Empowering your financial growth through structured credit solutions, asset financing, and transparent corporate loan management systems.</p>
         <a href="login.html" class="btn-cta">Access Secure Portal</a>
