@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vel Fin Corp - Login Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0F1D36;
+            --gold: #C5A059;
+            --bg-color: #F8F9FB;
+            --text-main: #2D3748;
+            --white: #FFFFFF;
+        }
+        body {
+            font-family: 'Manrope', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-card {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.1);
+            width: 100%;
+            max-width: 400px;
+            border-top: 5px solid var(--gold);
+        }
+        .logo-title {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--navy);
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .sub-title {
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--navy);
+        }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        select:focus, input:focus {
+            border-color: var(--gold);
+            outline: none;
+        }
+        .btn-login {
+            background-color: var(--navy);
+            color: var(--white);
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-login:hover {
+            background-color: var(--gold);
+            color: var(--navy);
+        }
+        .back-home {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #64748b;
+            text-decoration: none;
+        }
+        .back-home:hover {
+            color: var(--navy);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo-title">VEL FIN CORP</div>
+        <div class="sub-title">Secure Portal Login</div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            
+            <div class="form-group">
+                <label>Select Role (பயனர் வகை) *</label>
+                <select id="userRole" required onchange="updatePlaceholder()">
+                    <option value="">- ரோலைத் தேர்ந்தெடுக்கவும் -</option>
+                    <option value="admin">Administrator (அட்மின்)</option>
+                    <option value="staff">Office Staff / Collection (ஸ்டாஃப்)</option>
+                    <option value="retailer">Retailer / Partner (ரீடெய்லர்)</option>
+                    <option value="borrower">Borrower / Customer (பாரோவர்)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="usernameLabel">Username / ID / Mobile *</label>
+                <input type="text" id="username" required placeholder="உங்களது ஐடி அல்லது மொபைல் எண்">
+            </div>
+
+            <div class="form-group">
+                <label>Password / PIN *</label>
+                <input type="password" id="password" required placeholder="பாஸ்வேர்ட்டை உள்ளிடவும்">
+            </div>
+
+            <button type="submit" class="btn-login">Login / உள்நுழைய</button>
+        </form>
+
+        <a href="index.html" class="back-home">&larr; முகப்புப் பக்கத்திற்குத் திரும்ப</a>
+    </div>
+
+    <script>
+        function updatePlaceholder() {
+            const role = document.getElementById('userRole').value;
+            const userField = document.getElementById('username');
+            if (role === 'borrower') {
+                userField.placeholder = "பதிவு செய்யப்பட்ட மொபைல் எண் (உதா: 9443768900)";
+            } else if (role === 'staff' || role === 'retailer') {
+                userField.placeholder = "ஸ்டாஃப் / பார்ட்னர் ஐடி (உதா: STF001)";
+            } else {
+                userField.placeholder = "அட்மின் ஐடி (admin)";
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const role = document.getElementById('userRole').value;
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+
+            // Static Authentication Logic (Control passwords directly here)
+            if (role === 'admin') {
+                if (user === 'admin' && pass === 'velfincorp@2026') {
+                    alert("Admin Login Successful!");
+                    window.location.href = "dashboard.html";
+                } else {
+                    alert("தவறான அட்மின் ஐடி அல்லது பாஸ்வேர்ட்!");
+                }
+            } 
+            else if (role === 'staff') {
+                // நீங்கள் வழங்கும் ஸ்டாஃப் ஐடி மற்றும் பாஸ்வேர்ட் இங்கே சரிபார்க்கப்படும்
+                if ((user === 'staff01' && pass === 'staff123') || (user === 'collection01' && pass === 'col123')) {
+                    alert("Staff Login Successful!");
+                    window.location.href = "Dashboard.html";
+                } else {
+                    alert("தவறான ஸ்டாஃப் ஐடி அல்லது பாஸ்வேர்ட்!");
+                }
+            } 
+            else if (role === 'borrower') {
+                if (user.length === 10) {
+                    alert("Customer Portal Access Granted!");
+                    window.location.href = "Payments.html";
+                } else {
+                    alert("சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்!");
+                }
+            } 
+            else {
+                alert("Login Successful!");
+            }
+        }
+    </script>
+
+</body>
+</html>
