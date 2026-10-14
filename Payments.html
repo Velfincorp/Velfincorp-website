@@ -87,24 +87,26 @@
         
         <div class="form-group">
             <label>Borrowers Name *</label>
-            <select id="Borrowers_Name" required>
+            <select id="Borrowers_Name" onchange="loadLoanDetails()" required>
                 <option value="">-Select Borrower-</option>
-                <option value="cust1">Sample Customer 1</option>
-                <option value="cust2">Sample Customer 2</option>
+                <option value="cust1">Ravichandran Chennan (VPL/022/2026)</option>
+                <option value="cust2">Thowlath Basha Rjka (VPL/017/2026)</option>
             </select>
         </div>
 
         <div class="form-group">
             <label>Personal Loan</label>
-            <select id="Personal_Loan">
+            <select id="Personal_Loan" onchange="calculateDelay()">
                 <option value="">-Select Personal Loan-</option>
+                <option value="pl1" data-duedate="2026-10-10">VPL/022/2026 (Due: 10-Oct-2026)</option>
             </select>
         </div>
 
         <div class="form-group">
             <label>Credit Vault</label>
-            <select id="Credit_Vault">
+            <select id="Credit_Vault" onchange="calculateDelay()">
                 <option value="">-Select Credit Vault Loan-</option>
+                <option value="cv1" data-duedate="2026-10-05">VML-001/2026 (Due: 05-Oct-2026)</option>
             </select>
         </div>
 
@@ -135,12 +137,12 @@
 
         <div class="form-group">
             <label>Delayed Details *</label>
-            <input type="text" id="Delayed_Details" value="0 Days" readonly>
+            <input type="text" id="Delayed_Details" value="0 Days" readonly style="font-weight: bold; color: #DC3545;">
         </div>
 
         <div class="form-group">
             <label>Date *</label>
-            <input type="date" id="Date_field" required>
+            <input type="date" id="Date_field" onchange="calculateDelay()" required>
         </div>
 
         <div class="form-group">
@@ -155,6 +157,47 @@
 <script>
     // Set current date automatically
     document.getElementById('Date_field').valueAsDate = new Date();
+
+    // Auto-calculate delay days based on Due Date and Payment Date
+    function calculateDelay() {
+        const plSelect = document.getElementById('Personal_Loan');
+        const cvSelect = document.getElementById('Credit_Vault');
+        let selectedOption = null;
+
+        if (plSelect.value) {
+            selectedOption = plSelect.options[plSelect.selectedIndex];
+        } else if (cvSelect.value) {
+            selectedOption = cvSelect.options[cvSelect.selectedIndex];
+        }
+
+        if (selectedOption && selectedOption.dataset.duedate) {
+            const dueDateStr = selectedOption.dataset.duedate;
+            const dueDate = new Date(dueDateStr);
+            const paymentDateVal = document.getElementById('Date_field').value;
+            const paymentDate = new Date(paymentDateVal);
+
+            const diffTime = paymentDate - dueDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays > 0) {
+                document.getElementById('Delayed_Details').value = diffDays + " Days Delayed";
+            } else {
+                document.getElementById('Delayed_Details').value = "0 Days (On Time)";
+            }
+        } else {
+            document.getElementById('Delayed_Details').value = "0 Days";
+        }
+    }
+
+    function loadLoanDetails() {
+        // Dummy auto-fill simulation for borrower selection
+        document.getElementById('Paid_Amount').value = "1000.00";
+        document.getElementById('Balance_Amount').value = "5000.00";
+        document.getElementById('Paid_Installment').value = "5";
+        document.getElementById('Remaining_Installment').value = "5";
+        document.getElementById('Status').value = "ACTIVE";
+        calculateDelay();
+    }
 
     function validatePayment(event) {
         const paidAmt = parseFloat(document.getElementById('Paid_Amount').value) || 0;
