@@ -259,19 +259,19 @@
         <div class="cards-grid">
             <div class="card">
                 <h4>Total Active Loans Amount</h4>
-                <div class="amount green">₹840,000.00</div>
+                <div class="amount green" id="plActiveAmount">₹840,000.00</div>
             </div>
             <div class="card">
                 <h4>Total Amount Collected</h4>
-                <div class="amount green">₹152,200.00</div>
+                <div class="amount green" id="plCollectedAmount">₹152,200.00</div>
             </div>
             <div class="card red-border">
                 <h4>Remaining Balance Amount</h4>
-                <div class="amount red">₹687,800.00</div>
+                <div class="amount red" id="plRemainingBalance">₹687,800.00</div>
             </div>
             <div class="card">
                 <h4>Total Active Loans</h4>
-                <div class="amount">25</div>
+                <div class="amount" id="plActiveCount">25</div>
             </div>
         </div>
 
@@ -279,19 +279,19 @@
         <div class="cards-grid">
             <div class="card">
                 <h4>Total Active Credit Vault Amount</h4>
-                <div class="amount green">₹701,533.00</div>
+                <div class="amount green" id="cvActiveAmount">₹701,533.00</div>
             </div>
             <div class="card">
                 <h4>Total Amount Collected</h4>
-                <div class="amount green">₹129,130.50</div>
+                <div class="amount green" id="cvCollectedAmount">₹129,130.50</div>
             </div>
             <div class="card">
                 <h4>Total Active Vault Loans</h4>
-                <div class="amount">36</div>
+                <div class="amount" id="cvActiveCount">36</div>
             </div>
             <div class="card red-border">
                 <h4>Remaining Balance</h4>
-                <div class="amount red">₹701,533.00</div>
+                <div class="amount red" id="cvRemainingBalance">₹572,402.50</div>
             </div>
         </div>
 
@@ -326,6 +326,55 @@
     </div>
 
     <script>
+        // Dynamic Calculation & LocalStorage sync
+        window.addEventListener('DOMContentLoaded', () => {
+            // Retrieve loans and payments from localStorage if available, otherwise use default baseline numbers
+            let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
+            let personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
+            let payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
+
+            // Base fallback numbers matching your operational baseline if local storage is empty
+            let cvTotalAmount = 701533.00;
+            let cvCollected = 129130.50;
+            let cvCount = 36;
+
+            let plTotalAmount = 840000.00;
+            let plCollected = 152200.00;
+            let plCount = 25;
+
+            // If user has added loans dynamically via forms, compute from storage
+            if (creditVaultLoans.length > 0) {
+                cvTotalAmount = creditVaultLoans.reduce((sum, loan) => sum + (parseFloat(loan.productValue) || 0), 0);
+                cvCount = creditVaultLoans.filter(l => l.status === 'ACTIVE').length;
+            }
+
+            if (personalLoans.length > 0) {
+                plTotalAmount = personalLoans.reduce((sum, loan) => sum + (parseFloat(loan.loanAmount) || 0), 0);
+                plCount = personalLoans.filter(l => l.status === 'ACTIVE').length;
+            }
+
+            if (payments.length > 0) {
+                // Sum collected amounts based on loan type
+                cvCollected = payments.filter(p => p.loanType === 'Credit Vault').reduce((sum, p) => sum + (parseFloat(p.paidAmount) || 0), cvCollected);
+                plCollected = payments.filter(p => p.loanType === 'Personal Loan').reduce((sum, p) => sum + (parseFloat(p.paidAmount) || 0), plCollected);
+            }
+
+            // Correct calculation: Remaining Balance = Total Active Amount - Total Collected Amount
+            let cvRemaining = cvTotalAmount - cvCollected;
+            let plRemaining = plTotalAmount - plCollected;
+
+            // Update UI elements safely
+            document.getElementById('cvActiveAmount').innerText = '₹' + cvTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('cvCollectedAmount').innerText = '₹' + cvCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('cvActiveCount').innerText = cvCount;
+            document.getElementById('cvRemainingBalance').innerText = '₹' + cvRemaining.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+            document.getElementById('plActiveAmount').innerText = '₹' + plTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('plCollectedAmount').innerText = '₹' + plCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('plActiveCount').innerText = plCount;
+            document.getElementById('plRemainingBalance').innerText = '₹' + plRemaining.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        });
+
         function generateCredential() {
             const userId = document.getElementById('newUserId').value.trim();
             const userPass = document.getElementById('newUserPass').value.trim();
