@@ -3,51 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vel Fin Corp - All Payments Report</title>
+    <title>Vel Fin Corp - Comprehensive Payments & Dues Report</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F4F6F9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1050px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(11,29,58,0.1); }
-        h2 { text-align: center; color: #0B1D3A; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
-        th { background-color: #0B1D3A; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .back-btn { display: inline-block; margin-bottom: 15px; background: #C5A059; color: #0B1D3A; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; }
+        :root {
+            --primary-navy: #0B1D3A;
+            --accent-gold: #C5A059;
+            --bg-light: #F4F6F9;
+            --text-dark: #333333;
+            --green: #198754;
+            --red: #DC3545;
+            --orange: #fd7e14;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(11,29,58,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary-navy);
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 15px;
+            background: var(--accent-gold);
+            color: var(--primary-navy);
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        /* Tab Navigation */
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .tab-btn {
+            background: #e2e8f0;
+            color: var(--primary-navy);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .tab-btn.active, .tab-btn:hover {
+            background: var(--primary-navy);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-size: 13px;
+        }
+        th {
+            background-color: var(--primary-navy);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .badge-paid { background: #d1e7dd; color: #0f5132; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .badge-pending { background: #fff3cd; color: #664d03; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .badge-delayed { background: #f8d7da; color: #842029; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
-    <h2>All Payments Report</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Loan ID</th>
-                <th>Borrowers Name</th>
-                <th>Address</th>
-                <th>WhatsApp</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>12-Oct-2026</td>
-                <td>VPL/022/2026</td>
-                <td>Ravichandran Chennan</td>
-                <td>4/106, Kalipettai, Pappireddipatti, Tamil Nadu, 636905</td>
-                <td>+9194437689</td>
-            </tr>
-            <tr>
-                <td>12-Oct-2026</td>
-                <td>VPL/017/2026</td>
-                <td>Thowlath Basha Rjka</td>
-                <td>3/418, Marukalampatti, Pappireddipatti, Tamil Nadu, 636904</td>
-                <td>+9175983746</td>
-            </tr>
-        </tbody>
-    </table>
+    <h2>Comprehensive Payment & Dues Tracking Report</h2>
+
+    <!-- Tabs Selection -->
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab(event, 'paidToday')">இன்று செலுத்தியவர்கள் (Paid Today)</button>
+        <button class="tab-btn" onclick="switchTab(event, 'pendingDues')">செலுத்த வேண்டிய பாக்கி (Pending Dues)</button>
+        <button class="tab-btn" onclick="switchTab(event, 'delayedLoans')">காலதாமதமான லோன்கள் (Delayed / Overdue)</button>
+    </div>
+
+    <!-- Tab 1: Paid Today -->
+    <div id="paidToday" class="tab-content active">
+        <h3 style="color: var(--green);">இன்று பணம் செலுத்திய கஸ்டமர்களின் விவரங்கள்</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Loan ID</th>
+                    <th>Borrowers Name</th>
+                    <th>Paid Amount</th>
+                    <th>Status</th>
+                    <th>WhatsApp</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>14-Oct-2026</td>
+                    <td>VPL/022/2026</td>
+                    <td>Ravichandran Chennan</td>
+                    <td>₹1,000</td>
+                    <td><span class="badge-paid">PAID</span></td>
+                    <td>+9194437689</td>
+                </tr>
+                <tr>
+                    <td>14-Oct-2026</td>
+                    <td>VML-001/2026</td>
+                    <td>Santhosh M</td>
+                    <td>₹2,100</td>
+                    <td><span class="badge-paid">PAID</span></td>
+                    <td>+9174816828</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Tab 2: Pending Dues -->
+    <div id="pendingDues" class="tab-content">
+        <h3 style="color: var(--orange);">குறிப்பிட்ட தேதிகளில் (உதா: 13 & 16) டியூ கட்டாதவர்கள்</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Due Date</th>
+                    <th>Loan ID</th>
+                    <th>Borrowers Name</th>
+                    <th>EMI Amount</th>
+                    <th>Status</th>
+                    <th>Contact</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>13-Oct-2026</td>
+                    <td>VPL/017/2026</td>
+                    <td>Thowlath Basha Rjka</td>
+                    <td>₹500</td>
+                    <td><span class="badge-pending">NOT PAID</span></td>
+                    <td>+9175983746</td>
+                </tr>
+                <tr>
+                    <td>16-Oct-2026</td>
+                    <td>VPL/004/2026</td>
+                    <td>Mugamath Kathir</td>
+                    <td>₹1,000</td>
+                    <td><span class="badge-pending">UPCOMING / PENDING</span></td>
+                    <td>+9199657534</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Tab 3: Delayed / Overdue -->
+    <div id="delayedLoans" class="tab-content">
+        <h3 style="color: var(--red);">நீண்ட நாட்களாகக் காலதாமதமான (Delayed) லோன்கள்</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Original Due Date</th>
+                    <th>Loan ID</th>
+                    <th>Borrowers Name</th>
+                    <th>Delay Days</th>
+                    <th>Pending Balance</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>08-Oct-2026</td>
+                    <td>VPL/015/2026</td>
+                    <td>Kalaiyarasan V</td>
+                    <td>6 Days</td>
+                    <td>₹3,000</td>
+                    <td><span class="badge-delayed">HIGH DELAY</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
 </div>
+
+<script>
+    function switchTab(evt, tabName) {
+        let contents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < contents.length; i++) {
+            contents[i].classList.remove("active");
+        }
+        let buttons = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < buttons.length; i++) {
+            buttons[i].classList.remove("active");
+        }
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+</script>
 
 </body>
 </html>
