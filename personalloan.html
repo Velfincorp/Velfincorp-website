@@ -4,177 +4,337 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vel Fin Corp - Personal Loan Application</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-navy: #0B1D3A;
-            --accent-gold: #C5A059;
-            --bg-light: #F4F6F9;
-            --text-dark: #333333;
+            --navy: #0F1D36;
+            --gold: #C5A059;
+            --bg-color: #F8F9FB;
+            --text-main: #2D3748;
+            --white: #FFFFFF;
+            --danger: #C53030;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text-dark);
+            font-family: 'Manrope', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Left Sidebar Menu */
+        .sidebar {
+            width: 260px;
+            background-color: var(--navy);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            border-right: 3px solid var(--gold);
+            position: fixed;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
+            overflow-y: auto;
+        }
+        .sidebar-brand {
             padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0,0,0,0.1);
+        }
+        .sidebar-logo {
+            height: 40px;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            background: var(--white);
+            padding: 2px;
+        }
+        .sidebar-title {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 15px 0;
+            margin: 0;
+            flex: 1;
+        }
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 25px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active {
+            background-color: rgba(197, 160, 89, 0.15);
+            color: var(--gold);
+            border-left-color: var(--gold);
+        }
+        .sidebar-menu li a i {
+            width: 20px;
+            text-align: center;
+            color: var(--gold);
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .btn-logout {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px;
+            box-sizing: border-box;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            background: #ffffff;
-            padding: 30px;
+            background: var(--white);
+            padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(11, 29, 58, 0.1);
-            border-top: 5px solid var(--primary-navy);
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05);
+            border-top: 5px solid var(--navy);
         }
         h2 {
+            font-family: 'Cinzel', serif;
             text-align: center;
-            color: var(--primary-navy);
-            margin-bottom: 25px;
+            color: var(--navy);
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: var(--gold);
+            font-weight: 600;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         .form-group {
-            margin-bottom: 20px;
+            flex: 1;
+            min-width: 250px;
         }
         label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: var(--primary-navy);
+            color: var(--navy);
+            font-size: 13px;
         }
         input, select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
             font-size: 14px;
+            box-sizing: border-box;
         }
         input:focus, select:focus {
-            border-color: var(--accent-gold);
+            border-color: var(--gold);
             outline: none;
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
         }
         .btn-submit {
-            background-color: var(--primary-navy);
+            background-color: var(--navy);
             color: white;
-            padding: 12px 20px;
+            padding: 14px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             width: 100%;
             font-size: 16px;
             font-weight: bold;
+            margin-top: 30px;
+            transition: 0.3s;
         }
         .btn-submit:hover {
-            background-color: var(--accent-gold);
-            color: var(--primary-navy);
+            background-color: var(--gold);
+            color: var(--navy);
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>VEL FIN CORP</h2>
-    <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px;">Personal Loan Application</h3>
-
-    <form id="personalLoanForm" onsubmit="return validatePersonalLoan(event)">
-        
-        <div class="form-group">
-            <label>Loan ID *</label>
-            <input type="text" id="Loan_ID" readonly placeholder="Auto-generated (e.g., VPL/001/2026)">
+    <!-- Left Sidebar Navigation Menu -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-title">VEL FIN CORP</div>
         </div>
-
-        <div class="form-group">
-            <label>Loan Type (Repayment Frequency) *</label>
-            <select id="Loan_Type" onchange="calculatePersonalLoan()" required>
-                <option value="">-Select Type-</option>
-                <option value="Daily">Daily</option>
-                <option value="Weekly">Weekly</option>
-                <option value="Monthly">Monthly</option>
-            </select>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
+            <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="personalloan.html" class="active"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
+            <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
+            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
+            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="index.html" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
+    </div>
 
-        <div class="form-group">
-            <label>Tenure *</label>
-            <input type="number" id="Tenure" readonly>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <h2>VEL FIN CORP</h2>
+            <div class="subtitle">Personal Loan Application</div>
+
+            <form id="personalLoanForm" onsubmit="return validatePersonalLoan(event)">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Borrowers Details *</label>
+                        <select id="Borrowers_Details" required>
+                            <option value="">-Select Borrower-</option>
+                            <option value="cust1">Ravichandran (VFC/001/2026)</option>
+                            <option value="cust2">Thowlath Basha (VFC/002/2026)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Loan ID *</label>
+                        <input type="text" id="Loan_ID" readonly placeholder="VPL/001/2026" style="background-color: #f1f5f9;">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Loan Type (Frequency) *</label>
+                        <select id="Loan_Type" onchange="calculatePersonalLoan()" required>
+                            <option value="">-Select Type-</option>
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tenure *</label>
+                        <input type="number" id="Tenure" readonly style="background-color: #f1f5f9;">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Loan Amount (₹) *</label>
+                        <input type="number" id="Loan_Amount" oninput="calculatePersonalLoan()" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Disbursed Amount (₹)</label>
+                        <input type="number" id="Disbursed_Amount" readonly style="background-color: #f1f5f9;">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Document Charge (₹)</label>
+                        <input type="number" id="Document_Charge" value="50" readonly style="background-color: #f1f5f9;">
+                    </div>
+                    <div class="form-group">
+                        <label>Installment Amount (₹)</label>
+                        <input type="number" id="Installment_Amount" readonly style="background-color: #f1f5f9; font-weight: bold; color: #2F855A;">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="Status" required>
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="PENDING">PENDING</option>
+                            <option value="CLOSED">CLOSED</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Personal Loan</button>
+            </form>
         </div>
+    </div>
 
-        <div class="form-group">
-            <label>Loan Amount (?) *</label>
-            <input type="number" id="Loan_Amount" oninput="calculatePersonalLoan()" required>
-        </div>
+    <script>
+        window.onload = function() {
+            const year = new Date().getFullYear();
+            document.getElementById('Loan_ID').value = "VPL/001/" + year;
+        };
 
-        <div class="form-group">
-            <label>Disbursed Amount (?)</label>
-            <input type="number" id="Disbursed_Amount" readonly>
-        </div>
+        function calculatePersonalLoan() {
+            const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
+            const loanType = document.getElementById('Loan_Type').value;
 
-        <div class="form-group">
-            <label>Document Charge (?)</label>
-            <input type="number" id="Document_Charge" readonly value="50">
-        </div>
+            if (loanAmount > 0) {
+                const deduction = loanAmount * 0.15;
+                const disbursed = loanAmount - deduction;
+                document.getElementById('Disbursed_Amount').value = disbursed.toFixed(2);
+                document.getElementById('Document_Charge').value = 50;
 
-        <div class="form-group">
-            <label>Installment Amount (?)</label>
-            <input type="number" id="Installment_Amount" readonly>
-        </div>
+                let tenure = 10;
+                let installment = 0;
 
-        <div class="form-group">
-            <label>Status</label>
-            <input type="text" id="Status" value="ACTIVE" readonly>
-        </div>
+                if (loanType === "Weekly") {
+                    tenure = 10;
+                    installment = loanAmount * 0.10;
+                } else if (loanType === "Daily") {
+                    tenure = 100;
+                    installment = loanAmount / 100;
+                } else if (loanType === "Monthly") {
+                    tenure = 5;
+                    installment = loanAmount / 5;
+                }
 
-        <button type="submit" class="btn-submit">Submit Personal Loan</button>
-    </form>
-</div>
+                document.getElementById('Tenure').value = tenure;
+                document.getElementById('Installment_Amount').value = installment.toFixed(2);
+            }
+        }
 
-<script>
-    // Auto-generate Loan ID and calculations on load/change
-    window.onload = function() {
-        const year = new Date().getFullYear();
-        document.getElementById('Loan_ID').value = "VPL/001/" + year;
-    };
-
-    function calculatePersonalLoan() {
-        const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
-        const loanType = document.getElementById('Loan_Type').value;
-
-        if (loanAmount > 0) {
-            // 15% Deduction
-            const deduction = loanAmount * 0.15;
-            const disbursed = loanAmount - deduction;
-            document.getElementById('Disbursed_Amount').value = disbursed.toFixed(2);
-            document.getElementById('Document_Charge').value = 50;
-
-            let tenure = 10;
-            let installment = 0;
-
-            if (loanType === "Weekly") {
-                tenure = 10;
-                installment = loanAmount * 0.10;
-            } else if (loanType === "Daily") {
-                tenure = 100;
-                installment = loanAmount / 100;
-            } else if (loanType === "Monthly") {
-                tenure = 5;
-                installment = loanAmount / 5;
+        function validatePersonalLoan(event) {
+            event.preventDefault();
+            const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
+            if (loanAmount <= 0) {
+                alert("Please enter a valid loan amount!");
+                return false;
             }
 
-            document.getElementById('Tenure').value = tenure;
-            document.getElementById('Installment_Amount').value = installment.toFixed(2);
+            alert("Personal loan application successfully validated and saved!");
+            document.getElementById('personalLoanForm').reset();
+            return true;
         }
-    }
-
-    function validatePersonalLoan(event) {
-        const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
-        if (loanAmount <= 0) {
-            alert("?????????? ?????? ???? ?????? ??????????!");
-            event.preventDefault();
-            return false;
-        }
-
-        alert("Personal Loan application validated and submitted successfully!");
-        return true;
-    }
-</script>
-
+    </script>
 </body>
 </html>
