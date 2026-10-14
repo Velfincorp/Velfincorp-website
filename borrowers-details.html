@@ -35,6 +35,7 @@
             position: fixed;
             height: 100vh;
             box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
+            overflow-y: auto;
         }
         .sidebar-brand {
             padding: 20px;
@@ -65,7 +66,6 @@
             padding: 15px 0;
             margin: 0;
             flex: 1;
-            overflow-y: auto;
         }
         .sidebar-menu li a {
             display: flex;
@@ -224,33 +224,87 @@
     <div class="main-content">
         <div class="container">
             <h2>VEL FIN CORP</h2>
-            <div class="subtitle">Comprehensive Borrower Registration & Loan Application</div>
+            <div class="subtitle">Borrowers Details Registration Form</div>
 
-            <form id="comprehensiveBorrowerForm" onsubmit="return saveBorrowerData(event)">
+            <form id="zohoBorrowerForm" onsubmit="return validateAndSubmit(event)">
                 
-                <div class="section-heading">1. Basic Identification & ID Proofs</div>
+                <div class="section-heading">1. General & Retailer Details</div>
                 <div class="form-row">
+                    <div class="form-group">
+                        <label>Issued by *</label>
+                        <select id="Issued_by" onchange="toggleRetailerFields()" required>
+                            <option value="">-Select-</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Retailer">Retailer</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label>Borrower ID *</label>
-                        <input type="text" id="Borrower_ID" value="VFC/025/2026" readonly style="background-color: #f1f5f9;">
+                        <input type="text" id="Borrower_ID" readonly value="VFC/001/2026" style="background-color: #f1f5f9;">
+                    </div>
+                </div>
+
+                <!-- Toggle Retailer Fields (Workflow equivalent) -->
+                <div class="form-row hidden" id="retailerFieldsGroup">
+                    <div class="form-group">
+                        <label>Retailer Details *</label>
+                        <select id="Retailer_Details" onchange="autoFillRetailerCode()">
+                            <option value="">-Select Retailer-</option>
+                            <option value="RET001">Vel Retailer One</option>
+                            <option value="RET002">Fin Partner Two</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Full Name (As per Aadhar) *</label>
-                        <input type="text" id="Full_Name" placeholder="Enter full name" required>
+                        <label>Retailer Code *</label>
+                        <input type="text" id="Retailer_Code" readonly placeholder="Auto-filled code">
+                    </div>
+                </div>
+
+                <div class="section-heading">2. Personal & Family Information</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Customer Photo *</label>
+                        <input type="file" id="Customer_Photo" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Loan Date *</label>
+                        <input type="date" id="Loan_Date" required>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Primary Phone Number (WhatsApp) *</label>
-                        <input type="text" id="Phone_Number" maxlength="10" placeholder="10 digit mobile number" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Additional Contact (Nominee / Reference)</label>
-                        <input type="text" id="Nominee_Contact" maxlength="10" placeholder="10 digit number">
+                        <label>Customer Name *</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="Name_Prefix" style="width: 100px;">
+                                <option value="Mr">Mr</option>
+                                <option value="Mrs">Mrs</option>
+                                <option value="Ms">Ms</option>
+                            </select>
+                            <input type="text" id="First_Name" placeholder="First Name" required style="flex: 1;">
+                            <input type="text" id="Last_Name" placeholder="Last Name" style="flex: 1;">
+                        </div>
                     </div>
                 </div>
 
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Relationship *</label>
+                        <select id="Relationship" required>
+                            <option value="">-Select-</option>
+                            <option value="S/O">Son Of</option>
+                            <option value="D/O">Daughter Of</option>
+                            <option value="W/O">Wife Of</option>
+                            <option value="C/O">Care Of</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Son / Daughter / Spouse Name *</label>
+                        <input type="text" id="Relative_Name" placeholder="Enter relative name" required>
+                    </div>
+                </div>
+
+                <div class="section-heading">3. Identity Proofs & Contact Details</div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Aadhar Number *</label>
@@ -258,63 +312,88 @@
                     </div>
                     <div class="form-group">
                         <label>PAN Number *</label>
-                        <input type="text" id="PAN_Number" placeholder="ABCDE1234F" maxlength="10" required>
+                        <input type="text" id="PAN_NUMBER" placeholder="ABCDE1234F" maxlength="10" required>
                     </div>
                 </div>
 
-                <div class="section-heading">2. Address & Residential Details</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Door No / Street Address *</label>
-                        <input type="text" id="Street_Address" placeholder="Enter door no and street" required>
+                        <label>Phone Number *</label>
+                        <input type="text" id="Phone_Number" maxlength="10" placeholder="10 digit number" required>
                     </div>
                     <div class="form-group">
-                        <label>City / Town *</label>
-                        <input type="text" id="City" placeholder="City name" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>District *</label>
-                        <input type="text" id="District" placeholder="District" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Pincode *</label>
-                        <input type="text" id="Pincode" maxlength="6" placeholder="6 digit pincode" required>
+                        <label>WhatsApp Number *</label>
+                        <input type="text" id="Whatsapp_Number" maxlength="10" placeholder="10 digit number" required>
                     </div>
                 </div>
 
-                <div class="section-heading">3. Employment & Income Details</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Employment Type *</label>
-                        <select id="Employment_Type" required>
-                            <option value="">-Select Employment-</option>
-                            <option value="Salaried">Salaried Employee</option>
-                            <option value="Business">Business Owner / Proprietor</option>
-                            <option value="Self-Employed">Self-Employed / Freelancer</option>
-                            <option value="Daily Wages">Daily Wages / Others</option>
+                        <label>Nominee Name *</label>
+                        <input type="text" id="Nominee_Name" placeholder="Nominee Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nominee Contact Number *</label>
+                        <input type="text" id="Nominee_Contact_Number" maxlength="10" placeholder="10 digit number" required>
+                    </div>
+                </div>
+
+                <div class="section-heading">4. Address & Employment Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Address Line 1 *</label>
+                        <input type="text" id="Address_Line_1" placeholder="Door No / Street" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Land Mark</label>
+                        <input type="text" id="Land_Mark" placeholder="Nearby landmark">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>City / District *</label>
+                        <input type="text" id="City_District" placeholder="City or District" required>
+                    </div>
+                    <div class="form-group">
+                        <label>State / Province *</label>
+                        <input type="text" id="State_Province" placeholder="State" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Postal Code *</label>
+                        <input type="text" id="Postal_Code" maxlength="6" placeholder="Pincode" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Occupation *</label>
+                        <select id="Occupation" required>
+                            <option value="">-Select Occupation-</option>
+                            <option value="Salaried">Salaried</option>
+                            <option value="Business">Business</option>
+                            <option value="Self-Employed">Self-Employed</option>
+                            <option value="Daily Wages">Daily Wages</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Monthly Income (₹) *</label>
-                        <input type="number" id="Monthly_Income" placeholder="Enter monthly income" required>
+                        <label>Nature of the Job *</label>
+                        <input type="text" id="Nature_of_the_Job" placeholder="Job description" required>
                     </div>
                 </div>
 
-                <div class="section-heading">4. Bank & Payment Setup</div>
+                <div class="section-heading">5. Payment Method & Document Uploads</div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Payment Method *</label>
-                        <select id="Payment_Method" onchange="handlePaymentMethod()" required>
-                            <option value="">-Select Payment Method-</option>
-                            <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
-                            <option value="e - NACH">e - NACH (Bank Auto Debit)</option>
+                        <select id="Payment_Method" onchange="showHidePaymentDetails()" required>
+                            <option value="">-Select-</option>
+                            <option value="UPI">UPI</option>
+                            <option value="e - NACH">e - NACH</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- UPI Fields -->
+                <!-- UPI & Bank Details (Controlled by Workflows) -->
                 <div class="form-row hidden" id="upiGroup">
                     <div class="form-group">
                         <label>UPI ID *</label>
@@ -322,26 +401,25 @@
                     </div>
                 </div>
 
-                <!-- Bank Fields -->
                 <div id="bankFields" class="hidden">
                     <div class="form-row">
                         <div class="form-group">
                             <label>Bank Name *</label>
-                            <input type="text" id="Bank_Name" placeholder="Bank Name">
+                            <input type="text" id="Bank_Name">
                         </div>
                         <div class="form-group">
                             <label>Account Holder Name *</label>
-                            <input type="text" id="Account_Holder_Name" placeholder="As in bank passbook">
+                            <input type="text" id="Account_Holder_Name">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Bank Account Number *</label>
-                            <input type="password" id="Bank_Account_Number" placeholder="Account Number">
+                            <input type="password" id="Bank_Account_Number">
                         </div>
                         <div class="form-group">
-                            <label>Confirm Account Number *</label>
-                            <input type="text" id="Confirm_Account_Number" placeholder="Re-enter Account Number">
+                            <label>Confirm Bank Account Number *</label>
+                            <input type="text" id="Confirm_Bank_Account_Number">
                         </div>
                     </div>
                     <div class="form-row">
@@ -352,13 +430,68 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-submit">Save Borrower & Submit Application</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Upload Aadhar Front side *</label>
+                        <input type="file" id="Aadhar_Front" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Aadhar Back Side *</label>
+                        <input type="file" id="Aadhar_Back" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Upload Pan Card *</label>
+                        <input type="file" id="Pan_Card" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Ration card front side *</label>
+                        <input type="file" id="Ration_Card" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>CIBIL Score / Document *</label>
+                        <input type="file" id="CIBIL_Score" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email ID</label>
+                        <input type="email" id="Email" placeholder="customer@email.com">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Registration</button>
             </form>
         </div>
     </div>
 
     <script>
-        function handlePaymentMethod() {
+        // Set today's date automatically on load
+        document.getElementById('Loan_Date').valueAsDate = new Date();
+
+        // Toggle Retailer Fields Workflow Logic
+        function toggleRetailerFields() {
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerGroup = document.getElementById('retailerFieldsGroup');
+            if (issuedBy === 'Retailer') {
+                retailerGroup.classList.remove('hidden');
+            } else {
+                retailerGroup.classList.add('hidden');
+                document.getElementById('Retailer_Details').value = '';
+                document.getElementById('Retailer_Code').value = '';
+            }
+        }
+
+        function autoFillRetailerCode() {
+            const ret = document.getElementById('Retailer_Details').value;
+            document.getElementById('Retailer_Code').value = ret;
+        }
+
+        // Show Hide Payment Details Workflow Logic
+        function showHidePaymentDetails() {
             const method = document.getElementById('Payment_Method').value;
             const upiGroup = document.getElementById('upiGroup');
             const bankFields = document.getElementById('bankFields');
@@ -375,20 +508,77 @@
             }
         }
 
-        // Auto uppercase PAN
-        document.getElementById('PAN_Number').addEventListener('input', function() {
+        // PAN Auto Capital Workflow Logic
+        document.getElementById('PAN_NUMBER').addEventListener('input', function() {
             this.value = this.value.toUpperCase();
         });
 
-        function saveBorrowerData(event) {
+        // Aadhar Auto Format Workflow Logic (Spaces every 4 digits)
+        document.getElementById('Aadhar_Number').addEventListener('input', function() {
+            let num = this.value.replace(/\D/g, '');
+            if (num.length > 12) num = num.slice(0, 12);
+            if (num.length > 8) {
+                this.value = num.slice(0, 4) + ' ' + num.slice(4, 8) + ' ' + num.slice(8, 12);
+            } else if (num.length > 4) {
+                this.value = num.slice(0, 4) + ' ' + num.slice(4);
+            } else {
+                this.value = num;
+            }
+        });
+
+        // Form Submission & Validations Workflow Logic
+        function validateAndSubmit(event) {
             event.preventDefault();
+
+            // Phone Number Check
             const phone = document.getElementById('Phone_Number').value.trim();
-            if(phone.length !== 10) {
-                alert("Please enter a valid 10-digit phone number.");
+            const whatsapp = document.getElementById('Whatsapp_Number').value.trim();
+            if (phone.length !== 10 || isNaN(phone)) {
+                alert("Please enter a valid 10-digit Phone Number.");
                 return false;
             }
-            alert("Borrower details successfully saved to LocalStorage database!");
-            document.getElementById('comprehensiveBorrowerForm').reset();
+            if (whatsapp.length !== 10 || isNaN(whatsapp)) {
+                alert("Please enter a valid 10-digit WhatsApp Number.");
+                return false;
+            }
+
+            // Check Additional / Nominee Number
+            const nomineePhone = document.getElementById('Nominee_Contact_Number').value.trim();
+            if (nomineePhone.length !== 10 || isNaN(nomineePhone)) {
+                alert("Please enter a valid 10-digit Nominee Contact Number.");
+                return false;
+            }
+            if (nomineePhone === phone) {
+                alert("Nominee Contact Number cannot be the same as Phone Number!");
+                return false;
+            }
+
+            // Aadhar Validation
+            const aadhar = document.getElementById('Aadhar_Number').value.replace(/\s/g, '');
+            if (aadhar.length !== 12) {
+                alert("Aadhar Number must be exactly 12 digits.");
+                return false;
+            }
+
+            // Bank & UPI Validation Workflow
+            const method = document.getElementById('Payment_Method').value;
+            if (method === 'e - NACH') {
+                const acc = document.getElementById('Bank_Account_Number').value.trim();
+                const confirmAcc = document.getElementById('Confirm_Bank_Account_Number').value.trim();
+                const ifsc = document.getElementById('IFSC_Code').value.trim();
+
+                if (acc !== confirmAcc) {
+                    alert("Bank account numbers do not match!");
+                    return false;
+                }
+                if (ifsc.length !== 11) {
+                    alert("Invalid IFSC code! Must be 11 characters.");
+                    return false;
+                }
+            }
+
+            alert("Borrower details validated and saved successfully!");
+            document.getElementById('zohoBorrowerForm').reset();
             return true;
         }
     </script>
