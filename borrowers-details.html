@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vel Fin Corp - Comprehensive Borrower Registration</title>
+    <title>Vel Fin Corp - Borrower Registration & Loan Application</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -23,8 +23,6 @@
             display: flex;
             min-height: 100vh;
         }
-        
-        /* Left Sidebar Menu */
         .sidebar {
             width: 260px;
             background-color: var(--navy);
@@ -108,8 +106,6 @@
             text-align: center;
             box-sizing: border-box;
         }
-
-        /* Main Content Area */
         .main-content {
             margin-left: 260px;
             flex: 1;
@@ -199,7 +195,6 @@
 </head>
 <body>
 
-    <!-- Left Sidebar Navigation Menu -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -208,10 +203,12 @@
         <ul class="sidebar-menu">
             <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
             <li><a href="borrowers-details.html" class="active"><i class="fas fa-users"></i> Borrower Details</a></li>
-            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Loan Entry Form</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
+            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
             <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
-            <li><a href="personalloan-report.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan Report</a></li>
+            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
             <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
         </ul>
@@ -220,7 +217,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <h2>VEL FIN CORP</h2>
@@ -244,7 +240,6 @@
                     </div>
                 </div>
 
-                <!-- Toggle Retailer Fields (Workflow equivalent) -->
                 <div class="form-row hidden" id="retailerFieldsGroup">
                     <div class="form-group">
                         <label>Retailer Details *</label>
@@ -393,7 +388,6 @@
                     </div>
                 </div>
 
-                <!-- UPI & Bank Details (Controlled by Workflows) -->
                 <div class="form-row hidden" id="upiGroup">
                     <div class="form-group">
                         <label>UPI ID *</label>
@@ -430,49 +424,14 @@
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Upload Aadhar Front side *</label>
-                        <input type="file" id="Aadhar_Front" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Aadhar Back Side *</label>
-                        <input type="file" id="Aadhar_Back" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Upload Pan Card *</label>
-                        <input type="file" id="Pan_Card" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Ration card front side *</label>
-                        <input type="file" id="Ration_Card" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>CIBIL Score / Document *</label>
-                        <input type="file" id="CIBIL_Score" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Email ID</label>
-                        <input type="email" id="Email" placeholder="customer@email.com">
-                    </div>
-                </div>
-
                 <button type="submit" class="btn-submit">Submit Registration</button>
             </form>
         </div>
     </div>
 
     <script>
-        // Set today's date automatically on load
         document.getElementById('Loan_Date').valueAsDate = new Date();
 
-        // Toggle Retailer Fields Workflow Logic
         function toggleRetailerFields() {
             const issuedBy = document.getElementById('Issued_by').value;
             const retailerGroup = document.getElementById('retailerFieldsGroup');
@@ -490,7 +449,6 @@
             document.getElementById('Retailer_Code').value = ret;
         }
 
-        // Show Hide Payment Details Workflow Logic
         function showHidePaymentDetails() {
             const method = document.getElementById('Payment_Method').value;
             const upiGroup = document.getElementById('upiGroup');
@@ -508,12 +466,10 @@
             }
         }
 
-        // PAN Auto Capital Workflow Logic
         document.getElementById('PAN_NUMBER').addEventListener('input', function() {
             this.value = this.value.toUpperCase();
         });
 
-        // Aadhar Auto Format Workflow Logic (Spaces every 4 digits)
         document.getElementById('Aadhar_Number').addEventListener('input', function() {
             let num = this.value.replace(/\D/g, '');
             if (num.length > 12) num = num.slice(0, 12);
@@ -526,11 +482,9 @@
             }
         });
 
-        // Form Submission & Validations Workflow Logic
         function validateAndSubmit(event) {
             event.preventDefault();
 
-            // Phone Number Check
             const phone = document.getElementById('Phone_Number').value.trim();
             const whatsapp = document.getElementById('Whatsapp_Number').value.trim();
             if (phone.length !== 10 || isNaN(phone)) {
@@ -542,42 +496,19 @@
                 return false;
             }
 
-            // Check Additional / Nominee Number
-            const nomineePhone = document.getElementById('Nominee_Contact_Number').value.trim();
-            if (nomineePhone.length !== 10 || isNaN(nomineePhone)) {
-                alert("Please enter a valid 10-digit Nominee Contact Number.");
-                return false;
-            }
-            if (nomineePhone === phone) {
-                alert("Nominee Contact Number cannot be the same as Phone Number!");
-                return false;
-            }
+            // Save borrower details to localStorage for the Report Page database
+            let borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
+            borrowers.push({
+                borrowerId: document.getElementById('Borrower_ID').value,
+                name: (document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + document.getElementById('Last_Name').value).trim(),
+                phone: phone,
+                whatsapp: whatsapp,
+                occupation: document.getElementById('Occupation').value,
+                city: document.getElementById('City_District').value
+            });
+            localStorage.setItem('velfincorp_borrowers', JSON.stringify(borrowers));
 
-            // Aadhar Validation
-            const aadhar = document.getElementById('Aadhar_Number').value.replace(/\s/g, '');
-            if (aadhar.length !== 12) {
-                alert("Aadhar Number must be exactly 12 digits.");
-                return false;
-            }
-
-            // Bank & UPI Validation Workflow
-            const method = document.getElementById('Payment_Method').value;
-            if (method === 'e - NACH') {
-                const acc = document.getElementById('Bank_Account_Number').value.trim();
-                const confirmAcc = document.getElementById('Confirm_Bank_Account_Number').value.trim();
-                const ifsc = document.getElementById('IFSC_Code').value.trim();
-
-                if (acc !== confirmAcc) {
-                    alert("Bank account numbers do not match!");
-                    return false;
-                }
-                if (ifsc.length !== 11) {
-                    alert("Invalid IFSC code! Must be 11 characters.");
-                    return false;
-                }
-            }
-
-            alert("Borrower details validated and saved successfully!");
+            alert("Borrower details successfully registered and saved to database!");
             document.getElementById('zohoBorrowerForm').reset();
             return true;
         }
