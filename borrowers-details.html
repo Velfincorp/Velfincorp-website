@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vel Fin Corp - Borrower Registration & Loan Application</title>
+    <title>Vel Fin Corp - Comprehensive Borrower Registration</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -287,10 +287,10 @@
                         <label>Relationship *</label>
                         <select id="Relationship" required>
                             <option value="">-Select-</option>
-                            <option value="S/O">Son Of</option>
-                            <option value="D/O">Daughter Of</option>
-                            <option value="W/O">Wife Of</option>
-                            <option value="C/O">Care Of</option>
+                            <option value="Son of">Son Of</option>
+                            <option value="Daughter of">Daughter Of</option>
+                            <option value="Wife of">Wife Of</option>
+                            <option value="Care of">Care Of</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -424,6 +424,39 @@
                     </div>
                 </div>
 
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Upload Aadhar Front side *</label>
+                        <input type="file" id="Aadhar_Front" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Aadhar Back Side *</label>
+                        <input type="file" id="Aadhar_Back" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Upload Pan Card *</label>
+                        <input type="file" id="Pan_Card" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Ration card front side *</label>
+                        <input type="file" id="Ration_Card" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>CIBIL Score / Document *</label>
+                        <input type="file" id="CIBIL_Score" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email ID</label>
+                        <input type="email" id="Email" placeholder="customer@email.com">
+                    </div>
+                </div>
+
                 <button type="submit" class="btn-submit">Submit Registration</button>
             </form>
         </div>
@@ -496,19 +529,45 @@
                 return false;
             }
 
-            // Save borrower details to localStorage for the Report Page database
+            // Extract file names safely
+            const getFileVal = (id) => {
+                const el = document.getElementById(id);
+                return el && el.files && el.files[0] ? el.files[0].name : 'Not Uploaded';
+            };
+
+            // Save complete borrower details with all fields and file attachments into localStorage
             let borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
             borrowers.push({
                 borrowerId: document.getElementById('Borrower_ID').value,
-                name: (document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + document.getElementById('Last_Name').value).trim(),
+                issuedBy: document.getElementById('Issued_by').value,
+                loanDate: document.getElementById('Loan_Date').value,
+                name: (document.getElementById('Name_Prefix').value + ". " + document.getElementById('First_Name').value + " " + document.getElementById('Last_Name').value).trim(),
+                relationship: document.getElementById('Relationship').value,
+                relativeName: document.getElementById('Relative_Name').value,
+                aadhar: document.getElementById('Aadhar_Number').value,
+                pan: document.getElementById('PAN_NUMBER').value,
                 phone: phone,
                 whatsapp: whatsapp,
+                nominee: document.getElementById('Nominee_Name').value,
+                nomineePhone: document.getElementById('Nominee_Contact_Number').value,
+                address: document.getElementById('Address_Line_1').value + (document.getElementById('Land_Mark').value ? ', ' + document.getElementById('Land_Mark').value : ''),
+                city: document.getElementById('City_District').value,
+                state: document.getElementById('State_Province').value,
+                pincode: document.getElementById('Postal_Code').value,
                 occupation: document.getElementById('Occupation').value,
-                city: document.getElementById('City_District').value
+                jobNature: document.getElementById('Nature_of_the_Job').value,
+                paymentMethod: document.getElementById('Payment_Method').value,
+                email: document.getElementById('Email').value || '-',
+                photo: getFileVal('Customer_Photo'),
+                aadharFront: getFileVal('Aadhar_Front'),
+                aadharBack: getFileVal('Aadhar_Back'),
+                panCard: getFileVal('Pan_Card'),
+                rationCard: getFileVal('Ration_Card'),
+                cibil: getFileVal('CIBIL_Score')
             });
             localStorage.setItem('velfincorp_borrowers', JSON.stringify(borrowers));
 
-            alert("Borrower details successfully registered and saved to database!");
+            alert("Borrower complete details successfully registered and saved to database!");
             document.getElementById('zohoBorrowerForm').reset();
             return true;
         }
