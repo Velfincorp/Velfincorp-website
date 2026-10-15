@@ -291,6 +291,8 @@
     </div>
 
     <script>
+        let currentBorrower = null;
+
         window.addEventListener('DOMContentLoaded', () => {
             const tbody = document.getElementById('borrowerTableBody');
             let borrowers = [];
@@ -350,6 +352,7 @@
         });
 
         function showProfile(b) {
+            currentBorrower = b; // Store current borrower data for PDF naming
             const modal = document.getElementById('profileModal');
             const body = document.getElementById('modalBody');
 
@@ -395,9 +398,17 @@
             const actions = element.querySelector('.modal-actions');
             actions.style.display = 'none';
 
+            // Generate dynamic filename using Customer Name and Borrower ID
+            let fileName = "Borrower_Profile.pdf";
+            if (currentBorrower) {
+                const cleanName = (currentBorrower.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanId = (currentBorrower.borrowerId || 'ID').replace(/[^a-zA-Z0-9]/g, '_');
+                fileName = `${cleanName}_${cleanId}.pdf`;
+            }
+
             const opt = {
                 margin:       10,
-                filename:     'Borrower_Profile.pdf',
+                filename:     fileName,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2 },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
