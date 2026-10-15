@@ -220,9 +220,9 @@
     <div class="main-content">
         <div class="container">
             <h2>VEL FIN CORP</h2>
-            <div class="subtitle">Borrowers Details Registration Form</div>
+            <div class="subtitle">Borrower Registration & Loan Application</div>
 
-            <form id="zohoBorrowerForm" onsubmit="return validateAndSubmit(event)">
+            <form id="borrowerRegistrationForm" onsubmit="return validateAndSubmit(event)">
                 
                 <div class="section-heading">1. General & Retailer Details</div>
                 <div class="form-row">
@@ -399,21 +399,21 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Bank Name *</label>
-                            <input type="text" id="Bank_Name">
+                            <input type="text" id="Bank_Name" placeholder="Bank Name">
                         </div>
                         <div class="form-group">
                             <label>Account Holder Name *</label>
-                            <input type="text" id="Account_Holder_Name">
+                            <input type="text" id="Account_Holder_Name" placeholder="Passbook Name">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Bank Account Number *</label>
-                            <input type="password" id="Bank_Account_Number">
+                            <input type="password" id="Bank_Account_Number" placeholder="Account Number">
                         </div>
                         <div class="form-group">
                             <label>Confirm Bank Account Number *</label>
-                            <input type="text" id="Confirm_Bank_Account_Number">
+                            <input type="text" id="Confirm_Bank_Account_Number" placeholder="Re-enter Account Number">
                         </div>
                     </div>
                     <div class="form-row">
@@ -529,13 +529,12 @@
                 return false;
             }
 
-            // Extract file names safely
             const getFileVal = (id) => {
                 const el = document.getElementById(id);
                 return el && el.files && el.files[0] ? el.files[0].name : 'Not Uploaded';
             };
 
-            // Save complete borrower details with all fields and file attachments into localStorage
+            // Save complete borrower details into localStorage
             let borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
             borrowers.push({
                 borrowerId: document.getElementById('Borrower_ID').value,
@@ -557,6 +556,11 @@
                 occupation: document.getElementById('Occupation').value,
                 jobNature: document.getElementById('Nature_of_the_Job').value,
                 paymentMethod: document.getElementById('Payment_Method').value,
+                upiId: document.getElementById('UPI_ID').value || '-',
+                bankName: document.getElementById('Bank_Name').value || '-',
+                accountHolder: document.getElementById('Account_Holder_Name').value || '-',
+                accountNumber: document.getElementById('Bank_Account_Number').value ? '********' + document.getElementById('Bank_Account_Number').value.slice(-4) : '-',
+                ifsc: document.getElementById('IFSC_Code').value || '-',
                 email: document.getElementById('Email').value || '-',
                 photo: getFileVal('Customer_Photo'),
                 aadharFront: getFileVal('Aadhar_Front'),
@@ -568,7 +572,7 @@
             localStorage.setItem('velfincorp_borrowers', JSON.stringify(borrowers));
 
             alert("Borrower complete details successfully registered and saved to database!");
-            document.getElementById('zohoBorrowerForm').reset();
+            document.getElementById('borrowerRegistrationForm').reset();
             return true;
         }
     </script>
