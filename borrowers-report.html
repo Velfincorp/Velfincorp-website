@@ -293,9 +293,14 @@
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const tbody = document.getElementById('borrowerTableBody');
-            let borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
+            let borrowers = [];
+            try {
+                borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
+            } catch(e) {
+                borrowers = [];
+            }
 
-            if (borrowers.length === 0) {
+            if (!Array.isArray(borrowers) || borrowers.length === 0) {
                 borrowers = [
                     {
                         borrowerId: "VFC/001/2026",
