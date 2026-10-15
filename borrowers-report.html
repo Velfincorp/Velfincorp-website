@@ -202,13 +202,6 @@
             width: 35%;
             background: #f1f5f9;
         }
-        .customer-photo {
-            width: 70px;
-            height: 70px;
-            object-fit: cover;
-            border-radius: 4px;
-            border: 1px solid var(--gold);
-        }
     </style>
 </head>
 <body>
@@ -261,7 +254,7 @@
     <div class="modal" id="profileModal">
         <div class="modal-content">
             <div class="modal-header">
-                <span>Borrower Full Profile & Documents</span>
+                <span>Borrower Full Profile & Payment Details</span>
                 <button class="close-btn" onclick="closeModal()">X</button>
             </div>
             <div id="modalBody">
@@ -282,7 +275,7 @@
                         name: "Mr. Rajapriyan D",
                         phone: "8778003840",
                         whatsapp: "+919787762734",
-                        aadhar: "[Aadhaar Redacted]",
+                        aadhar: "9276 1008 2463",
                         pan: "HPHPR9283H",
                         occupation: "Business",
                         city: "Sengam, Tamil Nadu",
@@ -292,6 +285,12 @@
                         nominee: "Durairaj",
                         nomineePhone: "9787762734",
                         loanDate: "13-Oct-2026",
+                        paymentMethod: "e - NACH",
+                        bankName: "State Bank of India",
+                        accountHolder: "Rajapriyan D",
+                        accountNumber: "********4321",
+                        ifsc: "SBIN0001234",
+                        upiId: "-",
                         photo: "customer-sample.jpg",
                         aadharFront: "Aadhar_Front.jpg",
                         aadharBack: "Aadhar_Back.jpg",
@@ -322,11 +321,23 @@
             const modal = document.getElementById('profileModal');
             const body = document.getElementById('modalBody');
 
+            let paymentDetailsHTML = '';
+            if (b.paymentMethod === 'UPI') {
+                paymentDetailsHTML = `<tr><td>Payment Method</td><td>UPI</td></tr>
+                                      <tr><td>UPI ID</td><td>${b.upiId || '-'}</td></tr>`;
+            } else {
+                paymentDetailsHTML = `<tr><td>Payment Method</td><td>e - NACH (Bank Auto Debit)</td></tr>
+                                      <tr><td>Bank Name</td><td>${b.bankName || '-'}</td></tr>
+                                      <tr><td>Account Holder Name</td><td>${b.accountHolder || '-'}</td></tr>
+                                      <tr><td>Bank Account Number</td><td>${b.accountNumber || '-'}</td></tr>
+                                      <tr><td>IFSC Code</td><td>${b.ifsc || '-'}</td></tr>`;
+            }
+
             body.innerHTML = `
                 <table class="profile-table">
                     <tr><td>Borrower ID</td><td>${b.borrowerId || '-'}</td></tr>
                     <tr><td>Customer Name</td><td>${b.name || '-'}</td></tr>
-                    <tr><td>Aadhar Number</td><td>${b.aadhar || '[Aadhaar Redacted]'}</td></tr>
+                    <tr><td>Aadhar Number</td><td>${b.aadhar || '-'}</td></tr>
                     <tr><td>PAN Number</td><td>${b.pan || '-'}</td></tr>
                     <tr><td>Phone Number</td><td>${b.phone || '-'}</td></tr>
                     <tr><td>WhatsApp</td><td>${b.whatsapp || '-'}</td></tr>
@@ -335,6 +346,7 @@
                     <tr><td>Address</td><td>${b.address || '-'}, ${b.city || '-'}</td></tr>
                     <tr><td>Nominee Details</td><td>${b.nominee || '-'} (${b.nomineePhone || '-'})</td></tr>
                     <tr><td>Loan Date</td><td>${b.loanDate || '-'}</td></tr>
+                    ${paymentDetailsHTML}
                     <tr><td>Customer Photo</td><td><span style="color: #2F855A; font-weight: bold;"><i class="fas fa-image"></i> ${b.photo || 'Uploaded Photo.jpg'}</span></td></tr>
                     <tr><td>Upload Aadhar Front side</td><td><span style="color: #2B6CB0;"><i class="fas fa-file-pdf"></i> ${b.aadharFront || 'Aadhar_Front.jpg'}</span></td></tr>
                     <tr><td>Upload Aadhar Back Side</td><td><span style="color: #2B6CB0;"><i class="fas fa-file-pdf"></i> ${b.aadharBack || 'Aadhar_Back.jpg'}</span></td></tr>
