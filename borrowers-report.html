@@ -199,6 +199,7 @@
             const tbody = document.getElementById('borrowerTableBody');
             let borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
 
+            // Default sample row if storage is empty
             if (borrowers.length === 0) {
                 borrowers = [
                     {
