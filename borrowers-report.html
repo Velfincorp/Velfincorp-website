@@ -178,11 +178,24 @@
             justify-content: space-between;
             align-items: center;
         }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-print {
+            background-color: var(--gold);
+            color: var(--navy);
+            border: none;
+            padding: 6px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
         .close-btn {
             background: var(--danger);
             color: white;
             border: none;
-            padding: 5px 12px;
+            padding: 6px 15px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
@@ -201,6 +214,26 @@
             color: var(--navy);
             width: 35%;
             background: #f1f5f9;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #profileModal, #profileModal * {
+                visibility: visible;
+            }
+            #profileModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+            }
+            .modal-actions {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -255,7 +288,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <span>Borrower Full Profile & Payment Details</span>
-                <button class="close-btn" onclick="closeModal()">X</button>
+                <div class="modal-actions">
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print / PDF</button>
+                    <button class="close-btn" onclick="closeModal()">X</button>
+                </div>
             </div>
             <div id="modalBody">
                 <!-- Detailed table will load here -->
@@ -288,7 +324,7 @@
                         paymentMethod: "e - NACH",
                         bankName: "State Bank of India",
                         accountHolder: "Rajapriyan D",
-                        accountNumber: "********4321",
+                        accountNumber: "384729104321",
                         ifsc: "SBIN0001234",
                         upiId: "-",
                         photo: "customer-sample.jpg",
