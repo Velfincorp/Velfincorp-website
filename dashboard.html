@@ -328,12 +328,10 @@
     <script>
         // Dynamic Calculation & LocalStorage sync
         window.addEventListener('DOMContentLoaded', () => {
-            // Retrieve loans and payments from localStorage if available, otherwise use default baseline numbers
             let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
             let personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
             let payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
 
-            // Base fallback numbers matching your operational baseline if local storage is empty
             let cvTotalAmount = 701533.00;
             let cvCollected = 129130.50;
             let cvCount = 36;
@@ -342,7 +340,6 @@
             let plCollected = 152200.00;
             let plCount = 25;
 
-            // If user has added loans dynamically via forms, compute from storage
             if (creditVaultLoans.length > 0) {
                 cvTotalAmount = creditVaultLoans.reduce((sum, loan) => sum + (parseFloat(loan.productValue) || 0), 0);
                 cvCount = creditVaultLoans.filter(l => l.status === 'ACTIVE').length;
@@ -354,16 +351,14 @@
             }
 
             if (payments.length > 0) {
-                // Sum collected amounts based on loan type
                 cvCollected = payments.filter(p => p.loanType === 'Credit Vault').reduce((sum, p) => sum + (parseFloat(p.paidAmount) || 0), cvCollected);
                 plCollected = payments.filter(p => p.loanType === 'Personal Loan').reduce((sum, p) => sum + (parseFloat(p.paidAmount) || 0), plCollected);
             }
 
-            // Correct calculation: Remaining Balance = Total Active Amount - Total Collected Amount
+            // Remaining Balance Calculation: Active Amount - Collected Amount
             let cvRemaining = cvTotalAmount - cvCollected;
             let plRemaining = plTotalAmount - plCollected;
 
-            // Update UI elements safely
             document.getElementById('cvActiveAmount').innerText = '₹' + cvTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('cvCollectedAmount').innerText = '₹' + cvCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('cvActiveCount').innerText = cvCount;
