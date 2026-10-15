@@ -158,7 +158,7 @@
         <ul class="sidebar-menu">
             <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
             <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
-            <li><a href="borrowers-report.html" class="active"><i class="fas id-card"></i> Borrower Report</a></li>
+            <li><a href="borrowers-report.html" class="active"><i class="fas fa-id-card"></i> Borrower Report</a></li>
             <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
             <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
             <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
@@ -188,18 +188,45 @@
                     </tr>
                 </thead>
                 <tbody id="borrowerTableBody">
-                    <tr>
-                        <td>VFC/001/2026</td>
-                        <td>Ravichandran Chennan</td>
-                        <td>9486886293</td>
-                        <td>9486886293</td>
-                        <td>Business</td>
-                        <td>Hosur</td>
-                    </tr>
+                    <!-- Dynamic Data loaded from localStorage -->
                 </tbody>
             </table>
         </div>
     </div>
 
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const tbody = document.getElementById('borrowerTableBody');
+            let borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
+
+            // Sample default row if storage is empty
+            if (borrowers.length === 0) {
+                borrowers = [
+                    {
+                        borrowerId: "VFC/001/2026",
+                        name: "Ravichandran Chennan",
+                        phone: "9486886293",
+                        whatsapp: "9486886293",
+                        occupation: "Business",
+                        city: "Hosur"
+                    }
+                ];
+            }
+
+            tbody.innerHTML = '';
+            borrowers.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${b.borrowerId || 'VFC/001/2026'}</td>
+                    <td>${b.name || '-'}</td>
+                    <td>${b.phone || '-'}</td>
+                    <td>${b.whatsapp || '-'}</td>
+                    <td>${b.occupation || '-'}</td>
+                    <td>${b.city || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+    </script>
 </body>
 </html>
