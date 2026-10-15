@@ -188,7 +188,7 @@
                     </tr>
                 </thead>
                 <tbody id="borrowerTableBody">
-                    <!-- Dynamic Data loaded from localStorage -->
+                    <!-- Dynamic data will be loaded here -->
                 </tbody>
             </table>
         </div>
@@ -199,7 +199,6 @@
             const tbody = document.getElementById('borrowerTableBody');
             let borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
 
-            // Sample default row if storage is empty
             if (borrowers.length === 0) {
                 borrowers = [
                     {
