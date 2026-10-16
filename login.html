@@ -1,141 +1,28 @@
-<!DOCTYPE html>
-<html lang="ta">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vel Fin Corp - Secure Portal Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --navy: #0F1D36;
-            --gold: #C5A059;
-            --bg-color: #F8F9FB;
-            --text-main: #2D3748;
-            --white: #FFFFFF;
-            --danger: #C53030;
-        }
-        body {
-            font-family: 'Manrope', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .login-card {
-            background: var(--white);
-            width: 400px;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08);
-            border-top: 5px solid var(--navy);
-            text-align: center;
-        }
-        .login-card h2 {
-            font-family: 'Cinzel', serif;
-            color: var(--navy);
-            margin-bottom: 5px;
-        }
-        .login-card p {
-            color: var(--gold);
-            font-weight: 600;
-            font-size: 13px;
-            margin-bottom: 30px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--navy);
-            font-size: 13px;
-        }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        input:focus, select:focus {
-            border-color: var(--gold);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
-        }
-        .btn-login {
-            background-color: var(--navy);
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 15px;
-            font-weight: bold;
-            margin-top: 10px;
-            transition: 0.3s;
-        }
-        .btn-login:hover {
-            background-color: var(--gold);
-            color: var(--navy);
-        }
-    </style>
-</head>
-<body>
+function handleLogin(event) {
+    event.preventDefault();
+    const role = document.getElementById('userRole').value;
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
 
-    <div class="login-card">
-        <h2>VEL FIN CORP</h2>
-        <p>Secure Enterprise Portal Login</p>
+    if (role === 'borrower') {
+        // வாடிக்கையாளர் மொபைல் எண் 10 இலக்கமாக உள்ளதா என சரிபார்த்தல்
+        if (username.length !== 10) {
+            alert("தயவுசெய்து சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்.");
+            return;
+        }
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label>Select User Role *</label>
-                <select id="userRole" required>
-                    <option value="">-Select Role-</option>
-                    <option value="admin">Admin / Management</option>
-                    <option value="staff">Staff / Collection Agent</option>
-                    <option value="borrower">Borrower / Customer</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Username / ID / Mobile *</label>
-                <input type="text" id="username" placeholder="Registered mobile number" required>
-            </div>
-
-            <div class="form-group">
-                <label>Password / PIN *</label>
-                <input type="password" id="password" placeholder="Enter password" required>
-            </div>
-
-            <button type="submit" class="btn-login">Secure Login</button>
-        </form>
-    </div>
-
-    <script>
-        function handleLogin(event) {
-            event.preventDefault();
-            const role = document.getElementById('userRole').value;
-            const username = document.getElementById('username').value.trim();
-
-            // Store user session
+        // மொபைல் எண்ணின் கடைசி 4 இலக்கங்களை பாஸ்வேர்ட்டாக சோதித்தல்
+        const expectedPassword = username.slice(-4);
+        
+        if (password === expectedPassword) {
             sessionStorage.setItem('velfincorp_logged_user', username);
-
-            if (role === 'borrower') {
-                // Redirect customer directly to their personal borrower portal
-                window.location.href = 'borrower-portal.html';
-            } else {
-                // Redirect admin/staff to the main dashboard
-                window.location.href = 'dashboard.html';
-            }
+            window.location.href = 'borrower-portal.html';
+        } else {
+            alert("தவறான பாஸ்வேர்ட்! உங்கள் மொபைல் எண்ணின் கடைசி 4 இலக்கங்களை பாஸ்வேர்ட்டாக உள்ளிடவும்.");
         }
-    </script>
-</body>
-</html>
+    } else {
+        // அட்மின் மற்றும் ஸ்டாஃப் லாகின்
+        sessionStorage.setItem('velfincorp_logged_user', username);
+        window.location.href = 'dashboard.html';
+    }
+}
