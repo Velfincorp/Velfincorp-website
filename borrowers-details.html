@@ -1,3 +1,43 @@
+<script>
+    // Centralized Authentication & Security Protection Script
+    (function() {
+        const currentPage = window.location.pathname.split("/").pop() || "index.html";
+        const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+        const userRole = sessionStorage.getItem('velfincorp_role');
+
+        // 1. Prevent back/forward cache browsing after logout
+        window.pageshow = function(event) {
+            if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                window.location.replace('login.html');
+            }
+        };
+
+        // 2. Public pages that don't require login
+        const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+        if (publicPages.includes(currentPage)) {
+            return; // Allow public access
+        }
+
+        // 3. If not logged in, redirect to login page immediately
+        if (!loggedUser || !userRole) {
+            window.location.replace('login.html');
+            return;
+        }
+
+        // 4. Role-based Access Control (RBAC) Enforcement
+        if (userRole === 'borrower') {
+            // Borrowers are ONLY allowed inside the borrower portal
+            if (currentPage !== 'borrower-portal.html') {
+                window.location.replace('borrower-portal.html');
+            }
+        } else {
+            // Admin and Staff are NOT allowed inside the borrower portal
+            if (currentPage === 'borrower-portal.html') {
+                window.location.replace('dashboard.html');
+            }
+        }
+    })();
+</script>
 <!DOCTYPE html>
 <html lang="ta">
 <head>
