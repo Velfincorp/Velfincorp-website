@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vel Fin Corp - Secure Portal Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --navy: #0F1D36;
@@ -12,6 +13,7 @@
             --bg-color: #F8F9FB;
             --text-main: #2D3748;
             --white: #FFFFFF;
+            --danger: #C53030;
         }
         body {
             font-family: 'Manrope', Arial, sans-serif;
@@ -19,94 +21,42 @@
             color: var(--text-main);
             margin: 0;
             display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        /* Navbar with Logo */
-        nav {
-            background-color: var(--navy);
-            color: var(--white);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 40px;
-            border-bottom: 3px solid var(--gold);
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.15);
-        }
-        .brand-container {
-            display: flex;
-            align-items: center;
-            gap: 13px;
-        }
-        .nav-logo {
-            height: 48px;
-            width: 48px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 2px solid var(--gold);
-            background: var(--white);
-            padding: 2px;
-        }
-        .logo-text-area {
-            font-family: 'Cinzel', serif;
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--gold);
-            letter-spacing: 1.5px;
-            line-height: 1.1;
-        }
-        .logo-subtext {
-            font-size: 9px;
-            color: #E2E8F0;
-            letter-spacing: 2px;
-            font-family: 'Manrope', sans-serif;
-            text-transform: uppercase;
-        }
-        .nav-links { display: flex; gap: 25px; align-items: center; }
-        .nav-links a { color: var(--white); text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.3s; }
-        .nav-links a:hover { color: var(--gold); }
-
-        .login-wrapper {
-            display: flex;
             justify-content: center;
             align-items: center;
-            flex: 1;
-            padding: 30px 20px;
+            height: 100vh;
         }
         .login-card {
             background: var(--white);
+            width: 400px;
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.1);
-            width: 100%;
-            max-width: 400px;
-            border-top: 5px solid var(--gold);
-        }
-        .logo-title {
-            font-family: 'Cinzel', serif;
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--navy);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08);
+            border-top: 5px solid var(--navy);
             text-align: center;
+        }
+        .login-card h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--navy);
             margin-bottom: 5px;
         }
-        .sub-title {
-            text-align: center;
-            font-size: 14px;
-            color: #64748b;
+        .login-card p {
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 13px;
             margin-bottom: 30px;
         }
         .form-group {
             margin-bottom: 20px;
+            text-align: left;
         }
         label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            font-size: 13px;
             color: var(--navy);
+            font-size: 13px;
         }
-        select, input {
+        input, select {
             width: 100%;
             padding: 12px;
             border: 1px solid #cbd5e1;
@@ -114,137 +64,78 @@
             font-size: 14px;
             box-sizing: border-box;
         }
-        select:focus, input:focus {
+        input:focus, select:focus {
             border-color: var(--gold);
             outline: none;
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
         }
         .btn-login {
             background-color: var(--navy);
-            color: var(--white);
-            border: none;
+            color: white;
             padding: 12px;
-            width: 100%;
-            font-size: 16px;
-            font-weight: bold;
+            border: none;
             border-radius: 6px;
             cursor: pointer;
+            width: 100%;
+            font-size: 15px;
+            font-weight: bold;
+            margin-top: 10px;
             transition: 0.3s;
         }
         .btn-login:hover {
             background-color: var(--gold);
             color: var(--navy);
         }
-        .back-home {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            font-size: 13px;
-            color: #64748b;
-            text-decoration: none;
-        }
-        .back-home:hover {
-            color: var(--navy);
-        }
     </style>
 </head>
 <body>
 
-    <nav>
-        <div class="brand-container">
-            <img src="velfincorp-logo.jpeg" alt="Vel Fin Corp Logo" class="nav-logo">
-            <div>
-                <div class="logo-text-area">VEL FIN CORP</div>
-                <div class="logo-subtext">Trust • Finance • Prosperity</div>
+    <div class="login-card">
+        <h2>VEL FIN CORP</h2>
+        <p>Secure Enterprise Portal Login</p>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Select User Role *</label>
+                <select id="userRole" required>
+                    <option value="">-Select Role-</option>
+                    <option value="admin">Admin / Management</option>
+                    <option value="staff">Staff / Collection Agent</option>
+                    <option value="borrower">Borrower / Customer</option>
+                </select>
             </div>
-        </div>
-        <div class="nav-links">
-            <a href="index.html">Home</a>
-            <a href="contact.html">Contact Us</a>
-        </div>
-    </nav>
 
-    <div class="login-wrapper">
-        <div class="login-card">
-            <div class="logo-title">VEL FIN CORP</div>
-            <div class="sub-title">Secure Enterprise Portal Login</div>
+            <div class="form-group">
+                <label>Username / ID / Mobile *</label>
+                <input type="text" id="username" placeholder="Registered mobile number" required>
+            </div>
 
-            <form id="loginForm" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label>Select User Role *</label>
-                    <select id="userRole" required onchange="updatePlaceholder()">
-                        <option value="">- Select Role -</option>
-                        <option value="admin">Administrator (Admin)</option>
-                        <option value="staff">Office Staff / Collection</option>
-                        <option value="retailer">Retailer / Partner</option>
-                        <option value="borrower">Borrower / Customer</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label>Password / PIN *</label>
+                <input type="password" id="password" placeholder="Enter password" required>
+            </div>
 
-                <div class="form-group">
-                    <label id="usernameLabel">Username / ID / Mobile *</label>
-                    <input type="text" id="username" required placeholder="Enter ID or mobile number">
-                </div>
-
-                <div class="form-group">
-                    <label>Password / PIN *</label>
-                    <input type="password" id="password" required placeholder="Enter password">
-                </div>
-
-                <button type="submit" class="btn-login">Secure Login</button>
-            </form>
-
-            <a href="index.html" class="back-home">&larr; Back to Home Page</a>
-        </div>
+            <button type="submit" class="btn-login">Secure Login</button>
+        </form>
     </div>
 
     <script>
-        function updatePlaceholder() {
-            const role = document.getElementById('userRole').value;
-            const userField = document.getElementById('username');
-            if (role === 'borrower') {
-                userField.placeholder = "Registered 10-digit mobile number";
-            } else if (role === 'staff' || role === 'retailer') {
-                userField.placeholder = "Staff / Partner ID (e.g., STF001)";
-            } else {
-                userField.placeholder = "Admin ID (admin)";
-            }
-        }
-
         function handleLogin(event) {
             event.preventDefault();
             const role = document.getElementById('userRole').value;
-            const user = document.getElementById('username').value.trim();
-            const pass = document.getElementById('password').value.trim();
+            const username = document.getElementById('username').value.trim();
 
-            if (role === 'admin') {
-                if (user === 'admin' && pass === 'velfincorp@2026') {
-                    alert("Admin Login Successful!");
-                    window.location.href = "dashboard.html";
-                } else {
-                    alert("Invalid Admin ID or Password!");
-                }
-            } 
-            else if (role === 'staff') {
-                if ((user === 'staff01' && pass === 'staff123') / (user === 'collection01' && pass === 'col123')) {
-                    alert("Staff Login Successful!");
-                    window.location.href = "dashboard.html";
-                } else {
-                    alert("Invalid Staff ID or Password!");
-                }
-            } 
-            else if (role === 'borrower') {
-                if (user.length === 10) {
-                    alert("Customer Portal Access Granted!");
-                    window.location.href = "payments.html";
-                } else {
-                    alert("Please enter a valid 10-digit mobile number!");
-                }
-            } 
-            else {
-                alert("Login Successful!");
+            // Store user session
+            sessionStorage.setItem('velfincorp_logged_user', username);
+
+            if (role === 'borrower') {
+                // Redirect customer directly to their personal borrower portal
+                window.location.href = 'borrower-portal.html';
+            } else {
+                // Redirect admin/staff to the main dashboard
+                window.location.href = 'dashboard.html';
             }
         }
     </script>
-
 </body>
 </html>
