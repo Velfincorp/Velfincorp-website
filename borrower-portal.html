@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vel Fin Corp - Borrower Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --navy: #0F1D36;
+            --gold: #C5A059;
+            --bg-color: #F8F9FB;
+            --text-main: #2D3748;
+            --white: #FFFFFF;
+            --danger: #C53030;
+        }
+        body {
+            font-family: 'Manrope', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 30px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08);
+            border-top: 5px solid var(--navy);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .header h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--navy);
+            margin: 0;
+            font-size: 22px;
+        }
+        .btn-logout {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .profile-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        .profile-table td {
+            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+        }
+        .profile-table td:first-child {
+            font-weight: bold;
+            color: var(--navy);
+            width: 35%;
+            background: #f1f5f9;
+        }
+        .action-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+        .btn-print {
+            background-color: var(--navy);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-pdf {
+            background-color: var(--gold);
+            color: var(--navy);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--danger);
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="printableArea">
+        <div class="header">
+            <h2>VEL FIN CORP - My Loan Profile</h2>
+            <a href="login.html" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+
+        <div id="portalContent">
+            <!-- Borrower details will load dynamically here based on login -->
+        </div>
+
+        <div class="action-actions" id="actionButtons" style="display:none;">
+            <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print Details</button>
+            <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const portalContent = document.getElementById('portalContent');
+            const actionButtons = document.getElementById('actionButtons');
+            
+            // Get logged-in borrower identifier from sessionStorage
+            const loggedInUser = sessionStorage.getItem('velfincorp_logged_user');
+
+            let borrowers = [];
+            try {
+                borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
+            } catch(e) {
+                borrowers = [];
+            }
+
+            // Find borrower matching logged-in mobile number / ID
+            let borrower = borrowers.find(b => b.phone === loggedInUser || b.borrowerId === loggedInUser);
+
+            // Fallback for testing if no specific login session is found
+            if (!borrower && borrowers.length > 0) {
+                borrower = borrowers[0]; 
+            }
+
+            if (!borrower) {
+                portalContent.innerHTML = `<div class="no-data">No borrower records found for this account! Please contact admin.</div>`;
+                return;
+            }
+
+            actionButtons.style.display = 'flex';
+
+            let paymentDetailsHTML = '';
+            if (borrower.paymentMethod === 'UPI') {
+                paymentDetailsHTML = `<tr><td>Payment Method</td><td>UPI</td></tr>
+                                      <tr><td>UPI ID</td><td>${borrower.upiId || '-'}</td></tr>`;
+            } else {
+                paymentDetailsHTML = `<tr><td>Payment Method</td><td>e - NACH (Bank Auto Debit)</td></tr>
+                                      <tr><td>Bank Name</td><td>${borrower.bankName || '-'}</td></tr>
+                                      <tr><td>Account Holder Name</td><td>${borrower.accountHolder || '-'}</td></tr>
+                                      <tr><td>Bank Account Number</td><td>${borrower.accountNumber || '-'}</td></tr>
+                                      <tr><td>IFSC Code</td><td>${borrower.ifsc || '-'}</td></tr>`;
+            }
+
+            portalContent.innerHTML = `
+                <table class="profile-table">
+                    <tr><td>Borrower ID</td><td>${borrower.borrowerId || '-'}</td></tr>
+                    <tr><td>Customer Name</td><td>${borrower.name || '-'}</td></tr>
+                    <tr><td>Aadhar Number</td><td>${borrower.aadhar || '-'}</td></tr>
+                    <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
+                    <tr><td>Phone Number</td><td>${borrower.phone || '-'}</td></tr>
+                    <tr><td>WhatsApp</td><td>${borrower.whatsapp || '-'}</td></tr>
+                    <tr><td>Relationship</td><td>${borrower.relationship || '-'} (${borrower.relativeName || '-'})</td></tr>
+                    <tr><td>Occupation & Job</td><td>${borrower.occupation || '-'}</td></tr>
+                    <tr><td>Address</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
+                    <tr><td>Nominee Details</td><td>${borrower.nominee || '-'} (${borrower.nomineePhone || '-'})</td></tr>
+                    <tr><td>Loan Date</td><td>${borrower.loanDate || '-'}</td></tr>
+                    ${paymentDetailsHTML}
+                    <tr><td>Customer Photo</td><td><span style="color: #2F855A; font-weight: bold;"><i class="fas fa-image"></i> ${borrower.photo || 'Uploaded Photo.jpg'}</span></td></tr>
+                    <tr><td>Documents Uploaded</td><td><span style="color: #2B6CB0;"><i class="fas fa-file-pdf"></i> Aadhar, PAN, Ration Card & CIBIL verified</span></td></tr>
+                </table>
+            `;
+        });
+
+        function downloadPDF() {
+            const element = document.getElementById('printableArea');
+            const actions = document.getElementById('actionButtons');
+            actions.style.display = 'none';
+
+            const opt = {
+                margin:       10,
+                filename:     'My_Loan_Profile.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(element).set(opt).save().then(() => {
+                actions.style.display = 'flex';
+            });
+        }
+    </script>
+</body>
+</html>
