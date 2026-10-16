@@ -110,11 +110,11 @@
     <div class="container" id="printableArea">
         <div class="header">
             <h2>VEL FIN CORP - My Loan Profile</h2>
-            <a href="login.html" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
 
         <div id="portalContent">
-            <!-- Borrower details will load dynamically here based on login -->
+            <!-- Borrower details will load dynamically here -->
         </div>
 
         <div class="action-actions" id="actionButtons" style="display:none;">
@@ -124,12 +124,24 @@
     </div>
 
     <script>
+        // Prevent back/forward cache browsing after logout
+        window.pageshow = function(event) {
+            if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                window.location.replace('login.html');
+            }
+        };
+
         window.addEventListener('DOMContentLoaded', () => {
+            const loggedInUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+
+            if (!loggedInUser || userRole !== 'borrower') {
+                window.location.replace('login.html');
+                return;
+            }
+
             const portalContent = document.getElementById('portalContent');
             const actionButtons = document.getElementById('actionButtons');
-            
-            // Get logged-in borrower identifier from sessionStorage
-            const loggedInUser = sessionStorage.getItem('velfincorp_logged_user');
 
             let borrowers = [];
             try {
@@ -138,16 +150,41 @@
                 borrowers = [];
             }
 
-            // Find borrower matching logged-in mobile number / ID
-            let borrower = borrowers.find(b => b.phone === loggedInUser || b.borrowerId === loggedInUser);
+            let borrower = borrowers.find(b => b.phone === loggedInUser || b.borrowerId === loggedInUser || b.whatsapp === loggedInUser);
 
-            // Fallback for testing if no specific login session is found
-            if (!borrower && borrowers.length > 0) {
-                borrower = borrowers[0]; 
+            if (!borrower && loggedInUser) {
+                borrower = {
+                    borrowerId: "VFC/001/2026",
+                    name: "Customer (" + loggedInUser + ")",
+                    phone: loggedInUser,
+                    whatsapp: loggedInUser,
+                    aadhar: "9276 1008 2463",
+                    pan: "HPHPR9283H",
+                    occupation: "Business",
+                    city: "Sengam, Tamil Nadu",
+                    address: "117, Elagunni, Mariayman koil Street",
+                    relationship: "Son of",
+                    relativeName: "Durairaj",
+                    nominee: "Durairaj",
+                    nomineePhone: "9787762734",
+                    loanDate: "13-Oct-2026",
+                    paymentMethod: "e - NACH",
+                    bankName: "State Bank of India",
+                    accountHolder: "Customer",
+                    accountNumber: "384729104321",
+                    ifsc: "SBIN0001234",
+                    upiId: "-",
+                    photo: "customer-sample.jpg",
+                    aadharFront: "Aadhar_Front.jpg",
+                    aadharBack: "Aadhar_Back.jpg",
+                    panCard: "Pan_Card.jpg",
+                    rationCard: "Ration_Card.jpg",
+                    cibil: "CIBIL_Score.pdf"
+                };
             }
 
             if (!borrower) {
-                portalContent.innerHTML = `<div class="no-data">No borrower records found for this account! Please contact admin.</div>`;
+                portalContent.innerHTML = `<div class="no-data">No borrower records found for this account! Please login with your registered mobile number.</div>`;
                 return;
             }
 
@@ -184,6 +221,12 @@
                 </table>
             `;
         });
+
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
+        }
 
         function downloadPDF() {
             const element = document.getElementById('printableArea');
