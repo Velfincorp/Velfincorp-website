@@ -44,7 +44,100 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
-            padding: 30px;
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Left Sidebar Menu */
+        .sidebar {
+            width: 260px;
+            background-color: var(--navy);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            border-right: 3px solid var(--gold);
+            position: fixed;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0,0,0,0.1);
+        }
+        .sidebar-logo {
+            height: 40px;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            background: var(--white);
+            padding: 2px;
+        }
+        .sidebar-title {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 15px 0;
+            margin: 0;
+            flex: 1;
+        }
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 25px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active {
+            background-color: rgba(197, 160, 89, 0.15);
+            color: var(--gold);
+            border-left-color: var(--gold);
+        }
+        .sidebar-menu li a i {
+            width: 20px;
+            text-align: center;
+            color: var(--gold);
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .btn-logout {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px;
+            box-sizing: border-box;
         }
         .container {
             max-width: 800px;
@@ -68,17 +161,6 @@
             color: var(--navy);
             margin: 0;
             font-size: 22px;
-        }
-        .back-btn {
-            background-color: var(--gold);
-            color: var(--navy);
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            text-decoration: none;
-            font-size: 13px;
         }
         .form-group {
             margin-bottom: 20px;
@@ -124,55 +206,80 @@
 </head>
 <body>
 
-    <div class="container">
-        <div class="header">
-            <h2>VEL FIN CORP - Retailer Details Registration</h2>
-            <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
+    <!-- Left Sidebar Menu -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-title">VEL FIN CORP</div>
         </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
+            <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
+            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
+            <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
+            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
+            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="retailers.html" class="active"><i class="fas fa-store"></i> Retailers & Staff</a></li>
+            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </div>
 
-        <form id="retailerForm" onsubmit="saveRetailer(event)">
-            <div class="form-group">
-                <label>Show Room Name *</label>
-                <input type="text" id="showroomName" placeholder="Enter showroom name" required>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <h2>Retailer Details Registration</h2>
             </div>
 
-            <div class="form-group">
-                <label>Retailer Code (Auto-generated)</label>
-                <input type="text" id="retailerCode" value="VFC-RET-2026-001" readonly style="background: #f1f5f9;">
-            </div>
+            <form id="retailerForm" onsubmit="saveRetailer(event)">
+                <div class="form-group">
+                    <label>Show Room Name *</label>
+                    <input type="text" id="showroomName" placeholder="Enter showroom name" required>
+                </div>
 
-            <div class="form-group">
-                <label>Owner Name *</label>
-                <input type="text" id="ownerName" placeholder="Enter owner name" required>
-            </div>
+                <div class="form-group">
+                    <label>Retailer Code (Auto-generated)</label>
+                    <input type="text" id="retailerCode" value="VFC-RET-2026-001" readonly style="background: #f1f5f9;">
+                </div>
 
-            <div class="form-group">
-                <label>WhatsApp Number *</label>
-                <input type="text" id="whatsappNumber" placeholder="10 digit number" maxlength="10" required>
-            </div>
+                <div class="form-group">
+                    <label>Owner Name *</label>
+                    <input type="text" id="ownerName" placeholder="Enter owner name" required>
+                </div>
 
-            <div class="form-group">
-                <label>Email *</label>
-                <input type="email" id="retailerEmail" placeholder="Enter email address" required>
-            </div>
+                <div class="form-group">
+                    <label>WhatsApp Number *</label>
+                    <input type="text" id="whatsappNumber" placeholder="10 digit number" maxlength="10" required>
+                </div>
 
-            <div class="form-group">
-                <label>City / Location *</label>
-                <input type="text" id="cityLocation" placeholder="Enter city or location" required>
-            </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="retailerEmail" placeholder="Enter email address" required>
+                </div>
 
-            <div class="form-group">
-                <label>GST #</label>
-                <input type="text" id="gstNumber" placeholder="Enter GST number (Optional)">
-            </div>
+                <div class="form-group">
+                    <label>City / Location *</label>
+                    <input type="text" id="cityLocation" placeholder="Enter city or location" required>
+                </div>
 
-            <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Retailer Details</button>
-        </form>
+                <div class="form-group">
+                    <label>GST #</label>
+                    <input type="text" id="gstNumber" placeholder="Enter GST number (Optional)">
+                </div>
+
+                <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Retailer Details</button>
+            </form>
+        </div>
     </div>
 
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            // Auto generate code
             let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
             let nextCode = `VFC-RET-2026-00${retailers.length + 1}`;
             document.getElementById('retailerCode').value = nextCode;
@@ -199,9 +306,14 @@
             alert("Retailer details saved successfully!");
             document.getElementById('retailerForm').reset();
             
-            // Refresh code
             let nextCode = `VFC-RET-2026-00${retailers.length + 1}`;
             document.getElementById('retailerCode').value = nextCode;
+        }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
         }
     </script>
 </body>
