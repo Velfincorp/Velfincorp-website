@@ -265,6 +265,7 @@
             </div>
 
             <form id="registrationForm" onsubmit="saveData(event)">
+                <!-- Role Selection Dropdown -->
                 <div class="form-group">
                     <label>Select User Type *</label>
                     <select id="userType" onchange="toggleFormFields()" required>
@@ -379,7 +380,6 @@
                 let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
                 codeInput.value = `VFC-RET-2026-00${retailers.length + 1}`;
 
-                // Set required attributes
                 document.getElementById('showroomName').setAttribute('required', 'true');
                 document.getElementById('ownerName').setAttribute('required', 'true');
                 document.getElementById('retailerPhone').setAttribute('required', 'true');
@@ -410,9 +410,9 @@
 
         function saveData(event) {
             event.preventDefault();
-            const userType = document.getElementById('userType').value;
+            const userType = document.getElementById('userType.value');
 
-            if (userType === 'retailer') {
+            if (document.getElementById('userType').value === 'retailer') {
                 const retailer = {
                     code: document.getElementById('userCode').value,
                     showroom: document.getElementById('showroomName').value.trim(),
