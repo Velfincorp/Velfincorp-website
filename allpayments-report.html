@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -24,9 +23,7 @@
             };
 
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) {
-                return; 
-            }
+            if (publicPages.includes(currentPage)) return;
 
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
@@ -195,7 +192,7 @@
             background-color: #f8fafc;
             cursor: pointer;
         }
-        /* Modal for Full Payment & Borrower Profile */
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -291,6 +288,7 @@
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html" class="active"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
             <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
         </ul>
         <div class="sidebar-footer">
@@ -301,7 +299,6 @@
     <div class="main-content">
         <div class="header-title">VEL FIN CORP - ALL PAYMENTS REPORT</div>
         
-        <!-- Live Search Bar -->
         <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name, Phone Number, or ID..." onkeyup="filterTable()">
 
         <div class="table-container">
@@ -324,11 +321,11 @@
         </div>
     </div>
 
-    <!-- Modal Popup for Full Details -->
+    <!-- Modal Popup for Full Financial & Borrower Details -->
     <div class="modal" id="paymentModal">
         <div class="modal-content" id="printableArea">
             <div class="modal-header">
-                <span>Payment Receipt & Borrower Full Profile</span>
+                <span>Payment Receipt & Financial Status</span>
                 <div class="modal-actions">
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
                     <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
@@ -368,7 +365,7 @@
                         borrowerId: "VFC/001/2026",
                         borrower: "VFC/001/2026 - Mr. Rajapriyan D",
                         phone: "8778003840",
-                        amount: "5,000.00",
+                        amount: "5000.00",
                         date: "15-Oct-2026",
                         mode: "e-NACH"
                     }
@@ -380,7 +377,7 @@
                 let borrower = borrowers.find(b => b.borrowerId === p.borrowerId || (p.borrower && p.borrower.includes(b.borrowerId)) || b.phone === p.phone) || {};
 
                 const tr = document.createElement('tr');
-                tr.onclick = () => showPaymentDetails(p, borrower);
+                tr.onclick = () => showPaymentDetails(p, borrower, payments);
                 tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td><strong>${p.paymentId || 'PAY/001/2026'}</strong></td>
@@ -394,18 +391,55 @@
             });
         }
 
-        function showPaymentDetails(p, borrower) {
+        function showPaymentDetails(p, borrower, allPayments) {
             currentPayment = p;
             const modal = document.getElementById('paymentModal');
             const modalBody = document.getElementById('modalBody');
+
+            // Calculate total paid and pending balance for this borrower/loan
+            let borrowerPayments = allPayments.filter(item => 
+                (p.borrowerId && item.borrowerId === p.borrowerId) || 
+                (p.borrower && item.borrower === p.borrower) ||
+                (p.phone && item.phone === p.phone)
+            );
+
+            let totalPaid = borrowerPayments.reduce((sum, item) => sum + (parseFloat(item.amount || item.paidAmount) || 0), 0);
+            
+            // Check loan amount from localStorage if available
+            let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
+            let personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
+            
+            let matchedLoan = creditVaultLoans.concat(personalLoans).find(l => 
+                l.borrowerId === p.borrowerId || (p.borrower && p.borrower.includes(l.loanId))
+            ) || {};
+
+            let totalLoanAmount = parseFloat(matchedLoan.productValue || matchedLoan.loanAmount || 18000);
+            let pendingBalance = totalLoanAmount > totalPaid ? (totalLoanAmount - totalPaid) : 0;
+
+            // Repayment / Delay status check
+            let delayStatus = "On Time (Regular)";
+            let currentPaidAmt = parseFloat(p.amount || p.paidAmount || 0);
+            let expectedEmi = parseFloat(matchedLoan.weeklyEmi || matchedLoan.installment || currentPaidAmt);
+            
+            if (currentPaidAmt < expectedEmi) {
+                delayStatus = "Underpaid / Partial Payment";
+            } else if (p.isDelayed || p.delayDays > 0) {
+                delayStatus = "Paid with Delay";
+            }
 
             modalBody.innerHTML = `
                 <table class="profile-table">
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Payment Information</th></tr>
                     <tr><td>Payment ID</td><td>${p.paymentId || 'PAY/001/2026'}</td></tr>
-                    <tr><td>Amount Paid</td><td>₹${p.amount || p.paidAmount || '0.00'}</td></tr>
+                    <tr><td>Amount Paid (This Transaction)</td><td style="color: #2F855A; font-weight: bold;">₹${currentPaidAmt.toFixed(2)}</td></tr>
                     <tr><td>Payment Date</td><td>${p.date || '-'}</td></tr>
                     <tr><td>Payment Mode</td><td>${p.mode || p.loanType || 'e-NACH'}</td></tr>
+                    <tr><td>Repayment Status</td><td>${delayStatus}</td></tr>
+
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Loan Financial Summary</th></tr>
+                    <tr><td>Total Loan Amount</td><td>₹${totalLoanAmount.toFixed(2)}</td></tr>
+                    <tr><td>Total Paid So Far</td><td style="color: #2F855A; font-weight: bold;">₹${totalPaid.toFixed(2)}</td></tr>
+                    <tr><td>Pending Balance Amount</td><td style="color: #C53030; font-weight: bold;">₹${pendingBalance.toFixed(2)}</td></tr>
 
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Details</th></tr>
                     <tr><td>Borrower ID / Name</td><td>${p.borrower || borrower.name || '-'}</td></tr>
@@ -449,7 +483,7 @@
             const actions = element.querySelector('.modal-actions');
             actions.style.display = 'none';
 
-            let fileName = "Payment_Receipt.pdf";
+            let fileName = "Payment_Financial_Report.pdf";
             if (currentPayment) {
                 const cleanName = (currentPayment.borrower || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
                 const cleanId = (currentPayment.paymentId || 'Payment').replace(/[^a-zA-Z0-9]/g, '_');
