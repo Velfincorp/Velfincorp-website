@@ -1,79 +1,84 @@
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<script>
-    // Centralized Authentication & Security Protection Script
-    (function() {
-        const currentPage = window.location.pathname.split("/").pop() || "index.html";
-        const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-        const userRole = sessionStorage.getItem('velfincorp_role');
-
-        // 1. Prevent back/forward cache browsing after logout
-        window.pageshow = function(event) {
-            if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
-                window.location.replace('login.html');
-            }
-        };
-
-        // 2. Public pages that don't require login
-        const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-        if (publicPages.includes(currentPage)) {
-            return; // Allow public access
-        }
-
-        // 3. If not logged in, redirect to login page immediately
-        if (!loggedUser || !userRole) {
-            window.location.replace('login.html');
-            return;
-        }
-
-        // 4. Role-based Access Control (RBAC) Enforcement
-        if (userRole === 'borrower') {
-            // Borrowers are ONLY allowed inside the borrower portal
-            if (currentPage !== 'borrower-portal.html') {
-                window.location.replace('borrower-portal.html');
-            }
-        } else {
-            // Admin and Staff are NOT allowed inside the borrower portal
-            if (currentPage === 'borrower-portal.html') {
-                window.location.replace('dashboard.html');
-            }
-        }
-    })();
-</script>
 <!DOCTYPE html>
 <html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Retailer Details Registration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        (function() {
+            const currentPage = window.location.pathname.split("/").pop() || "index.html";
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+
+            window.pageshow = function(event) {
+                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                    window.location.replace('login.html');
+                }
+            };
+
+            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+            if (publicPages.includes(currentPage)) return;
+
+            if (!loggedUser || !userRole) {
+                window.location.replace('login.html');
+                return;
+            }
+        })();
+    </script>
     <style>
         :root {
-            --primary-navy: #0B1D3A;
-            --accent-gold: #C5A059;
-            --bg-light: #F4F6F9;
-            --text-dark: #333333;
+            --navy: #0F1D36;
+            --gold: #C5A059;
+            --bg-color: #F8F9FB;
+            --text-main: #2D3748;
+            --white: #FFFFFF;
+            --danger: #C53030;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text-dark);
+            font-family: 'Manrope', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 30px;
         }
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: #ffffff;
-            padding: 30px;
+            background: var(--white);
+            padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(11, 29, 58, 0.1);
-            border-top: 5px solid var(--primary-navy);
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08);
+            border-top: 5px solid var(--navy);
         }
-        h2 {
-            text-align: center;
-            color: var(--primary-navy);
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 15px;
             margin-bottom: 25px;
+        }
+        .header h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--navy);
+            margin: 0;
+            font-size: 22px;
+        }
+        .back-btn {
+            background-color: var(--gold);
+            color: var(--navy);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 13px;
         }
         .form-group {
             margin-bottom: 20px;
@@ -82,168 +87,122 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: var(--primary-navy);
+            color: var(--navy);
+            font-size: 13px;
         }
         input, select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
             font-size: 14px;
+            box-sizing: border-box;
         }
         input:focus, select:focus {
-            border-color: var(--accent-gold);
+            border-color: var(--gold);
             outline: none;
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
         }
         .btn-submit {
-            background-color: var(--primary-navy);
+            background-color: var(--navy);
             color: white;
-            padding: 12px 20px;
+            padding: 14px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             width: 100%;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
+            margin-top: 15px;
+            transition: 0.3s;
         }
         .btn-submit:hover {
-            background-color: var(--accent-gold);
-            color: var(--primary-navy);
+            background-color: var(--gold);
+            color: var(--navy);
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>VEL FIN CORP</h2>
-    <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px;">Retailer Details Registration</h3>
-
-    <form id="retailerForm" onsubmit="return validateRetailer(event)">
-        
-        <div class="form-group">
-            <label>Show Room Name *</label>
-            <input type="text" id="Show_Room_Name" oninput="generateRetailerCode()" required>
+    <div class="container">
+        <div class="header">
+            <h2>VEL FIN CORP - Retailer Details Registration</h2>
+            <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
         </div>
 
-        <div class="form-group">
-            <label>Retailer Code (Auto-generated)</label>
-            <input type="text" id="Retailer_Code" readonly>
-        </div>
+        <form id="retailerForm" onsubmit="saveRetailer(event)">
+            <div class="form-group">
+                <label>Show Room Name *</label>
+                <input type="text" id="showroomName" placeholder="Enter showroom name" required>
+            </div>
 
-        <div class="form-group">
-            <label>Owner Name *</label>
-            <input type="text" id="Owner_Name" required>
-        </div>
+            <div class="form-group">
+                <label>Retailer Code (Auto-generated)</label>
+                <input type="text" id="retailerCode" value="VFC-RET-2026-001" readonly style="background: #f1f5f9;">
+            </div>
 
-        <div class="form-group">
-            <label>WhatsApp Number *</label>
-            <input type="text" id="WhatsApp_Number" maxlength="10" placeholder="10 digit number" required>
-        </div>
+            <div class="form-group">
+                <label>Owner Name *</label>
+                <input type="text" id="ownerName" placeholder="Enter owner name" required>
+            </div>
 
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="Email">
-        </div>
+            <div class="form-group">
+                <label>WhatsApp Number *</label>
+                <input type="text" id="whatsappNumber" placeholder="10 digit number" maxlength="10" required>
+            </div>
 
-        <div class="form-group">
-            <label>City / Location *</label>
-            <input type="text" id="City_Location" oninput="generateRetailerCode()" required>
-        </div>
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="retailerEmail" placeholder="Enter email address" required>
+            </div>
 
-        <div class="form-group">
-            <label>GST #</label>
-            <input type="text" id="GST">
-        </div>
+            <div class="form-group">
+                <label>City / Location *</label>
+                <input type="text" id="cityLocation" placeholder="Enter city or location" required>
+            </div>
 
-        <div class="form-group">
-            <label>PAN NUMBER</label>
-            <input type="text" id="PAN_NUMBER" maxlength="10">
-        </div>
+            <div class="form-group">
+                <label>GST #</label>
+                <input type="text" id="gstNumber" placeholder="Enter GST number (Optional)">
+            </div>
 
-        <div class="form-group">
-            <label>Aadhar Number</label>
-            <input type="text" id="Aadhar_Number" maxlength="12">
-        </div>
+            <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Retailer Details</button>
+        </form>
+    </div>
 
-        <div class="form-group">
-            <label>Account Holder Name</label>
-            <input type="text" id="Account_Holder_Name">
-        </div>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // Auto generate code
+            let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
+            let nextCode = `VFC-RET-2026-00${retailers.length + 1}`;
+            document.getElementById('retailerCode').value = nextCode;
+        });
 
-        <div class="form-group">
-            <label>Bank & Branch Name</label>
-            <input type="text" id="Bank_Branch_Name">
-        </div>
-
-        <div class="form-group">
-            <label>Bank Account Number</label>
-            <input type="password" id="Bank_Account_Number">
-        </div>
-
-        <div class="form-group">
-            <label>Confirm Bank Account Number</label>
-            <input type="text" id="Confirm_Bank_Account_Number">
-        </div>
-
-        <div class="form-group">
-            <label>IFSC CODE</label>
-            <input type="text" id="IFSC_CODE" maxlength="11">
-        </div>
-
-        <button type="submit" class="btn-submit">Submit Retailer Details</button>
-    </form>
-</div>
-
-<script>
-    // Retailer Code Auto Generation Logic mirroring Zoho Deluge
-    function generateRetailerCode() {
-        let sname = document.getElementById('Show_Room_Name').value.trim();
-        let loc = document.getElementById('City_Location').value.trim();
-        let showInit = "";
-        let locInit = "";
-
-        if (sname.length > 0) {
-            let cleanedName = sname.replace(/&/g, "and");
-            let words = cleanedName.split(" ");
-            let count = 0;
-            for (let i = 0; i < words.length; i++) {
-                if (words[i].length > 0 && count < 2) {
-                    showInit += words[i].substring(0, 1).toUpperCase();
-                    count++;
-                }
-            }
-        }
-
-        if (loc.length > 0) {
-            locInit = loc.substring(0, 1).toUpperCase();
-        }
-
-        let finalCode = "";
-        if (locInit !== "" && showInit !== "") {
-            finalCode = locInit + showInit;
-        } else if (showInit !== "") {
-            finalCode = showInit;
-        } else if (locInit !== "") {
-            finalCode = locInit;
-        }
-
-        document.getElementById('Retailer_Code').value = finalCode;
-    }
-
-    function validateRetailer(event) {
-        const acc = document.getElementById('Bank_Account_Number').value;
-        const confirmAcc = document.getElementById('Confirm_Bank_Account_Number').value;
-
-        if (acc !== "" && confirmAcc !== "" && acc !== confirmAcc) {
-            alert("வங்கிக் கணக்கு எண்கள் இரண்டும் ஒன்றாக இல்லை!");
+        function saveRetailer(event) {
             event.preventDefault();
-            return false;
+
+            const retailer = {
+                code: document.getElementById('retailerCode').value,
+                showroom: document.getElementById('showroomName').value.trim(),
+                owner: document.getElementById('ownerName').value.trim(),
+                whatsapp: document.getElementById('whatsappNumber').value.trim(),
+                email: document.getElementById('retailerEmail').value.trim(),
+                city: document.getElementById('cityLocation').value.trim(),
+                gst: document.getElementById('gstNumber').value.trim(),
+                date: new Date().toLocaleDateString()
+            };
+
+            let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
+            retailers.push(retailer);
+            localStorage.setItem('velfincorp_retailers', JSON.stringify(retailers));
+
+            alert("Retailer details saved successfully!");
+            document.getElementById('retailerForm').reset();
+            
+            // Refresh code
+            let nextCode = `VFC-RET-2026-00${retailers.length + 1}`;
+            document.getElementById('retailerCode').value = nextCode;
         }
-
-        alert("Retailer details validated and submitted successfully!");
-        return true;
-    }
-</script>
-
+    </script>
 </body>
 </html>
