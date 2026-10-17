@@ -158,6 +158,16 @@
             border-bottom: 2px solid var(--gold);
             padding-bottom: 12px;
         }
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background: var(--white);
+        }
         .table-container {
             background: var(--white);
             padding: 20px;
@@ -183,6 +193,84 @@
         }
         tr:hover {
             background-color: #f8fafc;
+            cursor: pointer;
+        }
+        /* Modal for Full Payment & Borrower Profile */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--white);
+            width: 750px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            border-top: 5px solid var(--navy);
+        }
+        .modal-header {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            color: var(--navy);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-print {
+            background-color: var(--navy);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-pdf {
+            background-color: var(--gold);
+            color: var(--navy);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .close-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .profile-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .profile-table td {
+            padding: 10px 15px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+        }
+        .profile-table td:first-child {
+            font-weight: bold;
+            color: var(--navy);
+            width: 40%;
+            background: #f1f5f9;
         }
     </style>
 </head>
@@ -213,6 +301,9 @@
     <div class="main-content">
         <div class="header-title">VEL FIN CORP - ALL PAYMENTS REPORT</div>
         
+        <!-- Live Search Bar -->
+        <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name, Phone Number, or ID..." onkeyup="filterTable()">
+
         <div class="table-container">
             <table>
                 <thead>
@@ -220,6 +311,7 @@
                         <th>S.No</th>
                         <th>Payment ID</th>
                         <th>Borrower ID / Name</th>
+                        <th>Phone Number</th>
                         <th>Amount Paid (₹)</th>
                         <th>Payment Date</th>
                         <th>Mode</th>
@@ -232,21 +324,50 @@
         </div>
     </div>
 
+    <!-- Modal Popup for Full Details -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-content" id="printableArea">
+            <div class="modal-header">
+                <span>Payment Receipt & Borrower Full Profile</span>
+                <div class="modal-actions">
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                    <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="close-btn" onclick="closeModal()">X</button>
+                </div>
+            </div>
+            <div id="modalBody">
+                <!-- Details loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
     <script>
+        let currentPayment = null;
+
         window.addEventListener('DOMContentLoaded', () => {
+            loadPaymentsData();
+        });
+
+        function loadPaymentsData() {
             const tbody = document.getElementById('allPaymentsTableBody');
             let payments = [];
+            let borrowers = [];
+
             try {
                 payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
+                borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
             } catch(e) {
                 payments = [];
+                borrowers = [];
             }
 
             if (!Array.isArray(payments) || payments.length === 0) {
                 payments = [
                     {
                         paymentId: "PAY/001/2026",
+                        borrowerId: "VFC/001/2026",
                         borrower: "VFC/001/2026 - Mr. Rajapriyan D",
+                        phone: "8778003840",
                         amount: "5,000.00",
                         date: "15-Oct-2026",
                         mode: "e-NACH"
@@ -256,18 +377,101 @@
 
             tbody.innerHTML = '';
             payments.forEach((p, index) => {
+                let borrower = borrowers.find(b => b.borrowerId === p.borrowerId || (p.borrower && p.borrower.includes(b.borrowerId)) || b.phone === p.phone) || {};
+
                 const tr = document.createElement('tr');
+                tr.onclick = () => showPaymentDetails(p, borrower);
                 tr.innerHTML = `
                     <td>${index + 1}</td>
-                    <td>${p.paymentId || 'PAY/001/2026'}</td>
-                    <td>${p.borrower || '-'}</td>
-                    <td>₹${p.amount || '0.00'}</td>
+                    <td><strong>${p.paymentId || 'PAY/001/2026'}</strong></td>
+                    <td>${p.borrower || borrower.name || '-'}</td>
+                    <td>${p.phone || borrower.phone || '-'}</td>
+                    <td>₹${p.amount || p.paidAmount || '0.00'}</td>
                     <td>${p.date || '-'}</td>
-                    <td>${p.mode || '-'}</td>
+                    <td>${p.mode || p.loanType || 'e-NACH'}</td>
                 `;
                 tbody.appendChild(tr);
             });
-        });
+        }
+
+        function showPaymentDetails(p, borrower) {
+            currentPayment = p;
+            const modal = document.getElementById('paymentModal');
+            const modalBody = document.getElementById('modalBody');
+
+            modalBody.innerHTML = `
+                <table class="profile-table">
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Payment Information</th></tr>
+                    <tr><td>Payment ID</td><td>${p.paymentId || 'PAY/001/2026'}</td></tr>
+                    <tr><td>Amount Paid</td><td>₹${p.amount || p.paidAmount || '0.00'}</td></tr>
+                    <tr><td>Payment Date</td><td>${p.date || '-'}</td></tr>
+                    <tr><td>Payment Mode</td><td>${p.mode || p.loanType || 'e-NACH'}</td></tr>
+
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Details</th></tr>
+                    <tr><td>Borrower ID / Name</td><td>${p.borrower || borrower.name || '-'}</td></tr>
+                    <tr><td>Phone Number</td><td>${p.phone || borrower.phone || '-'}</td></tr>
+                    <tr><td>WhatsApp Number</td><td>${borrower.whatsapp || '-'}</td></tr>
+                    <tr><td>Aadhar Number</td><td>${borrower.aadhar || '-'}</td></tr>
+                    <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
+                    <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
+                    <tr><td>Occupation</td><td>${borrower.occupation || '-'}</td></tr>
+                    <tr><td>Nominee Details</td><td>${borrower.nominee || '-'} (${borrower.nomineePhone || '-'})</td></tr>
+                </table>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.getElementById('allPaymentsTableBody').getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const borrowerCol = rows[i].getElementsByTagName('td')[2];
+                const phoneCol = rows[i].getElementsByTagName('td')[3];
+                const payIdCol = rows[i].getElementsByTagName('td')[1];
+
+                if (borrowerCol || phoneCol || payIdCol) {
+                    const borrowerText = borrowerCol.textContent.toLowerCase();
+                    const phoneText = phoneCol.textContent.toLowerCase();
+                    const payIdText = payIdCol.textContent.toLowerCase();
+
+                    if (borrowerText.includes(input) || phoneText.includes(input) || payIdText.includes(input)) {
+                        rows[i].style.display = "";
+                    } else {
+                        rows[i].style.display = "none";
+                    }
+                }
+            }
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('printableArea');
+            const actions = element.querySelector('.modal-actions');
+            actions.style.display = 'none';
+
+            let fileName = "Payment_Receipt.pdf";
+            if (currentPayment) {
+                const cleanName = (currentPayment.borrower || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanId = (currentPayment.paymentId || 'Payment').replace(/[^a-zA-Z0-9]/g, '_');
+                fileName = `${cleanName}_${cleanId}.pdf`;
+            }
+
+            const opt = {
+                margin:       10,
+                filename:     fileName,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(element).set(opt).save().then(() => {
+                actions.style.display = 'flex';
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+        }
 
         function handleLogout() {
             sessionStorage.clear();
