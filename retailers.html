@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Vel Fin Corp - Retailer Details Registration</title>
+    <title>Vel Fin Corp - Retailer & Staff Registration</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -172,7 +172,7 @@
             color: var(--navy);
             font-size: 13px;
         }
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #cbd5e1;
@@ -180,7 +180,7 @@
             font-size: 14px;
             box-sizing: border-box;
         }
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             border-color: var(--gold);
             outline: none;
             box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
@@ -193,6 +193,24 @@
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 8px;
             font-weight: bold;
+        }
+        .permissions-group {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .permissions-group label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .permissions-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
         }
         .btn-submit {
             background-color: var(--navy);
@@ -243,131 +261,200 @@
     <div class="main-content">
         <div class="container">
             <div class="header">
-                <h2>Retailer Details Registration</h2>
+                <h2>Retailer & Staff Registration</h2>
             </div>
 
-            <form id="retailerForm" onsubmit="saveRetailer(event)">
+            <form id="registrationForm" onsubmit="saveData(event)">
                 <div class="form-group">
-                    <label>Show Room Name *</label>
-                    <input type="text" id="showroomName" placeholder="Enter showroom name" required>
+                    <label>Select User Type *</label>
+                    <select id="userType" onchange="toggleFormFields()" required>
+                        <option value="retailer">Retailer / Showroom Partner</option>
+                        <option value="staff">Staff / Collection Agent</option>
+                    </select>
                 </div>
 
+                <!-- Common Field -->
                 <div class="form-group">
-                    <label>Retailer Code (Auto-generated)</label>
-                    <input type="text" id="retailerCode" value="VFC-RET-2026-001" readonly style="background: #f1f5f9;">
+                    <label>Unique Code (Auto-generated)</label>
+                    <input type="text" id="userCode" readonly style="background: #f1f5f9;">
                 </div>
 
-                <div class="form-group">
-                    <label>Owner Name *</label>
-                    <input type="text" id="ownerName" placeholder="Enter owner name" required>
+                <!-- Retailer Specific Fields -->
+                <div id="retailerFields">
+                    <div class="form-group">
+                        <label>Show Room Name *</label>
+                        <input type="text" id="showroomName" placeholder="Enter showroom name">
+                    </div>
+                    <div class="form-group">
+                        <label>Owner Name *</label>
+                        <input type="text" id="ownerName" placeholder="Enter owner name">
+                    </div>
+                    <div class="form-group">
+                        <label>WhatsApp Number *</label>
+                        <input type="text" id="retailerPhone" placeholder="10 digit number" maxlength="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="retailerEmail" placeholder="Enter email address">
+                    </div>
+                    <div class="form-group">
+                        <label>City / Location *</label>
+                        <input type="text" id="cityLocation" placeholder="Enter city or location">
+                    </div>
+                    <div class="form-group">
+                        <label>Complete Address</label>
+                        <textarea id="fullAddress" rows="3" placeholder="Enter full address"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>GST #</label>
+                        <input type="text" id="gstNumber" placeholder="Enter GST number">
+                    </div>
+
+                    <div class="section-title">Identity & Bank Details</div>
+                    <div class="form-group">
+                        <label>PAN Number</label>
+                        <input type="text" id="panNumber" placeholder="Enter PAN number" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-group">
+                        <label>Aadhaar Number</label>
+                        <input type="text" id="aadharNumber" placeholder="Enter Aadhaar number" maxlength="12">
+                    </div>
+                    <div class="form-group">
+                        <label>Bank Account Number</label>
+                        <input type="text" id="accountNumber" placeholder="Enter bank account number">
+                    </div>
+                    <div class="form-group">
+                        <label>IFSC Code</label>
+                        <input type="text" id="ifscCode" placeholder="Enter IFSC code" style="text-transform: uppercase;">
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>WhatsApp Number *</label>
-                    <input type="text" id="whatsappNumber" placeholder="10 digit number" maxlength="10" required>
+                <!-- Staff Specific Fields -->
+                <div id="staffFields" style="display: none;">
+                    <div class="form-group">
+                        <label>Staff Name *</label>
+                        <input type="text" id="staffName" placeholder="Enter staff name">
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile Number (Username) *</label>
+                        <input type="text" id="staffPhone" placeholder="10 digit mobile number" maxlength="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Password / PIN *</label>
+                        <input type="text" id="staffPass" placeholder="Enter login password (e.g., Vel@2026)">
+                    </div>
+
+                    <div class="permissions-group">
+                        <label style="display:block; font-weight:bold; margin-bottom:8px; color:var(--navy);">Select Allowed Access Modules:</label>
+                        <label><input type="checkbox" name="perm" value="borrowers-details.html"> Borrower Details</label>
+                        <label><input type="checkbox" name="perm" value="creditvault.html"> Credit Vault Loan</label>
+                        <label><input type="checkbox" name="perm" value="personalloan.html"> Personal Loan</label>
+                        <label><input type="checkbox" name="perm" value="payments.html"> Payment Collection</label>
+                        <label><input type="checkbox" name="perm" value="creditvault-report.html"> Credit Vault Report</label>
+                        <label><input type="checkbox" name="perm" value="personalloan-report.html"> Personal Loan Report</label>
+                        <label><input type="checkbox" name="perm" value="allpayments-report.html"> All Payments Report</label>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Email *</label>
-                    <input type="email" id="retailerEmail" placeholder="Enter email address" required>
-                </div>
-
-                <div class="form-group">
-                    <label>City / Location *</label>
-                    <input type="text" id="cityLocation" placeholder="Enter city or location" required>
-                </div>
-
-                <div class="form-group">
-                    <label>GST #</label>
-                    <input type="text" id="gstNumber" placeholder="Enter GST number">
-                </div>
-
-                <div class="section-title">Bank & Statutory Details</div>
-
-                <div class="form-group">
-                    <label>PAN NUMBER</label>
-                    <input type="text" id="panNumber" placeholder="Enter PAN number" style="text-transform: uppercase;">
-                </div>
-
-                <div class="form-group">
-                    <label>Aadhar Number</label>
-                    <input type="text" id="aadharNumber" placeholder="Enter Aadhar number" maxlength="12">
-                </div>
-
-                <div class="form-group">
-                    <label>Account Holder Name</label>
-                    <input type="text" id="accountHolder" placeholder="Enter account holder name">
-                </div>
-
-                <div class="form-group">
-                    <label>Bank & Branch Name</label>
-                    <input type="text" id="bankBranch" placeholder="Enter bank and branch name">
-                </div>
-
-                <div class="form-group">
-                    <label>Bank Account Number</label>
-                    <input type="text" id="accountNumber" placeholder="Enter bank account number">
-                </div>
-
-                <div class="form-group">
-                    <label>Confirm Bank Account Number</label>
-                    <input type="text" id="confirmAccountNumber" placeholder="Re-enter bank account number">
-                </div>
-
-                <div class="form-group">
-                    <label>IFSC CODE</label>
-                    <input type="text" id="ifscCode" placeholder="Enter IFSC code" style="text-transform: uppercase;">
-                </div>
-
-                <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Retailer Details</button>
+                <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Details</button>
             </form>
         </div>
     </div>
 
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
-            let nextCode = `VFC-RET-2026-00${retailers.length + 1}`;
-            document.getElementById('retailerCode').value = nextCode;
+            toggleFormFields();
         });
 
-        function saveRetailer(event) {
+        function toggleFormFields() {
+            const userType = document.getElementById('userType').value;
+            const retailerFields = document.getElementById('retailerFields');
+            const staffFields = document.getElementById('staffFields');
+            const codeInput = document.getElementById('userCode');
+
+            if (userType === 'retailer') {
+                retailerFields.style.display = 'block';
+                staffFields.style.display = 'none';
+
+                let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
+                codeInput.value = `VFC-RET-2026-00${retailers.length + 1}`;
+
+                // Set required attributes
+                document.getElementById('showroomName').setAttribute('required', 'true');
+                document.getElementById('ownerName').setAttribute('required', 'true');
+                document.getElementById('retailerPhone').setAttribute('required', 'true');
+                document.getElementById('retailerEmail').setAttribute('required', 'true');
+                document.getElementById('cityLocation').setAttribute('required', 'true');
+
+                document.getElementById('staffName').removeAttribute('required');
+                document.getElementById('staffPhone').removeAttribute('required');
+                document.getElementById('staffPass').removeAttribute('required');
+            } else {
+                retailerFields.style.display = 'none';
+                staffFields.style.display = 'block';
+
+                let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+                codeInput.value = `VFC-STF-2026-00${users.length + 1}`;
+
+                document.getElementById('staffName').setAttribute('required', 'true');
+                document.getElementById('staffPhone').setAttribute('required', 'true');
+                document.getElementById('staffPass').setAttribute('required', 'true');
+
+                document.getElementById('showroomName').removeAttribute('required');
+                document.getElementById('ownerName').removeAttribute('required');
+                document.getElementById('retailerPhone').removeAttribute('required');
+                document.getElementById('retailerEmail').removeAttribute('required');
+                document.getElementById('cityLocation').removeAttribute('required');
+            }
+        }
+
+        function saveData(event) {
             event.preventDefault();
+            const userType = document.getElementById('userType').value;
 
-            const accNum = document.getElementById('accountNumber').value.trim();
-            const confirmAccNum = document.getElementById('confirmAccountNumber').value.trim();
+            if (userType === 'retailer') {
+                const retailer = {
+                    code: document.getElementById('userCode').value,
+                    showroom: document.getElementById('showroomName').value.trim(),
+                    owner: document.getElementById('ownerName').value.trim(),
+                    whatsapp: document.getElementById('retailerPhone').value.trim(),
+                    email: document.getElementById('retailerEmail').value.trim(),
+                    city: document.getElementById('cityLocation').value.trim(),
+                    address: document.getElementById('fullAddress').value.trim(),
+                    gst: document.getElementById('gstNumber').value.trim(),
+                    pan: document.getElementById('panNumber').value.trim(),
+                    aadhar: document.getElementById('aadharNumber').value.trim(),
+                    accountNumber: document.getElementById('accountNumber').value.trim(),
+                    ifsc: document.getElementById('ifscCode').value.trim(),
+                    date: new Date().toLocaleDateString()
+                };
 
-            if (accNum && confirmAccNum && accNum !== confirmAccNum) {
-                alert("Bank Account Numbers do not match! Please check again.");
-                return;
+                let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
+                retailers.push(retailer);
+                localStorage.setItem('velfincorp_retailers', JSON.stringify(retailers));
+                alert("Retailer details saved successfully!");
+            } else {
+                const staffId = document.getElementById('staffPhone').value.trim();
+                const staffPass = document.getElementById('staffPass').value.trim();
+                
+                const checkboxes = document.querySelectorAll('input[name="perm"]:checked');
+                let permissions = [];
+                checkboxes.forEach((cb) => permissions.push(cb.value));
+
+                let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+                users.push({
+                    id: staffId,
+                    pass: staffPass,
+                    role: 'staff',
+                    name: document.getElementById('staffName').value.trim(),
+                    permissions: permissions
+                });
+                localStorage.setItem('velfincorp_users', JSON.stringify(users));
+                alert("Staff access created successfully!");
             }
 
-            const retailer = {
-                code: document.getElementById('retailerCode').value,
-                showroom: document.getElementById('showroomName').value.trim(),
-                owner: document.getElementById('ownerName').value.trim(),
-                whatsapp: document.getElementById('whatsappNumber').value.trim(),
-                email: document.getElementById('retailerEmail').value.trim(),
-                city: document.getElementById('cityLocation').value.trim(),
-                gst: document.getElementById('gstNumber').value.trim(),
-                pan: document.getElementById('panNumber').value.trim(),
-                aadhar: document.getElementById('aadharNumber').value.trim(),
-                accountHolder: document.getElementById('accountHolder').value.trim(),
-                bankBranch: document.getElementById('bankBranch').value.trim(),
-                accountNumber: accNum,
-                ifsc: document.getElementById('ifscCode').value.trim(),
-                date: new Date().toLocaleDateString()
-            };
-
-            let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
-            retailers.push(retailer);
-            localStorage.setItem('velfincorp_retailers', JSON.stringify(retailers));
-
-            alert("Retailer details saved successfully!");
-            document.getElementById('retailerForm').reset();
-            
-            let nextCode = `VFC-RET-2026-00${retailers.length + 1}`;
-            document.getElementById('retailerCode').value = nextCode;
+            document.getElementById('registrationForm').reset();
+            toggleFormFields();
         }
 
         function handleLogout() {
