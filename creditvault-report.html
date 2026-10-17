@@ -1,73 +1,222 @@
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<script>
-    // Centralized Authentication & Security Protection Script
-    (function() {
-        const currentPage = window.location.pathname.split("/").pop() || "index.html";
-        const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-        const userRole = sessionStorage.getItem('velfincorp_role');
-
-        // 1. Prevent back/forward cache browsing after logout
-        window.pageshow = function(event) {
-            if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
-                window.location.replace('login.html');
-            }
-        };
-
-        // 2. Public pages that don't require login
-        const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-        if (publicPages.includes(currentPage)) {
-            return; // Allow public access
-        }
-
-        // 3. If not logged in, redirect to login page immediately
-        if (!loggedUser || !userRole) {
-            window.location.replace('login.html');
-            return;
-        }
-
-        // 4. Role-based Access Control (RBAC) Enforcement
-        if (userRole === 'borrower') {
-            // Borrowers are ONLY allowed inside the borrower portal
-            if (currentPage !== 'borrower-portal.html') {
-                window.location.replace('borrower-portal.html');
-            }
-        } else {
-            // Admin and Staff are NOT allowed inside the borrower portal
-            if (currentPage === 'borrower-portal.html') {
-                window.location.replace('dashboard.html');
-            }
-        }
-    })();
-</script>
 <!DOCTYPE html>
 <html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Credit Vault Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        // Centralized Authentication & Security Protection Script
+        (function() {
+            const currentPage = window.location.pathname.split("/").pop() || "index.html";
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+
+            window.pageshow = function(event) {
+                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                    window.location.replace('login.html');
+                }
+            };
+
+            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+            if (publicPages.includes(currentPage)) {
+                return; 
+            }
+
+            if (!loggedUser || !userRole) {
+                window.location.replace('login.html');
+                return;
+            }
+
+            if (userRole === 'borrower') {
+                if (currentPage !== 'borrower-portal.html') {
+                    window.location.replace('borrower-portal.html');
+                }
+            } else {
+                if (currentPage === 'borrower-portal.html') {
+                    window.location.replace('dashboard.html');
+                }
+            }
+        })();
+    </script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F4F6F9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(11,29,58,0.1); }
-        h2 { text-align: center; color: #0B1D3A; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
-        th { background-color: #0B1D3A; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .back-btn { display: inline-block; margin-bottom: 15px; background: #C5A059; color: #0B1D3A; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; }
+        :root {
+            --navy: #0F1D36;
+            --gold: #C5A059;
+            --bg-color: #F8F9FB;
+            --text-main: #2D3748;
+            --white: #FFFFFF;
+            --danger: #C53030;
+        }
+        body {
+            font-family: 'Manrope', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(15, 29, 54, 0.08);
+            border-top: 5px solid var(--navy);
+        }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--navy);
+            margin: 0;
+            font-size: 24px;
+        }
+        .back-btn {
+            background: var(--gold);
+            color: var(--navy);
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .search-box {
+            width: 100%;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th {
+            background-color: var(--navy);
+            color: white;
+            font-family: 'Cinzel', serif;
+        }
+        tr:hover {
+            background-color: #f8fafc;
+            cursor: pointer;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--white);
+            width: 750px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            border-top: 5px solid var(--navy);
+        }
+        .modal-header {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            color: var(--navy);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-print {
+            background-color: var(--navy);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-pdf {
+            background-color: var(--gold);
+            color: var(--navy);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .close-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .profile-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .profile-table td {
+            padding: 10px 15px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+        }
+        .profile-table td:first-child {
+            font-weight: bold;
+            color: var(--navy);
+            width: 40%;
+            background: #f1f5f9;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
-    <h2>Credit Vault Loans Report</h2>
+    <div class="header-flex">
+        <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
+        <h2>Credit Vault Loans Report</h2>
+    </div>
+
+    <!-- Search Input for Name or Phone -->
+    <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name or Phone Number..." onkeyup="filterTable()">
+
     <table>
         <thead>
             <tr>
                 <th>Loan ID</th>
                 <th>Borrower Name</th>
+                <th>Phone Number</th>
                 <th>Product Name</th>
                 <th>Product Value</th>
                 <th>Tenure</th>
@@ -75,28 +224,189 @@
                 <th>Status</th>
             </tr>
         </thead>
-        <tbody>
-            <tr>
-                <td>VML-001/2026</td>
-                <td>Ravichandran C</td>
-                <td>Samsung Galaxy M32</td>
-                <td>₹18,000</td>
-                <td>10 Weeks</td>
-                <td>₹2,100</td>
-                <td>ACTIVE</td>
-            </tr>
-            <tr>
-                <td>VEL-002/2026</td>
-                <td>Santhosh M</td>
-                <td>Whirlpool Washing Machine</td>
-                <td>₹22,000</td>
-                <td>15 Weeks</td>
-                <td>₹1,889</td>
-                <td>ACTIVE</td>
-            </tr>
+        <tbody id="reportTableBody">
+            <!-- Dynamic Data -->
         </tbody>
     </table>
 </div>
+
+<!-- Modal Popup for Full Loan & Borrower Details -->
+<div class="modal" id="loanModal">
+    <div class="modal-content" id="printableArea">
+        <div class="modal-header">
+            <span>Credit Vault Loan & Borrower Full Profile</span>
+            <div class="modal-actions">
+                <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="close-btn" onclick="closeModal()">X</button>
+            </div>
+        </div>
+        <div id="modalBody">
+            <!-- Details loaded dynamically -->
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentLoan = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadReportData();
+    });
+
+    function loadReportData() {
+        const tbody = document.getElementById('reportTableBody');
+        let loans = [];
+        let borrowers = [];
+
+        try {
+            loans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
+            borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
+        } catch(e) {
+            loans = [];
+            borrowers = [];
+        }
+
+        // Default sample if empty
+        if (loans.length === 0) {
+            loans = [
+                {
+                    loanId: "VML-001/2026",
+                    borrowerId: "VFC/001/2026",
+                    borrowerName: "Ravichandran C",
+                    phone: "9876543210",
+                    productName: "Samsung Galaxy M32",
+                    productValue: "18000",
+                    downPayment: "3000",
+                    financedAmount: "15000",
+                    tenure: "10 Weeks",
+                    weeklyEmi: "2100",
+                    status: "ACTIVE",
+                    loanDate: "13-Oct-2026"
+                },
+                {
+                    loanId: "VEL-002/2026",
+                    borrowerId: "VFC/002/2026",
+                    borrowerName: "Santhosh M",
+                    phone: "8778003840",
+                    productName: "Whirlpool Washing Machine",
+                    productValue: "22000",
+                    downPayment: "4000",
+                    financedAmount: "18000",
+                    tenure: "15 Weeks",
+                    weeklyEmi: "1889",
+                    status: "ACTIVE",
+                    loanDate: "14-Oct-2026"
+                }
+            ];
+        }
+
+        tbody.innerHTML = '';
+        loans.forEach((loan) => {
+            // Find complete borrower details if available
+            let borrower = borrowers.find(b => b.borrowerId === loan.borrowerId || b.name.includes(loan.borrowerName) || b.phone === loan.phone) || {};
+
+            const tr = document.createElement('tr');
+            tr.onclick = () => showLoanDetails(loan, borrower);
+            tr.innerHTML = `
+                <td><strong>${loan.loanId || '-'}</strong></td>
+                <td>${loan.borrowerName || borrower.name || '-'}</td>
+                <td>${loan.phone || borrower.phone || '-'}</td>
+                <td>${loan.productName || '-'}</td>
+                <td>₹${loan.productValue || '0'}</td>
+                <td>${loan.tenure || '-'}</td>
+                <td>₹${loan.weeklyEmi || '0'}</td>
+                <td><span style="color: #2F855A; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function showLoanDetails(loan, borrower) {
+        currentLoan = loan;
+        const modal = document.getElementById('loanModal');
+        const modalBody = document.getElementById('modalBody');
+
+        modalBody.innerHTML = `
+            <table class="profile-table">
+                <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Loan Information</th></tr>
+                <tr><td>Loan ID</td><td>${loan.loanId || '-'}</td></tr>
+                <tr><td>Product Name</td><td>${loan.productName || '-'}</td></tr>
+                <tr><td>Product Value</td><td>₹${loan.productValue || '-'}</td></tr>
+                <tr><td>Down Payment</td><td>₹${loan.downPayment || '-'}</td></tr>
+                <tr><td>Financed Amount</td><td>₹${loan.financedAmount || '-'}</td></tr>
+                <tr><td>Tenure & Weekly EMI</td><td>${loan.tenure || '-'} | ₹${loan.weeklyEmi || '-'} per week</td></tr>
+                <tr><td>Loan Status</td><td>${loan.status || 'ACTIVE'}</td></tr>
+                <tr><td>Loan Date</td><td>${loan.loanDate || '-'}</td></tr>
+                
+                <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Details</th></tr>
+                <tr><td>Borrower ID</td><td>${borrower.borrowerId || loan.borrowerId || '-'}</td></tr>
+                <tr><td>Customer Name</td><td>${borrower.name || loan.borrowerName || '-'}</td></tr>
+                <tr><td>Phone Number</td><td>${borrower.phone || loan.phone || '-'}</td></tr>
+                <tr><td>WhatsApp Number</td><td>${borrower.whatsapp || '-'}</td></tr>
+                <tr><td>Aadhar Number</td><td>${borrower.aadhar || '-'}</td></tr>
+                <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
+                <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
+                <tr><td>Occupation</td><td>${borrower.occupation || '-'}</td></tr>
+                <tr><td>Nominee Details</td><td>${borrower.nominee || '-'} (${borrower.nomineePhone || '-'})</td></tr>
+                <tr><td>Payment Mode</td><td>${borrower.paymentMethod || 'e-NACH'}</td></tr>
+            </table>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    function filterTable() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.getElementById('reportTableBody').getElementsByTagName('tr');
+
+        for (let i = 0; i < rows.length; i++) {
+            const nameCol = rows[i].getElementsByTagName('td')[1];
+            const phoneCol = rows[i].getElementsByTagName('td')[2];
+            const loanIdCol = rows[i].getElementsByTagName('td')[0];
+
+            if (nameCol || phoneCol || loanIdCol) {
+                const nameText = nameCol.textContent.toLowerCase();
+                const phoneText = phoneCol.textContent.toLowerCase();
+                const loanIdText = loanIdCol.textContent.toLowerCase();
+
+                if (nameText.includes(input) || phoneText.includes(input) || loanIdText.includes(input)) {
+                    rows[i].style.display = "";
+                } else {
+                    rows[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('printableArea');
+        const actions = element.querySelector('.modal-actions');
+        actions.style.display = 'none';
+
+        let fileName = "Credit_Vault_Loan_Profile.pdf";
+        if (currentLoan) {
+            const cleanName = (currentLoan.borrowerName || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+            const cleanId = (currentLoan.loanId || 'Loan').replace(/[^a-zA-Z0-9]/g, '_');
+            fileName = `${cleanName}_${cleanId}.pdf`;
+        }
+
+        const opt = {
+            margin:       10,
+            filename:     fileName,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().from(element).set(opt).save().then(() => {
+            actions.style.display = 'flex';
+        });
+    }
+
+    function closeModal() {
+        document.getElementById('loanModal').style.display = 'none';
+    }
+</script>
 
 </body>
 </html>
