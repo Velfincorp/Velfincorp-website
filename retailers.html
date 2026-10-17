@@ -291,8 +291,12 @@
                         <input type="text" id="ownerName" placeholder="Enter owner name">
                     </div>
                     <div class="form-group">
-                        <label>WhatsApp Number *</label>
+                        <label>WhatsApp Number (Username) *</label>
                         <input type="text" id="retailerPhone" placeholder="10 digit number" maxlength="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Password / PIN *</label>
+                        <input type="text" id="retailerPass" placeholder="Enter login password (Last 4 digits or custom)">
                     </div>
                     <div class="form-group">
                         <label>Email *</label>
@@ -383,6 +387,7 @@
                 document.getElementById('showroomName').setAttribute('required', 'true');
                 document.getElementById('ownerName').setAttribute('required', 'true');
                 document.getElementById('retailerPhone').setAttribute('required', 'true');
+                document.getElementById('retailerPass').setAttribute('required', 'true');
                 document.getElementById('retailerEmail').setAttribute('required', 'true');
                 document.getElementById('cityLocation').setAttribute('required', 'true');
 
@@ -403,6 +408,7 @@
                 document.getElementById('showroomName').removeAttribute('required');
                 document.getElementById('ownerName').removeAttribute('required');
                 document.getElementById('retailerPhone').removeAttribute('required');
+                document.getElementById('retailerPass').removeAttribute('required');
                 document.getElementById('retailerEmail').removeAttribute('required');
                 document.getElementById('cityLocation').removeAttribute('required');
             }
@@ -410,14 +416,17 @@
 
         function saveData(event) {
             event.preventDefault();
-            const userType = document.getElementById('userType.value');
+            const userType = document.getElementById('userType').value;
 
-            if (document.getElementById('userType').value === 'retailer') {
+            if (userType === 'retailer') {
+                const retailerId = document.getElementById('retailerPhone').value.trim();
+                const retailerPass = document.getElementById('retailerPass').value.trim();
+
                 const retailer = {
                     code: document.getElementById('userCode').value,
                     showroom: document.getElementById('showroomName').value.trim(),
                     owner: document.getElementById('ownerName').value.trim(),
-                    whatsapp: document.getElementById('retailerPhone').value.trim(),
+                    whatsapp: retailerId,
                     email: document.getElementById('retailerEmail').value.trim(),
                     city: document.getElementById('cityLocation').value.trim(),
                     address: document.getElementById('fullAddress').value.trim(),
@@ -429,10 +438,23 @@
                     date: new Date().toLocaleDateString()
                 };
 
+                // Save to retailers list
                 let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
                 retailers.push(retailer);
                 localStorage.setItem('velfincorp_retailers', JSON.stringify(retailers));
-                alert("Retailer details saved successfully!");
+
+                // Also save to users list with standard access modules for Retailer (Borrower Details & Credit Vault Loan)
+                let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+                users.push({
+                    id: retailerId,
+                    pass: retailerPass,
+                    role: 'retailer',
+                    name: retailer.showroom + ' (' + retailer.owner + ')',
+                    permissions: ['borrowers-details.html', 'creditvault.html']
+                });
+                localStorage.setItem('velfincorp_users', JSON.stringify(users));
+
+                alert("Retailer registered & login access created successfully!");
             } else {
                 const staffId = document.getElementById('staffPhone').value.trim();
                 const staffPass = document.getElementById('staffPass').value.trim();
