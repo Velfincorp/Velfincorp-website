@@ -1,65 +1,156 @@
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<script>
-    // Centralized Authentication & Security Protection Script
-    (function() {
-        const currentPage = window.location.pathname.split("/").pop() || "index.html";
-        const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-        const userRole = sessionStorage.getItem('velfincorp_role');
-
-        // 1. Prevent back/forward cache browsing after logout
-        window.pageshow = function(event) {
-            if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
-                window.location.replace('login.html');
-            }
-        };
-
-        // 2. Public pages that don't require login
-        const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-        if (publicPages.includes(currentPage)) {
-            return; // Allow public access
-        }
-
-        // 3. If not logged in, redirect to login page immediately
-        if (!loggedUser || !userRole) {
-            window.location.replace('login.html');
-            return;
-        }
-
-        // 4. Role-based Access Control (RBAC) Enforcement
-        if (userRole === 'borrower') {
-            // Borrowers are ONLY allowed inside the borrower portal
-            if (currentPage !== 'borrower-portal.html') {
-                window.location.replace('borrower-portal.html');
-            }
-        } else {
-            // Admin and Staff are NOT allowed inside the borrower portal
-            if (currentPage === 'borrower-portal.html') {
-                window.location.replace('dashboard.html');
-            }
-        }
-    })();
-</script>
 <!DOCTYPE html>
 <html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Payment Collection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // Centralized Authentication & Security Protection Script
+        (function() {
+            const currentPage = window.location.pathname.split("/").pop() || "index.html";
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+
+            window.pageshow = function(event) {
+                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                    window.location.replace('login.html');
+                }
+            };
+
+            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+            if (publicPages.includes(currentPage)) {
+                return; 
+            }
+
+            if (!loggedUser || !userRole) {
+                window.location.replace('login.html');
+                return;
+            }
+
+            if (userRole === 'borrower') {
+                if (currentPage !== 'borrower-portal.html') {
+                    window.location.replace('borrower-portal.html');
+                }
+            } else {
+                if (currentPage === 'borrower-portal.html') {
+                    window.location.replace('dashboard.html');
+                }
+            }
+        })();
+    </script>
     <style>
         :root {
-            --primary-navy: #0B1D3A;
+            --primary-navy: #0F1D36;
             --accent-gold: #C5A059;
-            --bg-light: #F4F6F9;
-            --text-dark: #333333;
+            --bg-light: #F8F9FB;
+            --text-dark: #2D3748;
+            --white: #FFFFFF;
+            --danger: #C53030;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Manrope', Arial, sans-serif;
             background-color: var(--bg-light);
             color: var(--text-dark);
             margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Left Sidebar Menu */
+        .sidebar {
+            width: 260px;
+            background-color: var(--primary-navy);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            border-right: 3px solid var(--accent-gold);
+            position: fixed;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
+            overflow-y: auto;
+        }
+        .sidebar-brand {
             padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0,0,0,0.1);
+        }
+        .sidebar-logo {
+            height: 40px;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--accent-gold);
+            background: var(--white);
+            padding: 2px;
+        }
+        .sidebar-title {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--accent-gold);
+            letter-spacing: 1px;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 15px 0;
+            margin: 0;
+            flex: 1;
+        }
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 25px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active {
+            background-color: rgba(197, 160, 89, 0.15);
+            color: var(--accent-gold);
+            border-left-color: var(--accent-gold);
+        }
+        .sidebar-menu li a i {
+            width: 20px;
+            text-align: center;
+            color: var(--accent-gold);
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .btn-logout {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px;
+            box-sizing: border-box;
         }
         .container {
             max-width: 800px;
@@ -73,7 +164,8 @@
         h2 {
             text-align: center;
             color: var(--primary-navy);
-            margin-bottom: 25px;
+            font-family: 'Cinzel', serif;
+            margin-bottom: 5px;
         }
         .form-group {
             margin-bottom: 20px;
@@ -83,6 +175,7 @@
             margin-bottom: 8px;
             font-weight: 600;
             color: var(--primary-navy);
+            font-size: 13px;
         }
         input, select {
             width: 100%;
@@ -90,6 +183,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 14px;
+            box-sizing: border-box;
         }
         input:focus, select:focus {
             border-color: var(--accent-gold);
@@ -122,138 +216,169 @@
 </head>
 <body>
 
-<div class="container">
-    <h2>VEL FIN CORP</h2>
-    <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px;">Payment Collection & Receipt</h3>
-
-    <form id="paymentForm" onsubmit="return validatePayment(event)">
-        
-        <div class="form-group">
-            <label>Borrowers Name *</label>
-            <select id="Borrowers_Name" onchange="loadLoanDetails()" required>
-                <option value="">-Select Borrower-</option>
-                <option value="cust1">Ravichandran Chennan (VPL/022/2026)</option>
-                <option value="cust2">Thowlath Basha Rjka (VPL/017/2026)</option>
-            </select>
+    <!-- Left Sidebar Menu -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-title">VEL FIN CORP</div>
         </div>
-
-        <div class="form-group">
-            <label>Personal Loan</label>
-            <select id="Personal_Loan" onchange="calculateDelay()">
-                <option value="">-Select Personal Loan-</option>
-                <option value="pl1" data-duedate="2026-10-10">VPL/022/2026 (Due: 10-Oct-2026)</option>
-            </select>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
+            <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
+            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
+            <li><a href="payments.html" class="active"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
+            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
+            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
+            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
+    </div>
 
-        <div class="form-group">
-            <label>Credit Vault</label>
-            <select id="Credit_Vault" onchange="calculateDelay()">
-                <option value="">-Select Credit Vault Loan-</option>
-                <option value="cv1" data-duedate="2026-10-05">VML-001/2026 (Due: 05-Oct-2026)</option>
-            </select>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <h2>VEL FIN CORP</h2>
+            <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px; font-family: 'Cinzel', serif;">Payment Collection & Receipt</h3>
+
+            <form id="paymentForm" onsubmit="return validatePayment(event)">
+                
+                <div class="form-group">
+                    <label>Borrowers Name *</label>
+                    <select id="Borrowers_Name" onchange="loadLoanDetails()" required>
+                        <option value="">-Select Borrower-</option>
+                        <option value="cust1">Ravichandran Chennan (VPL/022/2026)</option>
+                        <option value="cust2">Thowlath Basha Rjka (VPL/017/2026)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Personal Loan</label>
+                    <select id="Personal_Loan" onchange="calculateDelay()">
+                        <option value="">-Select Personal Loan-</option>
+                        <option value="pl1" data-duedate="2026-10-10">VPL/022/2026 (Due: 10-Oct-2026)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Credit Vault</label>
+                    <select id="Credit_Vault" onchange="calculateDelay()">
+                        <option value="">-Select Credit Vault Loan-</option>
+                        <option value="cv1" data-duedate="2026-10-05">VML-001/2026 (Due: 05-Oct-2026)</option>
+                    </select>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="Pre_Create_Loan">
+                    <label for="Pre_Create_Loan" style="margin-bottom: 0;">Pre Close Loan</label>
+                </div>
+
+                <div class="form-group">
+                    <label>Paid Amount (₹) *</label>
+                    <input type="number" id="Paid_Amount" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Balance Amount (₹)</label>
+                    <input type="number" id="Balance_Amount" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Paid Installment *</label>
+                    <input type="number" id="Paid_Installment" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Remaining Installment *</label>
+                    <input type="number" id="Remaining_Installment" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Delayed Details *</label>
+                    <input type="text" id="Delayed_Details" value="0 Days" readonly style="font-weight: bold; color: #DC3545;">
+                </div>
+
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="Date_field" onchange="calculateDelay()" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Status *</label>
+                    <input type="text" id="Status" readonly placeholder="ACTIVE / CLOSED">
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Payment</button>
+            </form>
         </div>
+    </div>
 
-        <div class="form-group checkbox-group">
-            <input type="checkbox" id="Pre_Create_Loan">
-            <label for="Pre_Create_Loan" style="margin-bottom: 0;">Pre Close Loan</label>
-        </div>
+    <script>
+        // Set current date automatically
+        document.getElementById('Date_field').valueAsDate = new Date();
 
-        <div class="form-group">
-            <label>Paid Amount (₹) *</label>
-            <input type="number" id="Paid_Amount" step="0.01" required>
-        </div>
+        // Auto-calculate delay days based on Due Date and Payment Date
+        function calculateDelay() {
+            const plSelect = document.getElementById('Personal_Loan');
+            const cvSelect = document.getElementById('Credit_Vault');
+            let selectedOption = null;
 
-        <div class="form-group">
-            <label>Balance Amount (₹)</label>
-            <input type="number" id="Balance_Amount" readonly>
-        </div>
-
-        <div class="form-group">
-            <label>Paid Installment *</label>
-            <input type="number" id="Paid_Installment" readonly>
-        </div>
-
-        <div class="form-group">
-            <label>Remaining Installment *</label>
-            <input type="number" id="Remaining_Installment" readonly>
-        </div>
-
-        <div class="form-group">
-            <label>Delayed Details *</label>
-            <input type="text" id="Delayed_Details" value="0 Days" readonly style="font-weight: bold; color: #DC3545;">
-        </div>
-
-        <div class="form-group">
-            <label>Date *</label>
-            <input type="date" id="Date_field" onchange="calculateDelay()" required>
-        </div>
-
-        <div class="form-group">
-            <label>Status *</label>
-            <input type="text" id="Status" readonly placeholder="ACTIVE / CLOSED">
-        </div>
-
-        <button type="submit" class="btn-submit">Submit Payment</button>
-    </form>
-</div>
-
-<script>
-    // Set current date automatically
-    document.getElementById('Date_field').valueAsDate = new Date();
-
-    // Auto-calculate delay days based on Due Date and Payment Date
-    function calculateDelay() {
-        const plSelect = document.getElementById('Personal_Loan');
-        const cvSelect = document.getElementById('Credit_Vault');
-        let selectedOption = null;
-
-        if (plSelect.value) {
-            selectedOption = plSelect.options[plSelect.selectedIndex];
-        } else if (cvSelect.value) {
-            selectedOption = cvSelect.options[cvSelect.selectedIndex];
-        }
-
-        if (selectedOption && selectedOption.dataset.duedate) {
-            const dueDateStr = selectedOption.dataset.duedate;
-            const dueDate = new Date(dueDateStr);
-            const paymentDateVal = document.getElementById('Date_field').value;
-            const paymentDate = new Date(paymentDateVal);
-
-            const diffTime = paymentDate - dueDate;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays > 0) {
-                document.getElementById('Delayed_Details').value = diffDays + " Days Delayed";
-            } else {
-                document.getElementById('Delayed_Details').value = "0 Days (On Time)";
+            if (plSelect.value) {
+                selectedOption = plSelect.options[plSelect.selectedIndex];
+            } else if (cvSelect.value) {
+                selectedOption = cvSelect.options[cvSelect.selectedIndex];
             }
-        } else {
-            document.getElementById('Delayed_Details').value = "0 Days";
-        }
-    }
 
-    function loadLoanDetails() {
-        // Dummy auto-fill simulation for borrower selection
-        document.getElementById('Paid_Amount').value = "1000.00";
-        document.getElementById('Balance_Amount').value = "5000.00";
-        document.getElementById('Paid_Installment').value = "5";
-        document.getElementById('Remaining_Installment').value = "5";
-        document.getElementById('Status').value = "ACTIVE";
-        calculateDelay();
-    }
+            if (selectedOption && selectedOption.dataset.duedate) {
+                const dueDateStr = selectedOption.dataset.duedate;
+                const dueDate = new Date(dueDateStr);
+                const paymentDateVal = document.getElementById('Date_field').value;
+                const paymentDate = new Date(paymentDateVal);
 
-    function validatePayment(event) {
-        const paidAmt = parseFloat(document.getElementById('Paid_Amount').value) || 0;
-        if (paidAmt <= 0) {
-            alert("தயவுசெய்து சரியான செலுத்தும் தொகையை உள்ளிடவும்!");
-            event.preventDefault();
-            return false;
+                const diffTime = paymentDate - dueDate;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays > 0) {
+                    document.getElementById('Delayed_Details').value = diffDays + " Days Delayed";
+                } else {
+                    document.getElementById('Delayed_Details').value = "0 Days (On Time)";
+                }
+            } else {
+                document.getElementById('Delayed_Details').value = "0 Days";
+            }
         }
 
-        alert("Payment recorded and WhatsApp receipt triggered successfully!");
-        return true;
-    }
-</script>
+        function loadLoanDetails() {
+            document.getElementById('Paid_Amount').value = "1000.00";
+            document.getElementById('Balance_Amount').value = "5000.00";
+            document.getElementById('Paid_Installment').value = "5";
+            document.getElementById('Remaining_Installment').value = "5";
+            document.getElementById('Status').value = "ACTIVE";
+            calculateDelay();
+        }
 
+        function validatePayment(event) {
+            const paidAmt = parseFloat(document.getElementById('Paid_Amount').value) || 0;
+            if (paidAmt <= 0) {
+                alert("தயவுசெய்து சரியான செலுத்தும் தொகையை உள்ளிடவும்!");
+                event.preventDefault();
+                return false;
+            }
+
+            alert("Payment recorded and WhatsApp receipt triggered successfully!");
+            return true;
+        }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
+        }
+    </script>
 </body>
 </html>
