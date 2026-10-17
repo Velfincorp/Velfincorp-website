@@ -185,6 +185,15 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
         }
+        .section-title {
+            font-family: 'Cinzel', serif;
+            color: var(--navy);
+            font-size: 16px;
+            margin: 25px 0 15px 0;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+            font-weight: bold;
+        }
         .btn-submit {
             background-color: var(--navy);
             color: white;
@@ -195,7 +204,7 @@
             width: 100%;
             font-size: 15px;
             font-weight: bold;
-            margin-top: 15px;
+            margin-top: 25px;
             transition: 0.3s;
         }
         .btn-submit:hover {
@@ -270,7 +279,44 @@
 
                 <div class="form-group">
                     <label>GST #</label>
-                    <input type="text" id="gstNumber" placeholder="Enter GST number (Optional)">
+                    <input type="text" id="gstNumber" placeholder="Enter GST number">
+                </div>
+
+                <div class="section-title">Bank & Statutory Details</div>
+
+                <div class="form-group">
+                    <label>PAN NUMBER</label>
+                    <input type="text" id="panNumber" placeholder="Enter PAN number" style="text-transform: uppercase;">
+                </div>
+
+                <div class="form-group">
+                    <label>Aadhar Number</label>
+                    <input type="text" id="aadharNumber" placeholder="Enter Aadhar number" maxlength="12">
+                </div>
+
+                <div class="form-group">
+                    <label>Account Holder Name</label>
+                    <input type="text" id="accountHolder" placeholder="Enter account holder name">
+                </div>
+
+                <div class="form-group">
+                    <label>Bank & Branch Name</label>
+                    <input type="text" id="bankBranch" placeholder="Enter bank and branch name">
+                </div>
+
+                <div class="form-group">
+                    <label>Bank Account Number</label>
+                    <input type="text" id="accountNumber" placeholder="Enter bank account number">
+                </div>
+
+                <div class="form-group">
+                    <label>Confirm Bank Account Number</label>
+                    <input type="text" id="confirmAccountNumber" placeholder="Re-enter bank account number">
+                </div>
+
+                <div class="form-group">
+                    <label>IFSC CODE</label>
+                    <input type="text" id="ifscCode" placeholder="Enter IFSC code" style="text-transform: uppercase;">
                 </div>
 
                 <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Retailer Details</button>
@@ -288,6 +334,14 @@
         function saveRetailer(event) {
             event.preventDefault();
 
+            const accNum = document.getElementById('accountNumber').value.trim();
+            const confirmAccNum = document.getElementById('confirmAccountNumber').value.trim();
+
+            if (accNum && confirmAccNum && accNum !== confirmAccNum) {
+                alert("Bank Account Numbers do not match! Please check again.");
+                return;
+            }
+
             const retailer = {
                 code: document.getElementById('retailerCode').value,
                 showroom: document.getElementById('showroomName').value.trim(),
@@ -296,6 +350,12 @@
                 email: document.getElementById('retailerEmail').value.trim(),
                 city: document.getElementById('cityLocation').value.trim(),
                 gst: document.getElementById('gstNumber').value.trim(),
+                pan: document.getElementById('panNumber').value.trim(),
+                aadhar: document.getElementById('aadharNumber').value.trim(),
+                accountHolder: document.getElementById('accountHolder').value.trim(),
+                bankBranch: document.getElementById('bankBranch').value.trim(),
+                accountNumber: accNum,
+                ifsc: document.getElementById('ifscCode').value.trim(),
                 date: new Date().toLocaleDateString()
             };
 
