@@ -10,32 +10,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
             const userRole = sessionStorage.getItem('velfincorp_role');
 
-            // 1. Prevent back/forward cache browsing after logout
             window.pageshow = function(event) {
                 if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
                     window.location.replace('login.html');
                 }
             };
 
-            // 2. Public pages check
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) {
-                return; 
-            }
+            if (publicPages.includes(currentPage)) return;
 
-            // 3. If not logged in, redirect immediately
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
                 return;
             }
 
-            // 4. Role-based Access Control Enforcement
             if (userRole === 'borrower') {
                 if (currentPage !== 'borrower-portal.html') {
                     window.location.replace('borrower-portal.html');
@@ -64,8 +57,6 @@
             display: flex;
             min-height: 100vh;
         }
-        
-        /* Left Sidebar Menu */
         .sidebar {
             width: 260px;
             background-color: var(--navy);
@@ -149,8 +140,6 @@
             text-align: center;
             box-sizing: border-box;
         }
-
-        /* Main Content Area */
         .main-content {
             margin-left: 260px;
             flex: 1;
@@ -202,7 +191,6 @@
         .card .amount.red { color: var(--danger); }
         .card .amount.green { color: #2F855A; }
 
-        /* Access Control Management Box */
         .admin-control-box {
             background: var(--white);
             padding: 25px;
@@ -266,11 +254,27 @@
             background-color: var(--gold);
             color: var(--navy);
         }
+        /* Users table list */
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .users-table th, .users-table td {
+            border: 1px solid #cbd5e1;
+            padding: 10px;
+            font-size: 13px;
+            text-align: left;
+        }
+        .users-table th {
+            background: var(--navy);
+            color: white;
+            font-family: 'Cinzel', serif;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Left Sidebar Navigation Menu -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -285,6 +289,7 @@
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
             <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
         </ul>
         <div class="sidebar-footer">
@@ -292,7 +297,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="header-title">VEL FIN CORP - MAIN DASHBOARD</div>
 
@@ -350,7 +354,6 @@
                 </select>
             </div>
 
-            <!-- Page Permission Checkboxes -->
             <div class="permissions-group">
                 <div style="font-weight: bold; font-size: 13px; color: var(--navy); margin-bottom: 8px;">Select Allowed Access Modules:</div>
                 <label><input type="checkbox" name="perm" value="borrowers-details.html"> Borrower Details</label>
@@ -363,59 +366,89 @@
             </div>
 
             <button class="btn-add-user" onclick="generateCredential()">Create User Access & Save</button>
+
+            <h3 style="margin-top: 30px;"><i class="fas fa-list"></i> Created Staff & Retailers List</h3>
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Username (Mobile)</th>
+                        <th>Role</th>
+                        <th>Allowed Modules Count</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <!-- Dynamic users -->
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        // Secure Logout Function
         function handleLogout() {
             sessionStorage.clear();
             localStorage.removeItem('velfincorp_logged_user');
             window.location.replace('login.html');
         }
 
-        // Dynamic Calculation & LocalStorage sync
         window.addEventListener('DOMContentLoaded', () => {
+            loadUsersList();
+            // Calculation logic
             let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
             let personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
             let payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
 
-            let cvTotalAmount = 701533.00;
-            let cvCollected = 129130.50;
-            let cvCount = 36;
-
-            let plTotalAmount = 840000.00;
-            let plCollected = 152200.00;
-            let plCount = 25;
+            let cvTotalAmount = 701533.00, cvCollected = 129130.50, cvCount = 36;
+            let plTotalAmount = 840000.00, plCollected = 152200.00, plCount = 25;
 
             if (creditVaultLoans.length > 0) {
                 cvTotalAmount = creditVaultLoans.reduce((sum, loan) => sum + (parseFloat(loan.productValue) || 0), 0);
                 cvCount = creditVaultLoans.filter(l => l.status === 'ACTIVE').length;
             }
-
             if (personalLoans.length > 0) {
                 plTotalAmount = personalLoans.reduce((sum, loan) => sum + (parseFloat(loan.loanAmount) || 0), 0);
                 plCount = personalLoans.filter(l => l.status === 'ACTIVE').length;
             }
-
             if (payments.length > 0) {
                 cvCollected = payments.filter(p => p.loanType === 'Credit Vault').reduce((sum, p) => sum + (parseFloat(p.paidAmount) || 0), cvCollected);
                 plCollected = payments.filter(p => p.loanType === 'Personal Loan').reduce((sum, p) => sum + (parseFloat(p.paidAmount) || 0), plCollected);
             }
 
-            let cvRemaining = cvTotalAmount - cvCollected;
-            let plRemaining = plTotalAmount - plCollected;
-
             document.getElementById('cvActiveAmount').innerText = '₹' + cvTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('cvCollectedAmount').innerText = '₹' + cvCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('cvActiveCount').innerText = cvCount;
-            document.getElementById('cvRemainingBalance').innerText = '₹' + cvRemaining.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('cvRemainingBalance').innerText = '₹' + (cvTotalAmount - cvCollected).toLocaleString('en-IN', {minimumFractionDigits: 2});
 
             document.getElementById('plActiveAmount').innerText = '₹' + plTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('plCollectedAmount').innerText = '₹' + plCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
             document.getElementById('plActiveCount').innerText = plCount;
-            document.getElementById('plRemainingBalance').innerText = '₹' + plRemaining.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            document.getElementById('plRemainingBalance').innerText = '₹' + (plTotalAmount - plCollected).toLocaleString('en-IN', {minimumFractionDigits: 2});
         });
+
+        function loadUsersList() {
+            const tbody = document.getElementById('usersTableBody');
+            let users = [];
+            try {
+                users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+            } catch(e) {
+                users = [];
+            }
+
+            tbody.innerHTML = '';
+            if (users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
+                return;
+            }
+
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${u.id || '-'}</td>
+                    <td><span style="text-transform: uppercase; font-weight: bold; color: #0F1D36;">${u.role || '-'}</span></td>
+                    <td>${u.permissions ? u.permissions.length : 0} Modules</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
         function generateCredential() {
             const userId = document.getElementById('newUserId').value.trim();
@@ -452,8 +485,8 @@
             document.getElementById('newUserId').value = '';
             document.getElementById('newUserPass').value = '';
             checkboxes.forEach(cb => cb.checked = false);
+            loadUsersList();
         }
     </script>
-
 </body>
 </html>
