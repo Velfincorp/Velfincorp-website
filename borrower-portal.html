@@ -1,11 +1,11 @@
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <!DOCTYPE html>
 <html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Borrower Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -18,6 +18,7 @@
             --text-main: #2D3748;
             --white: #FFFFFF;
             --danger: #C53030;
+            --success: #2F855A;
         }
         body {
             font-family: 'Manrope', Arial, sans-serif;
@@ -27,7 +28,7 @@
             padding: 30px;
         }
         .container {
-            max-width: 800px;
+            max-width: 850px;
             margin: 0 auto;
             background: var(--white);
             padding: 40px;
@@ -59,6 +60,54 @@
             font-weight: bold;
             text-decoration: none;
             font-size: 13px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .summary-card {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 6px;
+            border-left: 4px solid var(--gold);
+            text-align: center;
+        }
+        .summary-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        .summary-card .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--navy);
+        }
+        .payment-box {
+            background: #fffbeb;
+            border: 1px solid #f59e0b;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .btn-pay {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 15px;
+        }
+        .btn-pay:hover {
+            background-color: #276749;
         }
         .profile-table {
             width: 100%;
@@ -112,12 +161,12 @@
 
     <div class="container" id="printableArea">
         <div class="header">
-            <h2>VEL FIN CORP - My Loan Profile</h2>
+            <h2>VEL FIN CORP - Secure Borrower Portal</h2>
             <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
 
         <div id="portalContent">
-            <!-- Borrower details will load dynamically here -->
+            <!-- Dynamic Data -->
         </div>
 
         <div class="action-actions" id="actionButtons" style="display:none;">
@@ -127,7 +176,6 @@
     </div>
 
     <script>
-        // Prevent back/forward cache browsing after logout
         window.pageshow = function(event) {
             if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
                 window.location.replace('login.html');
@@ -147,8 +195,13 @@
             const actionButtons = document.getElementById('actionButtons');
 
             let borrowers = [];
+            let personalLoans = [];
+            let creditVaultLoans = [];
+            
             try {
                 borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
+                personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
+                creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
             } catch(e) {
                 borrowers = [];
             }
@@ -158,31 +211,14 @@
             if (!borrower && loggedInUser) {
                 borrower = {
                     borrowerId: "VFC/001/2026",
-                    name: "Customer (" + loggedInUser + ")",
+                    name: "Ravichandran C",
                     phone: loggedInUser,
                     whatsapp: loggedInUser,
-                    aadhar: "9276 1008 2463",
-                    pan: "HPHPR9283H",
+                    aadhar: "9276 1008 ****",
+                    pan: "HPHPR****H",
                     occupation: "Business",
                     city: "Sengam, Tamil Nadu",
-                    address: "117, Elagunni, Mariayman koil Street",
-                    relationship: "Son of",
-                    relativeName: "Durairaj",
-                    nominee: "Durairaj",
-                    nomineePhone: "9787762734",
-                    loanDate: "13-Oct-2026",
-                    paymentMethod: "e - NACH",
-                    bankName: "State Bank of India",
-                    accountHolder: "Customer",
-                    accountNumber: "384729104321",
-                    ifsc: "SBIN0001234",
-                    upiId: "-",
-                    photo: "customer-sample.jpg",
-                    aadharFront: "Aadhar_Front.jpg",
-                    aadharBack: "Aadhar_Back.jpg",
-                    panCard: "Pan_Card.jpg",
-                    rationCard: "Ration_Card.jpg",
-                    cibil: "CIBIL_Score.pdf"
+                    address: "117, Elagunni, Mariayman koil Street"
                 };
             }
 
@@ -193,34 +229,53 @@
 
             actionButtons.style.display = 'flex';
 
-            let paymentDetailsHTML = '';
-            if (borrower.paymentMethod === 'UPI') {
-                paymentDetailsHTML = `<tr><td>Payment Method</td><td>UPI</td></tr>
-                                      <tr><td>UPI ID</td><td>${borrower.upiId || '-'}</td></tr>`;
-            } else {
-                paymentDetailsHTML = `<tr><td>Payment Method</td><td>e - NACH (Bank Auto Debit)</td></tr>
-                                      <tr><td>Bank Name</td><td>${borrower.bankName || '-'}</td></tr>
-                                      <tr><td>Account Holder Name</td><td>${borrower.accountHolder || '-'}</td></tr>
-                                      <tr><td>Bank Account Number</td><td>${borrower.accountNumber || '-'}</td></tr>
-                                      <tr><td>IFSC Code</td><td>${borrower.ifsc || '-'}</td></tr>`;
-            }
+            let matchedLoan = personalLoans.concat(creditVaultLoans).find(l => l.borrowerName && l.borrowerName.includes(borrower.name)) || {
+                loanAmount: "10000",
+                installment: "1000",
+                weeklyEmi: "1000"
+            };
+
+            let emiAmt = parseFloat(matchedLoan.installment || matchedLoan.weeklyEmi || 1000);
+            let totalLoanAmt = parseFloat(matchedLoan.loanAmount || matchedLoan.productValue || 10000);
+
+            // Secure Dynamic UPI Intent Link (Company Bank details hidden from customer view)
+            const upiId = "velfincorp@sbi";
+            const payeeName = "VEL FIN CORP";
+            const upiPaymentUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${emiAmt}&cu=INR&tn=EMI_Payment`;
 
             portalContent.innerHTML = `
+                <!-- Financial Summary Cards -->
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h4>Total Loan Amount</h4>
+                        <div class="value">₹${totalLoanAmt.toFixed(2)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Current Due / EMI</h4>
+                        <div class="value" style="color: #2F855A;">₹${emiAmt.toFixed(2)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Account Status</h4>
+                        <div class="value" style="color: #2B6CB0;">ACTIVE</div>
+                    </div>
+                </div>
+
+                <!-- Secure Online Payment Gateway Box -->
+                <div class="payment-box">
+                    <h3 style="margin-top:0; color: var(--navy); font-family: 'Cinzel', serif;"><i class="fas fa-shield-alt"></i> Secure Online EMI Payment</h3>
+                    <p style="font-size: 13px; color: #475569; margin-bottom: 10px;">Pay your active installment securely using your preferred UPI app (GPay, PhonePe, Paytm, etc.).</p>
+                    <a href="${upiPaymentUrl}" class="btn-pay"><i class="fas fa-rupee-sign"></i> Pay ₹${emiAmt.toFixed(2)} Securely</a>
+                </div>
+
+                <!-- Borrower Personal Profile (No Bank Account Security Breach) -->
                 <table class="profile-table">
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Information</th></tr>
                     <tr><td>Borrower ID</td><td>${borrower.borrowerId || '-'}</td></tr>
                     <tr><td>Customer Name</td><td>${borrower.name || '-'}</td></tr>
+                    <tr><td>Phone Number</td><td>${borrower.phone || borrower.whatsapp || '-'}</td></tr>
                     <tr><td>Aadhar Number</td><td>${borrower.aadhar || '-'}</td></tr>
                     <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
-                    <tr><td>Phone Number</td><td>${borrower.phone || '-'}</td></tr>
-                    <tr><td>WhatsApp</td><td>${borrower.whatsapp || '-'}</td></tr>
-                    <tr><td>Relationship</td><td>${borrower.relationship || '-'} (${borrower.relativeName || '-'})</td></tr>
-                    <tr><td>Occupation & Job</td><td>${borrower.occupation || '-'}</td></tr>
-                    <tr><td>Address</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
-                    <tr><td>Nominee Details</td><td>${borrower.nominee || '-'} (${borrower.nomineePhone || '-'})</td></tr>
-                    <tr><td>Loan Date</td><td>${borrower.loanDate || '-'}</td></tr>
-                    ${paymentDetailsHTML}
-                    <tr><td>Customer Photo</td><td><span style="color: #2F855A; font-weight: bold;"><i class="fas fa-image"></i> ${borrower.photo || 'Uploaded Photo.jpg'}</span></td></tr>
-                    <tr><td>Documents Uploaded</td><td><span style="color: #2B6CB0;"><i class="fas fa-file-pdf"></i> Aadhar, PAN, Ration Card & CIBIL verified</span></td></tr>
+                    <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
                 </table>
             `;
         });
@@ -238,7 +293,7 @@
 
             const opt = {
                 margin:       10,
-                filename:     'My_Loan_Profile.pdf',
+                filename:     'Borrower_Secure_Profile.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2 },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
