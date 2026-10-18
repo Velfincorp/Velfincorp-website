@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -23,9 +22,7 @@
             };
 
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) {
-                return; 
-            }
+            if (publicPages.includes(currentPage)) return;
 
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
@@ -60,7 +57,6 @@
             display: flex;
             min-height: 100vh;
         }
-        /* Left Sidebar Menu */
         .sidebar {
             width: 260px;
             background-color: var(--primary-navy);
@@ -145,7 +141,6 @@
             box-sizing: border-box;
         }
 
-        /* Main Content Area */
         .main-content {
             margin-left: 260px;
             flex: 1;
@@ -246,30 +241,23 @@
             <h2>VEL FIN CORP</h2>
             <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px; font-family: 'Cinzel', serif;">Payment Collection & Receipt</h3>
 
-            <form id="paymentForm" onsubmit="return validatePayment(event)">
+            <form id="paymentForm" onsubmit="validatePayment(event)">
                 
                 <div class="form-group">
                     <label>Borrowers Name *</label>
-                    <select id="Borrowers_Name" onchange="loadLoanDetails()" required>
+                    <select id="Borrowers_Name" required>
                         <option value="">-Select Borrower-</option>
-                        <option value="cust1">Ravichandran Chennan (VPL/022/2026)</option>
-                        <option value="cust2">Thowlath Basha Rjka (VPL/017/2026)</option>
+                        <option value="Mr. Rajapriyan D (VFC/001/2026)" data-phone="8778003840">Mr. Rajapriyan D (VFC/001/2026)</option>
+                        <option value="Mr. Ravichandran C (VFC/002/2026)" data-phone="9876543210">Mr. Ravichandran C (VFC/002/2026)</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Personal Loan</label>
-                    <select id="Personal_Loan" onchange="calculateDelay()">
-                        <option value="">-Select Personal Loan-</option>
-                        <option value="pl1" data-duedate="2026-10-10">VPL/022/2026 (Due: 10-Oct-2026)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Credit Vault</label>
-                    <select id="Credit_Vault" onchange="calculateDelay()">
-                        <option value="">-Select Credit Vault Loan-</option>
-                        <option value="cv1" data-duedate="2026-10-05">VML-001/2026 (Due: 05-Oct-2026)</option>
+                    <label>Loan ID (Personal / Credit Vault) *</label>
+                    <select id="Loan_ID" onchange="calculateDelay()" required>
+                        <option value="">-Select Loan ID-</option>
+                        <option value="VPL/022/2026" data-duedate="2026-10-10">VPL/022/2026 (Due: 10-Oct-2026)</option>
+                        <option value="VML-001/2026" data-duedate="2026-10-05">VML-001/2026 (Due: 05-Oct-2026)</option>
                     </select>
                 </div>
 
@@ -280,27 +268,27 @@
 
                 <div class="form-group">
                     <label>Paid Amount (₹) *</label>
-                    <input type="number" id="Paid_Amount" step="0.01" required>
+                    <input type="number" id="Paid_Amount" step="0.01" oninput="calculateBalance()" required>
                 </div>
 
                 <div class="form-group">
                     <label>Balance Amount (₹)</label>
-                    <input type="number" id="Balance_Amount" readonly>
+                    <input type="number" id="Balance_Amount" readonly style="background: #f1f5f9;">
                 </div>
 
                 <div class="form-group">
                     <label>Paid Installment *</label>
-                    <input type="number" id="Paid_Installment" readonly>
+                    <input type="number" id="Paid_Installment" value="1" readonly style="background: #f1f5f9;">
                 </div>
 
                 <div class="form-group">
                     <label>Remaining Installment *</label>
-                    <input type="number" id="Remaining_Installment" readonly>
+                    <input type="number" id="Remaining_Installment" value="9" readonly style="background: #f1f5f9;">
                 </div>
 
                 <div class="form-group">
                     <label>Delayed Details *</label>
-                    <input type="text" id="Delayed_Details" value="0 Days" readonly style="font-weight: bold; color: #DC3545;">
+                    <input type="text" id="Delayed_Details" value="0 Days" readonly style="font-weight: bold; color: #DC3545; background: #f1f5f9;">
                 </div>
 
                 <div class="form-group">
@@ -309,37 +297,35 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Status *</label>
-                    <input type="text" id="Status" readonly placeholder="ACTIVE / CLOSED">
+                    <label>Payment Mode *</label>
+                    <select id="Payment_Mode" required>
+                        <option value="e-NACH">e-NACH</option>
+                        <option value="Cash">Cash</option>
+                        <option value="UPI / QR">UPI / QR</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                    </select>
                 </div>
 
-                <button type="submit" class="btn-submit">Submit Payment</button>
+                <div class="form-group">
+                    <label>Status *</label>
+                    <input type="text" id="Status" readonly value="ACTIVE" style="background: #f1f5f9;">
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Payment & Send WhatsApp Receipt</button>
             </form>
         </div>
     </div>
 
     <script>
-        // Set current date automatically
         document.getElementById('Date_field').valueAsDate = new Date();
 
-        // Auto-calculate delay days based on Due Date and Payment Date
         function calculateDelay() {
-            const plSelect = document.getElementById('Personal_Loan');
-            const cvSelect = document.getElementById('Credit_Vault');
-            let selectedOption = null;
-
-            if (plSelect.value) {
-                selectedOption = plSelect.options[plSelect.selectedIndex];
-            } else if (cvSelect.value) {
-                selectedOption = cvSelect.options[cvSelect.selectedIndex];
-            }
+            const loanSelect = document.getElementById('Loan_ID');
+            let selectedOption = loanSelect.options[loanSelect.selectedIndex];
 
             if (selectedOption && selectedOption.dataset.duedate) {
-                const dueDateStr = selectedOption.dataset.duedate;
-                const dueDate = new Date(dueDateStr);
-                const paymentDateVal = document.getElementById('Date_field').value;
-                const paymentDate = new Date(paymentDateVal);
-
+                const dueDate = new Date(selectedOption.dataset.duedate);
+                const paymentDate = new Date(document.getElementById('Date_field').value);
                 const diffTime = paymentDate - dueDate;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -353,25 +339,63 @@
             }
         }
 
-        function loadLoanDetails() {
-            document.getElementById('Paid_Amount').value = "1000.00";
-            document.getElementById('Balance_Amount').value = "5000.00";
-            document.getElementById('Paid_Installment').value = "5";
-            document.getElementById('Remaining_Installment').value = "5";
-            document.getElementById('Status').value = "ACTIVE";
-            calculateDelay();
+        function calculateBalance() {
+            let paid = parseFloat(document.getElementById('Paid_Amount').value) || 0;
+            let totalLoan = 10000.00; // Standard sample total loan amount
+            let balance = totalLoan - paid;
+            if (balance < 0) balance = 0;
+            document.getElementById('Balance_Amount').value = balance.toFixed(2);
         }
 
         function validatePayment(event) {
-            const paidAmt = parseFloat(document.getElementById('Paid_Amount').value) || 0;
-            if (paidAmt <= 0) {
-                alert("தயவுசெய்து சரியான செலுத்தும் தொகையை உள்ளிடவும்!");
-                event.preventDefault();
-                return false;
+            event.preventDefault();
+
+            const borrowerSelect = document.getElementById('Borrowers_Name');
+            const borrowerName = borrowerSelect.value;
+            const borrowerPhone = borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone || "8778003840";
+            const loanId = document.getElementById('Loan_ID').value;
+            const paidAmount = document.getElementById('Paid_Amount').value;
+            const balanceAmount = document.getElementById('Balance_Amount').value;
+            const paymentDate = document.getElementById('Date_field').value;
+            const paymentMode = document.getElementById('Payment_Mode').value;
+            const delayDetails = document.getElementById('Delayed_Details').value;
+            const paidInst = document.getElementById('Paid_Installment').value;
+            const remInst = document.getElementById('Remaining_Installment').value;
+
+            if (!borrowerName || !loanId || parseFloat(paidAmount) <= 0) {
+                alert("தயவுசெய்து கஸ்டமர் பெயர், லோன் ஐடி மற்றும் சரியான தொகையை உள்ளிடவும்!");
+                return;
             }
 
-            alert("Payment recorded and WhatsApp receipt triggered successfully!");
-            return true;
+            // Generate Payment ID
+            const paymentId = "PAY/" + Math.floor(100 + Math.random() * 900) + "/2026";
+
+            // Save to LocalStorage for All Payments Report
+            let payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
+            payments.push({
+                paymentId: paymentId,
+                borrower: borrowerName,
+                phone: borrowerPhone,
+                loanId: loanId,
+                amount: paidAmount,
+                balance: balanceAmount,
+                date: paymentDate,
+                mode: paymentMode,
+                delay: delayDetails,
+                paidInst: paidInst,
+                remInst: remInst
+            });
+            localStorage.setItem('velfincorp_payments', JSON.stringify(payments));
+
+            alert("Payment recorded successfully and saved to All Payments Report!");
+
+            // Trigger WhatsApp Receipt Template
+            const message = `*VEL FIN CORP - PAYMENT RECEIPT*%0A----------------------------------%0APayment ID: ${paymentId}%0ABorrower: ${borrowerName}%0ALoan ID: ${loanId}%0AAmount Paid: ₹${paidAmount}%0ABalance: ₹${balanceAmount}%0ADate: ${paymentDate}%0AMode: ${paymentMode}%0ADelay: ${delayDetails}%0AStatus: Successful%0A----------------------------------%0AThank you for banking with Vel Fin Corp!`;
+            
+            window.open(`https://wa.me/91${borrowerPhone}?text=${message}`, '_blank');
+
+            document.getElementById('paymentForm').reset();
+            document.getElementById('Date_field').valueAsDate = new Date();
         }
 
         function handleLogout() {
