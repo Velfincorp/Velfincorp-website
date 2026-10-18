@@ -1,408 +1,131 @@
-<!DOCTYPE html>
-<html lang="ta">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Vel Fin Corp - Payment Collection</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        (function() {
-            const currentPage = window.location.pathname.split("/").pop() || "index.html";
-            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-            const userRole = sessionStorage.getItem('velfincorp_role');
+async function validatePayment(event) {
+    event.preventDefault();
 
-            window.pageshow = function(event) {
-                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
-                    window.location.replace('login.html');
+    const borrowerSelect = document.getElementById('Borrowers_Name');
+    const borrowerName = borrowerSelect.value;
+    const borrowerPhone = borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone || "8778003840";
+    const loanId = document.getElementById('Loan_ID').value;
+    const paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
+    const balanceAmount = parseFloat(document.getElementById('Balance_Amount').value) || 0;
+    const paymentDate = document.getElementById('Date_field').value;
+    const paymentMode = document.getElementById('Payment_Mode').value;
+    const delayDetails = document.getElementById('Delayed_Details').value;
+    const paidInst = document.getElementById('Paid_Installment').value;
+    const remInst = parseInt(document.getElementById('Remaining_Installment').value) || 0;
+
+    if (!borrowerName || !loanId || paidAmount <= 0) {
+        alert("தயவுசெய்து கஸ்டமர் பெயர், லோன் ஐடி மற்றும் சரியான தொகையை உள்ளிடவும்!");
+        return;
+    }
+
+    // 1. Payment ID உருவாக்கம்
+    const paymentId = "PAY/" + Math.floor(100 + Math.random() * 900) + "/2026";
+
+    // 2. LocalStorage-ல் ரிப்போர்ட்டுக்காக சேமித்தல்
+    let payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
+    payments.push({
+        paymentId: paymentId,
+        borrower: borrowerName,
+        phone: borrowerPhone,
+        loanId: loanId,
+        amount: paidAmount,
+        balance: balanceAmount,
+        date: paymentDate,
+        mode: paymentMode,
+        delay: delayDetails,
+        paidInst: paidInst,
+        remInst: remInst
+    });
+    localStorage.setItem('velfincorp_payments', JSON.stringify(payments));
+
+    // 3. MSG91 API மூலம் ஆட்டோமேட்டிக்காக வாட்ஸ்அப் மெசேஜ் அனுப்புவது
+    const authKey = "563191ANiWhsCHw6a8aff47P1"; 
+    const wabaNumber = "919486886293";   
+
+    let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
+    if (cleanMobile.length > 10) {
+        cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
+    }
+    const finalMobile = "91" + cleanMobile;
+
+    // லோன் வகை மற்றும் டிஸ்ப்ளே பெயர் நிர்ணயித்தல்
+    let loanTypeDisp = "பர்சனல் லோன்";
+    if (loanId.includes("VML")) {
+        loanTypeDisp = "பொருள் கடன் (Credit Vault)";
+    }
+
+    let templateName = "";
+    let componentsBody = {};
+
+    // 4. Zoho ஸ்கிரிப்ட் போல நிலவரத்திற்கு ஏற்ப டெம்ப்ளேட்டைத் தேர்ந்தெடுத்தல்
+    if (remInst <= 0 || balanceAmount <= 0) {
+        // === A. லோன் முடிவுற்ற டெம்ப்ளேட் (Loan Closed Template) ===
+        templateName = "vel_fin_loan_closed";
+        componentsBody = {
+            "body_1": { "type": "text", "value": borrowerName },
+            "body_2": { "type": "text", "value": loanTypeDisp },
+            "body_3": { "type": "text", "value": paidAmount.toString() },
+            "body_4": { "type": "text", "value": paymentDate },
+            "body_5": { "type": "text", "value": paidInst.toString() },
+            "body_6": { "type": "text", "value": "0" },
+            "body_7": { "type": "text", "value": "0.00" },
+            "body_8": { "type": "text", "value": "Completed" }
+        };
+    } else {
+        // === B. வழக்கமான பேமெண்ட் ரசீது டெம்ப்ளேட் (Payment Receipt Template) ===
+        templateName = "vel_fin_payment_receipt";
+        componentsBody = {
+            "body_1": { "type": "text", "value": borrowerName },
+            "body_2": { "type": "text", "value": loanTypeDisp },
+            "body_3": { "type": "text", "value": paidAmount.toString() },
+            "body_4": { "type": "text", "value": paymentDate },
+            "body_5": { "type": "text", "value": paidInst.toString() },
+            "body_6": { "type": "text", "value": remInst.toString() },
+            "body_7": { "type": "text", "value": balanceAmount.toString() },
+            "body_8": { "type": "text", "value": delayDetails }
+        };
+    }
+
+    const payload = {
+        "messaging_product": "whatsapp",
+        "type": "template",
+        "template": {
+            "name": templateName,
+            "language": {
+                "code": "ta",
+                "policy": "deterministic"
+            },
+            "to_and_components": [
+                {
+                    "to": [finalMobile],
+                    "components": componentsBody
                 }
-            };
-
-            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) return;
-
-            if (!loggedUser || !userRole) {
-                window.location.replace('login.html');
-                return;
-            }
-
-            if (userRole === 'borrower') {
-                if (currentPage !== 'borrower-portal.html') {
-                    window.location.replace('borrower-portal.html');
-                }
-            } else {
-                if (currentPage === 'borrower-portal.html') {
-                    window.location.replace('dashboard.html');
-                }
-            }
-        })();
-    </script>
-    <style>
-        :root {
-            --primary-navy: #0F1D36;
-            --accent-gold: #C5A059;
-            --bg-light: #F8F9FB;
-            --text-dark: #2D3748;
-            --white: #FFFFFF;
-            --danger: #C53030;
+            ]
         }
-        body {
-            font-family: 'Manrope', Arial, sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text-dark);
-            margin: 0;
-            display: flex;
-            min-height: 100vh;
-        }
-        .sidebar {
-            width: 260px;
-            background-color: var(--primary-navy);
-            color: var(--white);
-            display: flex;
-            flex-direction: column;
-            border-right: 3px solid var(--accent-gold);
-            position: fixed;
-            height: 100vh;
-            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
-            overflow-y: auto;
-        }
-        .sidebar-brand {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0,0,0,0.1);
-        }
-        .sidebar-logo {
-            height: 40px;
-            width: 40px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 2px solid var(--accent-gold);
-            background: var(--white);
-            padding: 2px;
-        }
-        .sidebar-title {
-            font-family: 'Cinzel', serif;
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--accent-gold);
-            letter-spacing: 1px;
-        }
-        .sidebar-menu {
-            list-style: none;
-            padding: 15px 0;
-            margin: 0;
-            flex: 1;
-        }
-        .sidebar-menu li a {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px 25px;
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: 0.3s;
-            border-left: 4px solid transparent;
-        }
-        .sidebar-menu li a:hover, .sidebar-menu li a.active {
-            background-color: rgba(197, 160, 89, 0.15);
-            color: var(--accent-gold);
-            border-left-color: var(--accent-gold);
-        }
-        .sidebar-menu li a i {
-            width: 20px;
-            text-align: center;
-            color: var(--accent-gold);
-        }
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-        .btn-logout {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 10px;
-            width: 100%;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            box-sizing: border-box;
-        }
+    };
 
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: 40px;
-            box-sizing: border-box;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(11, 29, 58, 0.1);
-            border-top: 5px solid var(--primary-navy);
-        }
-        h2 {
-            text-align: center;
-            color: var(--primary-navy);
-            font-family: 'Cinzel', serif;
-            margin-bottom: 5px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--primary-navy);
-            font-size: 13px;
-        }
-        input, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        input:focus, select:focus {
-            border-color: var(--accent-gold);
-            outline: none;
-        }
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .checkbox-group input {
-            width: auto;
-        }
-        .btn-submit {
-            background-color: var(--primary-navy);
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .btn-submit:hover {
-            background-color: var(--accent-gold);
-            color: var(--primary-navy);
-        }
-    </style>
-</head>
-<body>
+    try {
+        const response = await fetch("https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/", {
+            method: "POST",
+            headers: {
+                "authkey": authKey,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "integrated_number": wabaNumber,
+                "content_type": "template",
+                "payload": payload
+            })
+        });
 
-    <!-- Left Sidebar Menu -->
-    <div class="sidebar">
-        <div class="sidebar-brand">
-            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
-            <div class="sidebar-title">VEL FIN CORP</div>
-        </div>
-        <ul class="sidebar-menu">
-            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
-            <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
-            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
-            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
-            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
-            <li><a href="payments.html" class="active"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
-            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
-            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
-            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
-            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
-            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
-        </ul>
-        <div class="sidebar-footer">
-            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
-        </div>
-    </div>
+        const result = await response.json();
+        console.log("MSG91 Response:", result);
+        alert("Payment submitted successfully and WhatsApp receipt sent automatically via MSG91!");
+    } catch (error) {
+        console.error("Error sending WhatsApp message:", error);
+        alert("Payment saved to report, but automated WhatsApp dispatch failed due to network.");
+    }
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="container">
-            <h2>VEL FIN CORP</h2>
-            <h3 style="text-align: center; color: var(--accent-gold); margin-top: -15px; margin-bottom: 25px; font-family: 'Cinzel', serif;">Payment Collection & Receipt</h3>
-
-            <form id="paymentForm" onsubmit="validatePayment(event)">
-                
-                <div class="form-group">
-                    <label>Borrowers Name *</label>
-                    <select id="Borrowers_Name" required>
-                        <option value="">-Select Borrower-</option>
-                        <option value="Mr. Rajapriyan D (VFC/001/2026)" data-phone="8778003840">Mr. Rajapriyan D (VFC/001/2026)</option>
-                        <option value="Mr. Ravichandran C (VFC/002/2026)" data-phone="9876543210">Mr. Ravichandran C (VFC/002/2026)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Loan ID (Personal / Credit Vault) *</label>
-                    <select id="Loan_ID" onchange="calculateDelay()" required>
-                        <option value="">-Select Loan ID-</option>
-                        <option value="VPL/022/2026" data-duedate="2026-10-10">VPL/022/2026 (Due: 10-Oct-2026)</option>
-                        <option value="VML-001/2026" data-duedate="2026-10-05">VML-001/2026 (Due: 05-Oct-2026)</option>
-                    </select>
-                </div>
-
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="Pre_Create_Loan">
-                    <label for="Pre_Create_Loan" style="margin-bottom: 0;">Pre Close Loan</label>
-                </div>
-
-                <div class="form-group">
-                    <label>Paid Amount (₹) *</label>
-                    <input type="number" id="Paid_Amount" step="0.01" oninput="calculateBalance()" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Balance Amount (₹)</label>
-                    <input type="number" id="Balance_Amount" readonly style="background: #f1f5f9;">
-                </div>
-
-                <div class="form-group">
-                    <label>Paid Installment *</label>
-                    <input type="number" id="Paid_Installment" value="1" readonly style="background: #f1f5f9;">
-                </div>
-
-                <div class="form-group">
-                    <label>Remaining Installment *</label>
-                    <input type="number" id="Remaining_Installment" value="9" readonly style="background: #f1f5f9;">
-                </div>
-
-                <div class="form-group">
-                    <label>Delayed Details *</label>
-                    <input type="text" id="Delayed_Details" value="0 Days" readonly style="font-weight: bold; color: #DC3545; background: #f1f5f9;">
-                </div>
-
-                <div class="form-group">
-                    <label>Date *</label>
-                    <input type="date" id="Date_field" onchange="calculateDelay()" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Payment Mode *</label>
-                    <select id="Payment_Mode" required>
-                        <option value="e-NACH">e-NACH</option>
-                        <option value="Cash">Cash</option>
-                        <option value="UPI / QR">UPI / QR</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Status *</label>
-                    <input type="text" id="Status" readonly value="ACTIVE" style="background: #f1f5f9;">
-                </div>
-
-                <button type="submit" class="btn-submit">Submit Payment & Send WhatsApp Receipt</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        document.getElementById('Date_field').valueAsDate = new Date();
-
-        function calculateDelay() {
-            const loanSelect = document.getElementById('Loan_ID');
-            let selectedOption = loanSelect.options[loanSelect.selectedIndex];
-
-            if (selectedOption && selectedOption.dataset.duedate) {
-                const dueDate = new Date(selectedOption.dataset.duedate);
-                const paymentDate = new Date(document.getElementById('Date_field').value);
-                const diffTime = paymentDate - dueDate;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                if (diffDays > 0) {
-                    document.getElementById('Delayed_Details').value = diffDays + " Days Delayed";
-                } else {
-                    document.getElementById('Delayed_Details').value = "0 Days (On Time)";
-                }
-            } else {
-                document.getElementById('Delayed_Details').value = "0 Days";
-            }
-        }
-
-        function calculateBalance() {
-            let paid = parseFloat(document.getElementById('Paid_Amount').value) || 0;
-            let totalLoan = 10000.00; // Standard sample total loan amount
-            let balance = totalLoan - paid;
-            if (balance < 0) balance = 0;
-            document.getElementById('Balance_Amount').value = balance.toFixed(2);
-        }
-
-        function validatePayment(event) {
-            event.preventDefault();
-
-            const borrowerSelect = document.getElementById('Borrowers_Name');
-            const borrowerName = borrowerSelect.value;
-            const borrowerPhone = borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone || "8778003840";
-            const loanId = document.getElementById('Loan_ID').value;
-            const paidAmount = document.getElementById('Paid_Amount').value;
-            const balanceAmount = document.getElementById('Balance_Amount').value;
-            const paymentDate = document.getElementById('Date_field').value;
-            const paymentMode = document.getElementById('Payment_Mode').value;
-            const delayDetails = document.getElementById('Delayed_Details').value;
-            const paidInst = document.getElementById('Paid_Installment').value;
-            const remInst = document.getElementById('Remaining_Installment').value;
-
-            if (!borrowerName || !loanId || parseFloat(paidAmount) <= 0) {
-                alert("தயவுசெய்து கஸ்டமர் பெயர், லோன் ஐடி மற்றும் சரியான தொகையை உள்ளிடவும்!");
-                return;
-            }
-
-            // Generate Payment ID
-            const paymentId = "PAY/" + Math.floor(100 + Math.random() * 900) + "/2026";
-
-            // Save to LocalStorage for All Payments Report
-            let payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
-            payments.push({
-                paymentId: paymentId,
-                borrower: borrowerName,
-                phone: borrowerPhone,
-                loanId: loanId,
-                amount: paidAmount,
-                balance: balanceAmount,
-                date: paymentDate,
-                mode: paymentMode,
-                delay: delayDetails,
-                paidInst: paidInst,
-                remInst: remInst
-            });
-            localStorage.setItem('velfincorp_payments', JSON.stringify(payments));
-
-            alert("Payment recorded successfully and saved to All Payments Report!");
-
-            // Trigger WhatsApp Receipt Template
-            const message = `*VEL FIN CORP - PAYMENT RECEIPT*%0A----------------------------------%0APayment ID: ${paymentId}%0ABorrower: ${borrowerName}%0ALoan ID: ${loanId}%0AAmount Paid: ₹${paidAmount}%0ABalance: ₹${balanceAmount}%0ADate: ${paymentDate}%0AMode: ${paymentMode}%0ADelay: ${delayDetails}%0AStatus: Successful%0A----------------------------------%0AThank you for banking with Vel Fin Corp!`;
-            
-            window.open(`https://wa.me/91${borrowerPhone}?text=${message}`, '_blank');
-
-            document.getElementById('paymentForm').reset();
-            document.getElementById('Date_field').valueAsDate = new Date();
-        }
-
-        function handleLogout() {
-            sessionStorage.clear();
-            localStorage.removeItem('velfincorp_logged_user');
-            window.location.replace('login.html');
-        }
-    </script>
-</body>
-</html>
+    document.getElementById('paymentForm').reset();
+    document.getElementById('Date_field').valueAsDate = new Date();
+}
