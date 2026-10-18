@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Vel Fin Corp - WhatsApp Reminders & Alerts</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        (function() {
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+            if (!loggedUser || userRole === 'borrower') {
+                window.location.replace('login.html');
+            }
+        })();
+    </script>
+    <style>
+        :root {
+            --navy: #0F1D36;
+            --gold: #C5A059;
+            --bg-color: #F8F9FB;
+            --text-main: #2D3748;
+            --white: #FFFFFF;
+            --danger: #C53030;
+            --success: #2F855A;
+        }
+        body {
+            font-family: 'Manrope', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 260px;
+            background-color: var(--navy);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            border-right: 3px solid var(--gold);
+            position: fixed;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0,0,0,0.1);
+        }
+        .sidebar-logo {
+            height: 40px;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            background: var(--white);
+            padding: 2px;
+        }
+        .sidebar-title {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 15px 0;
+            margin: 0;
+            flex: 1;
+        }
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 25px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active {
+            background-color: rgba(197, 160, 89, 0.15);
+            color: var(--gold);
+            border-left-color: var(--gold);
+        }
+        .sidebar-menu li a i {
+            width: 20px;
+            text-align: center;
+            color: var(--gold);
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .btn-logout {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08);
+            border-top: 5px solid var(--navy);
+        }
+        .header {
+            font-family: 'Cinzel', serif;
+            color: var(--navy);
+            font-size: 24px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-trigger {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-trigger:hover {
+            background-color: #276749;
+        }
+        .info-box {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Left Sidebar Menu -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-title">VEL FIN CORP</div>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
+            <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
+            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
+            <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
+            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
+            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="reminders.html" class="active"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
+            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <span>WhatsApp Reminders & Alerts</span>
+                <button class="btn-trigger" onclick="runAutomaticReminders()"><i class="fas fa-paper-plane"></i> Run System Reminders</button>
+            </div>
+
+            <div class="info-box">
+                <strong>Logic Check:</strong> This script automatically checks active loans. If tomorrow is the due date, it sends an <strong>Advance Reminder</strong> (`vel_fin_advance_reminder`). If the due date has passed and payment is not made, it sends a **Delay Alert** (`vel_fin_delay_alert`) with the exact number of overdue days.
+            </div>
+
+            <div id="reminderLog" style="font-family: monospace; background: #0f1d36; color: #38bdf8; padding: 15px; border-radius: 6px; min-height: 180px; max-height: 350px; overflow-y: auto;">
+                [System Ready] Click 'Run System Reminders' to process due dates and trigger automated WhatsApp alerts...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function runAutomaticReminders() {
+            const logBox = document.getElementById('reminderLog');
+            logBox.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Starting automated loan due date check...`;
+
+            const authKey = "563191ANiWhsCHw6a8aff47P1";
+            const wabaNumber = "784780864652082";
+
+            let personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
+            let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
+            let allLoans = personalLoans.concat(creditVaultLoans);
+
+            if (allLoans.length === 0) {
+                logBox.innerHTML += `<br>[Info] No active loans found in storage to evaluate.`;
+                return;
+            }
+
+            // இன்றைய தேதி (Today) மற்றும் நாளைக்கான தேதி (Tomorrow) கணக்கீடு
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            for (let loan of allLoans) {
+                let customerName = loan.borrowerName || "Customer";
+                let customerPhone = loan.phone || loan.whatsapp || "8778003840";
+                let emi = loan.installment || loan.weeklyEmi || "1000";
+                let loanType = loan.loanType || loan.productName || "Weekly";
+                
+                // லோன் தொடங்கும் தேதி அல்லது அடுத்த டியூ தேதியை எடுத்தல்
+                let loanDateStr = loan.loanDate || loan.date || new Date().toISOString().split('T')[0];
+                let dueDate = new Date(loanDateStr);
+                dueDate.setHours(0, 0, 0, 0);
+
+                let cleanMobile = customerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
+                if (cleanMobile.length > 10) {
+                    cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
+                }
+                const finalMobile = "91" + cleanMobile;
+
+                let templateName = "";
+                let components = {};
+
+                // 1. நாளைக்கு டியூ என்றால் -> Advance Reminder (1 நாள் முன்பு)
+                if (dueDate.getTime() === tomorrow.getTime()) {
+                    templateName = "vel_fin_advance_reminder";
+                    const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
+                    let dueDayName = daysOfWeek[dueDate.getDay()];
+                    let dueDateFormatted = dueDate.toLocaleDateString('en-GB');
+
+                    components = {
+                        "body_1": { "type": "text", "value": customerName },
+                        "body_2": { "type": "text", "value": loanType },
+                        "body_3": { "type": "text", "value": dueDayName },
+                        "body_4": { "type": "text", "value": dueDateFormatted },
+                        "body_5": { "type": "text", "value": "1" },
+                        "body_6": { "type": "text", "value": emi.toString() }
+                    };
+                } 
+                // 2. டியூ தேதி தாண்டிவிட்டால் (Delay) -> Delay Alert (தாமதத் தொகை நாட்களுடன்)
+                else if (dueDate.getTime() < today.getTime()) {
+                    const diffTime = Math.abs(today - dueDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    templateName = "vel_fin_delay_alert";
+                    components = {
+                        "body_1": { "type": "text", "value": customerName },
+                        "body_2": { "type": "text", "value": loanType },
+                        "body_3": { "type": "text", "value": diffDays.toString() },
+                        "body_4": { "type": "text", "value": "1" },
+                        "body_5": { "type": "text", "value": emi.toString() },
+                        "body_6": { "type": "text", "value": "5" }
+                    };
+                }
+
+                // பொருத்தமான டெம்ப்ளேட் இருந்தால் MSG91 API-க்கு அனுப்புதல்
+                if (templateName) {
+                    const payload = {
+                        "messaging_product": "whatsapp",
+                        "type": "template",
+                        "template": {
+                            "name": templateName,
+                            "language": { "code": "ta", "policy": "deterministic" },
+                            "namespace": "dc938b84_8f2e_4371_9a2e_11c1f8a734e8",
+                            "to_and_components": [
+                                {
+                                    "to": [finalMobile],
+                                    "components": components
+                                }
+                            ]
+                        }
+                    };
+
+                    try {
+                        const response = await fetch("https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/", {
+                            method: "POST",
+                            headers: {
+                                "authkey": authKey,
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                "integrated_number": wabaNumber,
+                                "content_type": "template",
+                                "payload": payload
+                            })
+                        });
+
+                        const result = await response.json();
+                        logBox.innerHTML += `<br><span style="color: #4ade80;">[Success] ${templateName} sent to ${customerName} (${finalMobile})</span>`;
+                    } catch (err) {
+                        logBox.innerHTML += `<br><span style="color: #f87171;">[Error] Failed for ${customerName}: ${err.message}</span>`;
+                    }
+                } else {
+                    logBox.innerHTML += `<br>[Skipped] No reminder due today for ${customerName}`;
+                }
+            }
+            logBox.innerHTML += `<br><strong>[Completed] Automated due date scan finished.</strong>`;
+        }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
+        }
+    </script>
+</body>
+</html>
