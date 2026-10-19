@@ -214,7 +214,7 @@
                     name: "Ravichandran C",
                     phone: loggedInUser,
                     whatsapp: loggedInUser,
-                    aadhar: "9276 1008 ****",
+                    aadhar: "[Aadhaar Redacted]",
                     pan: "HPHPR****H",
                     occupation: "Business",
                     city: "Sengam, Tamil Nadu",
@@ -238,7 +238,6 @@
             let emiAmt = parseFloat(matchedLoan.installment || matchedLoan.weeklyEmi || 1000);
             let totalLoanAmt = parseFloat(matchedLoan.loanAmount || matchedLoan.productValue || 10000);
 
-            // Secure Dynamic UPI Intent Link (Company Bank details hidden from customer view)
             const upiId = "velfincorp@sbi";
             const payeeName = "VEL FIN CORP";
             const upiPaymentUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${emiAmt}&cu=INR&tn=EMI_Payment`;
@@ -267,13 +266,13 @@
                     <a href="${upiPaymentUrl}" class="btn-pay"><i class="fas fa-rupee-sign"></i> Pay ₹${emiAmt.toFixed(2)} Securely</a>
                 </div>
 
-                <!-- Borrower Personal Profile (No Bank Account Security Breach) -->
+                <!-- Borrower Personal Profile -->
                 <table class="profile-table">
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Information</th></tr>
                     <tr><td>Borrower ID</td><td>${borrower.borrowerId || '-'}</td></tr>
                     <tr><td>Customer Name</td><td>${borrower.name || '-'}</td></tr>
                     <tr><td>Phone Number</td><td>${borrower.phone || borrower.whatsapp || '-'}</td></tr>
-                    <tr><td>Aadhar Number</td><td>${borrower.aadhar || '-'}</td></tr>
+                    <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
                     <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
                     <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
                 </table>
