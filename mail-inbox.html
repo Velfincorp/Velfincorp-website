@@ -1,12 +1,52 @@
 <!DOCTYPE html>
-<html lang="ta">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Support Mail Inbox</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        // Centralized Authentication & Security Protection Script
+        (function() {
+            const currentPage = window.location.pathname.split("/").pop() || "index.html";
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+
+            window.pageshow = function(event) {
+                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                    window.location.replace('login.html');
+                }
+            };
+
+            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+            if (publicPages.includes(currentPage)) {
+                return; 
+            }
+
+            if (!loggedUser || !userRole) {
+                window.location.replace('login.html');
+                return;
+            }
+
+            if (userRole === 'borrower') {
+                window.location.replace('borrower-portal.html');
+            } else if (userRole === 'staff') {
+                // If staff, verify if they have access to 'Support Mail' module
+                let staffList = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+                let currentStaff = staffList.find(s => s.id === loggedUser);
+                if (!currentStaff || !currentStaff.permissions || (!currentStaff.permissions.includes('Support Mail') && !currentStaff.permissions.includes('mail-inbox.html'))) {
+                    alert("You do not have permission to access Support Mail Inbox!");
+                    window.location.replace('dashboard.html');
+                }
+            }
+        })();
+    </script>
+
     <style>
         :root {
             --navy: #0F1D36;
@@ -25,6 +65,7 @@
             display: flex;
             min-height: 100vh;
         }
+        /* Left Sidebar Menu */
         .sidebar {
             width: 260px;
             background-color: var(--navy);
@@ -108,6 +149,7 @@
             text-align: center;
             box-sizing: border-box;
         }
+        /* Main Content Area */
         .main-content {
             margin-left: 260px;
             flex: 1;
@@ -136,14 +178,15 @@
             margin-bottom: 25px;
             display: block;
         }
-        .mail-card {
+        .message-card {
             background: #f8fafc;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
-        .mail-header {
+        .message-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -151,16 +194,16 @@
             padding-bottom: 10px;
             margin-bottom: 12px;
         }
-        .sender-info {
+        .sender-name {
             font-weight: bold;
             color: var(--navy);
             font-size: 16px;
         }
-        .mail-date {
+        .msg-date {
             font-size: 12px;
             color: #64748b;
         }
-        .mail-body {
+        .msg-body {
             font-size: 14px;
             color: var(--text-main);
             margin-bottom: 15px;
@@ -198,7 +241,7 @@
             color: var(--success);
             font-weight: bold;
         }
-        .no-mail {
+        .no-messages {
             text-align: center;
             padding: 40px;
             color: #64748b;
@@ -217,6 +260,7 @@
         <ul class="sidebar-menu">
             <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
             <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
             <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
             <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
             <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
@@ -225,6 +269,7 @@
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
             <li><a href="mail-inbox.html" class="active"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
             <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
             <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
         </ul>
         <div class="sidebar-footer">
@@ -235,54 +280,33 @@
     <!-- Main Content -->
     <div class="main-content">
         <div class="container">
-            <div class="header-title"><i class="fas fa-inbox"></i> Support Mail Inbox</div>
-            <span class="support-email-badge">Official Mail Address: support@velfincorp.com</span>
+            <div class="header-title"><i class="fas fa-inbox"></i> Customer Support Messages</div>
+            <span class="support-email-badge">Inbox Linked to: support@velfincorp.com</span>
 
-            <div id="mailContainer">
-                <!-- Mails load dynamically -->
+            <div id="messagesContainer">
+                <!-- Messages will load dynamically here -->
             </div>
         </div>
     </div>
 
     <script>
-        // Access Control & Security Check
-        (function() {
-            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-            const userRole = sessionStorage.getItem('velfincorp_role');
-            
-            if (!loggedUser || userRole === 'borrower') {
-                window.location.replace('login.html');
-                return;
-            }
-
-            // If staff, verify if they have access to 'Support Mail' module
-            if (userRole === 'staff') {
-                let staffList = JSON.parse(localStorage.getItem('velfincorp_staffs') || '[]');
-                let currentStaff = staffList.find(s => s.phone === loggedUser);
-                if (!currentStaff || !currentStaff.modules || !currentStaff.modules.includes('Support Mail')) {
-                    alert("You do not have permission to access Support Mail Inbox!");
-                    window.location.replace('dashboard.html');
-                }
-            }
-        })();
-
         window.addEventListener('DOMContentLoaded', () => {
-            loadMails();
+            loadMessages();
         });
 
-        function loadMails() {
-            const container = document.getElementById('mailContainer');
-            let mails = [];
+        function loadMessages() {
+            const container = document.getElementById('messagesContainer');
             
+            let messages = [];
             try {
-                mails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
+                // Fetching from the same LocalStorage key where contact.html saves data
+                messages = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
             } catch(e) {
-                mails = [];
+                messages = [];
             }
 
-            // Sample Demo Mail if empty
-            if (mails.length === 0) {
-                mails = [
+            if (messages.length === 0) {
+                messages = [
                     {
                         name: "Karthik Raja",
                         email: "karthik@gmail.com",
@@ -292,50 +316,54 @@
                         reply: ""
                     }
                 ];
-                localStorage.setItem('velfincorp_support_mails', JSON.stringify(mails));
+                localStorage.setItem('velfincorp_support_mails', JSON.stringify(messages));
+            }
+
+            if (messages.length === 0) {
+                container.innerHTML = `<div class="no-messages"><i class="fas fa-check-circle" style="color: #2F855A; font-size: 24px;"></i><br>No new messages found in support inbox.</div>`;
+                return;
             }
 
             let html = '';
-            mails.forEach((mail, index) => {
+            messages.forEach((msg, index) => {
                 html += `
-                    <div class="mail-card">
-                        <div class="mail-header">
+                    <div class="message-card">
+                        <div class="message-header">
                             <div>
-                                <span class="sender-info">${mail.name}</span> 
-                                <span style="font-size: 13px; color: #64748b;">(${mail.email} | ${mail.phone})</span>
+                                <span class="sender-name">${msg.name}</span> 
+                                <span style="font-size: 13px; color: #64748b;">(${msg.email || '-'} | ${msg.phone})</span>
                             </div>
-                            <span class="mail-date"><i class="far fa-clock"></i> ${mail.date}</span>
+                            <span class="msg-date"><i class="far fa-clock"></i> ${msg.date || '-'}</span>
                         </div>
-                        <div class="mail-body">
-                            <strong>Query:</strong> ${mail.message}
+                        <div class="msg-body">
+                            <strong>Message:</strong> ${msg.message}
                         </div>
-                        ${mail.reply ? `<div class="reply-status"><i class="fas fa-reply"></i> <strong>Reply Sent:</strong> \${mail.reply}</div>` : `
+                        ${msg.reply ? `<div class="reply-status"><i class="fas fa-reply"></i> <strong>Admin Reply:</strong> \${msg.reply}</div>` : `
                             <div class="reply-box">
-                                <input type="text" id="replyInput_\${index}" class="reply-input" placeholder="Type your reply from support@velfincorp.com...">
-                                <button class="btn-reply" onclick="sendMailReply(\${index})">Send Reply</button>
+                                <input type="text" id="replyInput_\${index}" class="reply-input" placeholder="Type your reply to customer...">
+                                <button class="btn-reply" onclick="sendReply(\${index})">Send Reply</button>
                             </div>
                         `}
                     </div>
                 `;
             });
 
-            container.html = html; // Fixed property assignment below
             container.innerHTML = html;
         }
 
-        function sendMailReply(index) {
+        function sendReply(index) {
             const replyText = document.getElementById(`replyInput_${index}`).value.trim();
             if (!replyText) {
                 alert("தயவுசெய்து பதிலை உள்ளிடவும்!");
                 return;
             }
 
-            let mails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
-            if (mails[index]) {
-                mails[index].reply = replyText;
-                localStorage.setItem('velfincorp_support_mails', JSON.stringify(mails));
-                alert("மின்னஞ்சல் பதில் வெற்றிகரமாக அனுப்பப்பட்டது!");
-                loadMails();
+            let messages = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
+            if (messages[index]) {
+                messages[index].reply = replyText;
+                localStorage.setItem('velfincorp_support_mails', JSON.stringify(messages));
+                alert("பதில் வெற்றிகரமாக அனுப்பப்பட்டது!");
+                loadMessages();
             }
         }
 
