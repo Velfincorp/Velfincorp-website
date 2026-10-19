@@ -1,14 +1,37 @@
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <!DOCTYPE html>
 <html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Secure Portal Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        // Centralized Authentication & Security Protection Script
+        (function() {
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+
+            window.pageshow = function(event) {
+                if (event.persisted) {
+                    window.location.reload();
+                }
+            };
+
+            // If already logged in, redirect to respective portals automatically
+            if (loggedUser && userRole) {
+                if (userRole === 'borrower') {
+                    window.location.replace('borrower-portal.html');
+                } else {
+                    window.location.replace('dashboard.html');
+                }
+            }
+        })();
+    </script>
     <style>
         :root {
             --navy: #0F1D36;
@@ -123,13 +146,6 @@
     </div>
 
     <script>
-        // Prevent back cache issue on login page
-        window.pageshow = function(event) {
-            if (event.persisted) {
-                window.location.reload();
-            }
-        };
-
         function handleLogin(event) {
             event.preventDefault();
             const role = document.getElementById('userRole').value;
