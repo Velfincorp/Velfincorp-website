@@ -1,54 +1,45 @@
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<script>
-    // Centralized Authentication & Security Protection Script
-    (function() {
-        const currentPage = window.location.pathname.split("/").pop() || "index.html";
-        const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-        const userRole = sessionStorage.getItem('velfincorp_role');
-
-        // 1. Prevent back/forward cache browsing after logout
-        window.pageshow = function(event) {
-            if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
-                window.location.replace('login.html');
-            }
-        };
-
-        // 2. Public pages that don't require login
-        const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-        if (publicPages.includes(currentPage)) {
-            return; // Allow public access
-        }
-
-        // 3. If not logged in, redirect to login page immediately
-        if (!loggedUser || !userRole) {
-            window.location.replace('login.html');
-            return;
-        }
-
-        // 4. Role-based Access Control (RBAC) Enforcement
-        if (userRole === 'borrower') {
-            // Borrowers are ONLY allowed inside the borrower portal
-            if (currentPage !== 'borrower-portal.html') {
-                window.location.replace('borrower-portal.html');
-            }
-        } else {
-            // Admin and Staff are NOT allowed inside the borrower portal
-            if (currentPage === 'borrower-portal.html') {
-                window.location.replace('dashboard.html');
-            }
-        }
-    })();
-</script>
 <!DOCTYPE html>
 <html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Comprehensive Borrower Registration</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        (function() {
+            const currentPage = window.location.pathname.split("/").pop() || "index.html";
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+
+            window.pageshow = function(event) {
+                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                    window.location.replace('login.html');
+                }
+            };
+
+            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+            if (publicPages.includes(currentPage)) return;
+
+            if (!loggedUser || !userRole) {
+                window.location.replace('login.html');
+                return;
+            }
+
+            if (userRole === 'borrower') {
+                if (currentPage !== 'borrower-portal.html') {
+                    window.location.replace('borrower-portal.html');
+                }
+            } else {
+                if (currentPage === 'borrower-portal.html') {
+                    window.location.replace('dashboard.html');
+                }
+            }
+        })();
+    </script>
     <style>
         :root {
             --navy: #0F1D36;
@@ -253,10 +244,13 @@
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
+            <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
             <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
         </ul>
         <div class="sidebar-footer">
-            <a href="index.html" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
     </div>
 
@@ -530,99 +524,4 @@
         }
 
         function showHidePaymentDetails() {
-            const method = document.getElementById('Payment_Method').value;
-            const upiGroup = document.getElementById('upiGroup');
-            const bankFields = document.getElementById('bankFields');
-
-            if (method === 'UPI') {
-                upiGroup.classList.remove('hidden');
-                bankFields.classList.add('hidden');
-            } else if (method === 'e - NACH') {
-                upiGroup.classList.add('hidden');
-                bankFields.classList.remove('hidden');
-            } else {
-                upiGroup.classList.add('hidden');
-                bankFields.classList.add('hidden');
-            }
-        }
-
-        document.getElementById('PAN_NUMBER').addEventListener('input', function() {
-            this.value = this.value.toUpperCase();
-        });
-
-        document.getElementById('Aadhar_Number').addEventListener('input', function() {
-            let num = this.value.replace(/\D/g, '');
-            if (num.length > 12) num = num.slice(0, 12);
-            if (num.length > 8) {
-                this.value = num.slice(0, 4) + ' ' + num.slice(4, 8) + ' ' + num.slice(8, 12);
-            } else if (num.length > 4) {
-                this.value = num.slice(0, 4) + ' ' + num.slice(4);
-            } else {
-                this.value = num;
-            }
-        });
-
-        function validateAndSubmit(event) {
-            event.preventDefault();
-
-            const phone = document.getElementById('Phone_Number').value.trim();
-            const whatsapp = document.getElementById('Whatsapp_Number').value.trim();
-            if (phone.length !== 10 || isNaN(phone)) {
-                alert("Please enter a valid 10-digit Phone Number.");
-                return false;
-            }
-            if (whatsapp.length !== 10 || isNaN(whatsapp)) {
-                alert("Please enter a valid 10-digit WhatsApp Number.");
-                return false;
-            }
-
-            const getFileVal = (id) => {
-                const el = document.getElementById(id);
-                return el && el.files && el.files[0] ? el.files[0].name : 'Not Uploaded';
-            };
-
-            // Save complete borrower details into localStorage including DOB
-            let borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
-            borrowers.push({
-                borrowerId: document.getElementById('Borrower_ID').value,
-                issuedBy: document.getElementById('Issued_by').value,
-                loanDate: document.getElementById('Loan_Date').value,
-                name: (document.getElementById('Name_Prefix').value + ". " + document.getElementById('First_Name').value + " " + document.getElementById('Last_Name').value).trim(),
-                dob: document.getElementById('Date_Of_Birth').value,
-                relationship: document.getElementById('Relationship').value,
-                relativeName: document.getElementById('Relative_Name').value,
-                aadhar: document.getElementById('Aadhar_Number').value,
-                pan: document.getElementById('PAN_NUMBER').value,
-                phone: phone,
-                whatsapp: whatsapp,
-                nominee: document.getElementById('Nominee_Name').value,
-                nomineePhone: document.getElementById('Nominee_Contact_Number').value,
-                address: document.getElementById('Address_Line_1').value + (document.getElementById('Land_Mark').value ? ', ' + document.getElementById('Land_Mark').value : ''),
-                city: document.getElementById('City_District').value,
-                state: document.getElementById('State_Province').value,
-                pincode: document.getElementById('Postal_Code').value,
-                occupation: document.getElementById('Occupation').value,
-                jobNature: document.getElementById('Nature_of_the_Job').value,
-                paymentMethod: document.getElementById('Payment_Method').value,
-                upiId: document.getElementById('UPI_ID').value || '-',
-                bankName: document.getElementById('Bank_Name').value || '-',
-                accountHolder: document.getElementById('Account_Holder_Name').value || '-',
-                accountNumber: document.getElementById('Bank_Account_Number').value ? '********' + document.getElementById('Bank_Account_Number').value.slice(-4) : '-',
-                ifsc: document.getElementById('IFSC_Code').value || '-',
-                email: document.getElementById('Email').value || '-',
-                photo: getFileVal('Customer_Photo'),
-                aadharFront: getFileVal('Aadhar_Front'),
-                aadharBack: getFileVal('Aadhar_Back'),
-                panCard: getFileVal('Pan_Card'),
-                rationCard: getFileVal('Ration_Card'),
-                cibil: getFileVal('CIBIL_Score')
-            });
-            localStorage.setItem('velfincorp_borrowers', JSON.stringify(borrowers));
-
-            alert("Borrower complete details successfully registered and saved to database!");
-            document.getElementById('borrowerRegistrationForm').reset();
-            return true;
-        }
-    </script>
-</body>
-</html>
+            const
