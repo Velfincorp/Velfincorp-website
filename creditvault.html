@@ -9,6 +9,44 @@
     <title>Vel Fin Corp - Credit Vault (Loan Application)</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // Centralized Authentication & Security Protection Script
+        (function() {
+            const currentPage = window.location.pathname.split("/").pop() || "index.html";
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+
+            // 1. Prevent back/forward cache browsing after logout
+            window.pageshow = function(event) {
+                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                    window.location.replace('login.html');
+                }
+            };
+
+            // 2. Public pages that don't require login
+            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+            if (publicPages.includes(currentPage)) {
+                return; // Allow public access
+            }
+
+            // 3. If not logged in, redirect to login page immediately
+            if (!loggedUser || !userRole) {
+                window.location.replace('login.html');
+                return;
+            }
+
+            // 4. Role-based Access Control (RBAC) Enforcement
+            if (userRole === 'borrower') {
+                if (currentPage !== 'borrower-portal.html') {
+                    window.location.replace('borrower-portal.html');
+                }
+            } else {
+                if (currentPage === 'borrower-portal.html') {
+                    window.location.replace('dashboard.html');
+                }
+            }
+        })();
+    </script>
     <style>
         :root {
             --navy: #0F1D36;
@@ -198,16 +236,20 @@
         <ul class="sidebar-menu">
             <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
             <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
             <li><a href="creditvault.html" class="active"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
             <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
             <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
+            <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
             <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
         </ul>
         <div class="sidebar-footer">
-            <a href="index.html" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
     </div>
 
@@ -438,7 +480,7 @@
             const tenureWeeks = document.getElementById('Tenure_Weeks').value;
             const loanId = document.getElementById('Loan_ID').value;
 
-            // 1. LocalStorage-ல் சேமித்தல்
+            // LocalStorage-ல் சேமித்தல்
             let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
             creditVaultLoans.push({
                 loanId: loanId,
@@ -453,7 +495,7 @@
             });
             localStorage.setItem('velfincorp_creditvault', JSON.stringify(creditVaultLoans));
 
-            // 2. MSG91 API மூலம் Welcome Message அனுப்புவது
+            // MSG91 API மூலம் Welcome Message அனுப்புவது
             const authKey = "563191ANiWhsCHw6a8aff47P1"; 
             const wabaNumber = "919486886293";   
             const templateName = "vel_fin_welcome_message";
@@ -533,6 +575,12 @@
 
             document.getElementById('creditVaultForm').reset();
             return true;
+        }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
         }
     </script>
 </body>
