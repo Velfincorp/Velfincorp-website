@@ -59,6 +59,100 @@
             color: var(--text-main);
             margin: 0;
             padding: 20px;
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 260px;
+            background-color: var(--navy);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            border-right: 3px solid var(--gold);
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0,0,0,0.1);
+        }
+        .sidebar-logo {
+            height: 40px;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            background: var(--white);
+            padding: 2px;
+        }
+        .sidebar-title {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 15px 0;
+            margin: 0;
+            flex: 1;
+        }
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 25px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active {
+            background-color: rgba(197, 160, 89, 0.15);
+            color: var(--gold);
+            border-left-color: var(--gold);
+        }
+        .sidebar-menu li a i {
+            width: 20px;
+            text-align: center;
+            color: var(--gold);
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .btn-logout {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 20px 40px;
+            box-sizing: border-box;
+            width: calc(100% - 260px);
         }
         .container {
             max-width: 1000px;
@@ -203,223 +297,257 @@
 </head>
 <body>
 
-<div class="container">
-    <div class="header-flex">
-        <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
-        <h2>Personal Loans Report</h2>
+    <!-- Left Sidebar Menu -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-title">VEL FIN CORP</div>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
+            <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
+            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
+            <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
+            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+            <li><a href="personalloan-report.html" class="active"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
+            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
+            <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
+            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
     </div>
 
-    <!-- Live Search Bar -->
-    <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name, Phone Number, or Loan ID..." onkeyup="filterTable()">
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <div class="header-flex">
+                <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
+                <h2>Personal Loans Report</h2>
+            </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Loan ID</th>
-                <th>Borrower Name</th>
-                <th>Phone Number</th>
-                <th>Loan Type</th>
-                <th>Loan Amount</th>
-                <th>Disbursed Amount</th>
-                <th>Installment</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="reportTableBody">
-            <!-- Dynamic Data -->
-        </tbody>
-    </table>
-</div>
+            <!-- Live Search Bar -->
+            <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name, Phone Number, or Loan ID..." onkeyup="filterTable()">
 
-<!-- Modal Popup for Full Loan & Borrower Details -->
-<div class="modal" id="loanModal">
-    <div class="modal-content" id="printableArea">
-        <div class="modal-header">
-            <span>Personal Loan & Borrower Full Profile</span>
-            <div class="modal-actions">
-                <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
-                <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
-                <button class="close-btn" onclick="closeModal()">X</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Loan ID</th>
+                        <th>Borrower Name</th>
+                        <th>Phone Number</th>
+                        <th>Loan Type</th>
+                        <th>Loan Amount</th>
+                        <th>Disbursed Amount</th>
+                        <th>Installment</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTableBody">
+                    <!-- Dynamic Data -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Popup for Full Loan & Borrower Details -->
+    <div class="modal" id="loanModal">
+        <div class="modal-content" id="printableArea">
+            <div class="modal-header">
+                <span>Personal Loan & Borrower Full Profile</span>
+                <div class="modal-actions">
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                    <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="close-btn" onclick="closeModal()">X</button>
+                </div>
+            </div>
+            <div id="modalBody">
+                <!-- Details loaded dynamically -->
             </div>
         </div>
-        <div id="modalBody">
-            <!-- Details loaded dynamically -->
-        </div>
     </div>
-</div>
 
-<script>
-    let currentLoan = null;
+    <script>
+        let currentLoan = null;
 
-    window.addEventListener('DOMContentLoaded', () => {
-        loadReportData();
-    });
+        window.addEventListener('DOMContentLoaded', () => {
+            loadReportData();
+        });
 
-    function loadReportData() {
-        const tbody = document.getElementById('reportTableBody');
-        let loans = [];
-        let borrowers = [];
-        let payments = [];
+        function loadReportData() {
+            const tbody = document.getElementById('reportTableBody');
+            let loans = [];
+            let borrowers = [];
+            let payments = [];
 
-        try {
-            loans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
-            borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
-            payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
-        } catch(e) {
-            loans = [];
-            borrowers = [];
-            payments = [];
+            try {
+                loans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
+                borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
+                payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
+            } catch(e) {
+                loans = [];
+                borrowers = [];
+                payments = [];
+            }
+
+            if (loans.length === 0) {
+                loans = [
+                    {
+                        loanId: "VPL/022/2026",
+                        borrowerId: "VFC/001/2026",
+                        borrowerName: "Ravichandran Chennan",
+                        phone: "9876543210",
+                        loanType: "Weekly",
+                        loanAmount: "10000",
+                        disbursedAmount: "8500",
+                        installment: "1000",
+                        status: "ACTIVE",
+                        loanDate: "10-Oct-2026"
+                    },
+                    {
+                        loanId: "VPL/017/2026",
+                        borrowerId: "VFC/002/2026",
+                        borrowerName: "Thowlath Basha Rjka",
+                        phone: "8778003840",
+                        loanType: "Daily",
+                        loanAmount: "5000",
+                        disbursedAmount: "4250",
+                        installment: "50",
+                        status: "ACTIVE",
+                        loanDate: "12-Oct-2026"
+                    }
+                ];
+            }
+
+            tbody.innerHTML = '';
+            loans.forEach((loan) => {
+                let borrower = borrowers.find(b => b.borrowerId === loan.borrowerId || (b.name && b.name.includes(loan.borrowerName)) || b.phone === loan.phone) || {};
+                
+                // Calculate paid amount and pending balance for this loan
+                let loanPayments = payments.filter(p => p.loanId === loan.loanId || (p.borrower && p.borrower.includes(loan.loanId)));
+                let totalPaid = loanPayments.reduce((sum, p) => sum + (parseFloat(p.amount || p.paidAmount) || 0), 0);
+                let loanAmt = parseFloat(loan.loanAmount || 0);
+                let pendingAmt = loanAmt > 0 ? (loanAmt - totalPaid) : 0;
+
+                const tr = document.createElement('tr');
+                tr.onclick = () => showLoanDetails(loan, borrower, totalPaid, pendingAmt, loanPayments);
+                tr.innerHTML = `
+                    <td><strong>${loan.loanId || '-'}</strong></td>
+                    <td>${loan.borrowerName || borrower.name || '-'}</td>
+                    <td>${loan.phone || borrower.phone || '-'}</td>
+                    <td>${loan.loanType || 'Weekly'}</td>
+                    <td>₹${loan.loanAmount || '0'}</td>
+                    <td>₹${loan.disbursedAmount || '0'}</td>
+                    <td>₹${loan.installment || '0'}</td>
+                    <td><span style="color: #2F855A; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        if (loans.length === 0) {
-            loans = [
-                {
-                    loanId: "VPL/022/2026",
-                    borrowerId: "VFC/001/2026",
-                    borrowerName: "Ravichandran Chennan",
-                    phone: "9876543210",
-                    loanType: "Weekly",
-                    loanAmount: "10000",
-                    disbursedAmount: "8500",
-                    installment: "1000",
-                    status: "ACTIVE",
-                    loanDate: "10-Oct-2026"
-                },
-                {
-                    loanId: "VPL/017/2026",
-                    borrowerId: "VFC/002/2026",
-                    borrowerName: "Thowlath Basha Rjka",
-                    phone: "8778003840",
-                    loanType: "Daily",
-                    loanAmount: "5000",
-                    disbursedAmount: "4250",
-                    installment: "50",
-                    status: "ACTIVE",
-                    loanDate: "12-Oct-2026"
+        function showLoanDetails(loan, borrower, totalPaid, pendingAmt, loanPayments) {
+            currentLoan = loan;
+            const modal = document.getElementById('loanModal');
+            const modalBody = document.getElementById('modalBody');
+
+            // Check delay details from payments if any
+            let delayInfo = "No delays recorded";
+            if (loanPayments.length > 0) {
+                let delayedPayments = loanPayments.filter(p => p.isDelayed === true || p.delayDays > 0);
+                if (delayedPayments.length > 0) {
+                    delayInfo = `${delayedPayments.length} installment(s) paid with delay.`;
                 }
-            ];
-        }
+            }
 
-        tbody.innerHTML = '';
-        loans.forEach((loan) => {
-            let borrower = borrowers.find(b => b.borrowerId === loan.borrowerId || (b.name && b.name.includes(loan.borrowerName)) || b.phone === loan.phone) || {};
-            
-            // Calculate paid amount and pending balance for this loan
-            let loanPayments = payments.filter(p => p.loanId === loan.loanId || (p.borrower && p.borrower.includes(loan.loanId)));
-            let totalPaid = loanPayments.reduce((sum, p) => sum + (parseFloat(p.amount || p.paidAmount) || 0), 0);
-            let loanAmt = parseFloat(loan.loanAmount || 0);
-            let pendingAmt = loanAmt > 0 ? (loanAmt - totalPaid) : 0;
+            modalBody.innerHTML = `
+                <table class="profile-table">
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Personal Loan Financial Status</th></tr>
+                    <tr><td>Loan ID</td><td>${loan.loanId || '-'}</td></tr>
+                    <tr><td>Loan Type & Date</td><td>${loan.loanType || '-'} | Started on: ${loan.loanDate || '-'}</td></tr>
+                    <tr><td>Total Loan Amount</td><td>₹${loan.loanAmount || '0'}</td></tr>
+                    <tr><td>Disbursed Amount</td><td>₹${loan.disbursedAmount || '0'}</td></tr>
+                    <tr><td>Installment Amount</td><td>₹${loan.installment || '-'}</td></tr>
+                    <tr><td>Total Amount Paid</td><td style="color: #2F855A; font-weight: bold;">₹${totalPaid.toFixed(2)}</td></tr>
+                    <tr><td>Pending Balance</td><td style="color: #C53030; font-weight: bold;">₹${pendingAmt.toFixed(2)}</td></tr>
+                    <tr><td>Repayment / Delay Status</td><td>${delayInfo}</td></tr>
+                    <tr><td>Loan Status</td><td>${loan.status || 'ACTIVE'}</td></tr>
 
-            const tr = document.createElement('tr');
-            tr.onclick = () => showLoanDetails(loan, borrower, totalPaid, pendingAmt, loanPayments);
-            tr.innerHTML = `
-                <td><strong>${loan.loanId || '-'}</strong></td>
-                <td>${loan.borrowerName || borrower.name || '-'}</td>
-                <td>${loan.phone || borrower.phone || '-'}</td>
-                <td>${loan.loanType || 'Weekly'}</td>
-                <td>₹${loan.loanAmount || '0'}</td>
-                <td>₹${loan.disbursedAmount || '0'}</td>
-                <td>₹${loan.installment || '0'}</td>
-                <td><span style="color: #2F855A; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Details</th></tr>
+                    <tr><td>Borrower ID</td><td>${borrower.borrowerId || loan.borrowerId || '-'}</td></tr>
+                    <tr><td>Customer Name</td><td>${borrower.name || loan.borrowerName || '-'}</td></tr>
+                    <tr><td>Phone Number</td><td>${borrower.phone || loan.phone || '-'}</td></tr>
+                    <tr><td>WhatsApp Number</td><td>${borrower.whatsapp || '-'}</td></tr>
+                    <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
+                    <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
+                    <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
+                    <tr><td>Occupation</td><td>${borrower.occupation || '-'}</td></tr>
+                    <tr><td>Nominee Details</td><td>${borrower.nominee || '-'} (${borrower.nomineePhone || '-'})</td></tr>
+                </table>
             `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function showLoanDetails(loan, borrower, totalPaid, pendingAmt, loanPayments) {
-        currentLoan = loan;
-        const modal = document.getElementById('loanModal');
-        const modalBody = document.getElementById('modalBody');
-
-        // Check delay details from payments if any
-        let delayInfo = "No delays recorded";
-        if (loanPayments.length > 0) {
-            let delayedPayments = loanPayments.filter(p => p.isDelayed === true || p.delayDays > 0);
-            if (delayedPayments.length > 0) {
-                delayInfo = `${delayedPayments.length} installment(s) paid with delay.`;
-            }
+            modal.style.display = 'flex';
         }
 
-        modalBody.innerHTML = `
-            <table class="profile-table">
-                <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Personal Loan Financial Status</th></tr>
-                <tr><td>Loan ID</td><td>${loan.loanId || '-'}</td></tr>
-                <tr><td>Loan Type & Date</td><td>${loan.loanType || '-'} | Started on: ${loan.loanDate || '-'}</td></tr>
-                <tr><td>Total Loan Amount</td><td>₹${loan.loanAmount || '0'}</td></tr>
-                <tr><td>Disbursed Amount</td><td>₹${loan.disbursedAmount || '0'}</td></tr>
-                <tr><td>Installment Amount</td><td>₹${loan.installment || '-'}</td></tr>
-                <tr><td>Total Amount Paid</td><td style="color: #2F855A; font-weight: bold;">₹${totalPaid.toFixed(2)}</td></tr>
-                <tr><td>Pending Balance</td><td style="color: #C53030; font-weight: bold;">₹${pendingAmt.toFixed(2)}</td></tr>
-                <tr><td>Repayment / Delay Status</td><td>${delayInfo}</td></tr>
-                <tr><td>Loan Status</td><td>${loan.status || 'ACTIVE'}</td></tr>
+        function filterTable() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.getElementById('reportTableBody').getElementsByTagName('tr');
 
-                <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Details</th></tr>
-                <tr><td>Borrower ID</td><td>${borrower.borrowerId || loan.borrowerId || '-'}</td></tr>
-                <tr><td>Customer Name</td><td>${borrower.name || loan.borrowerName || '-'}</td></tr>
-                <tr><td>Phone Number</td><td>${borrower.phone || loan.phone || '-'}</td></tr>
-                <tr><td>WhatsApp Number</td><td>${borrower.whatsapp || '-'}</td></tr>
-                <tr><td>Aadhar Number</td><td>${borrower.aadhar || '-'}</td></tr>
-                <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
-                <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
-                <tr><td>Occupation</td><td>${borrower.occupation || '-'}</td></tr>
-                <tr><td>Nominee Details</td><td>${borrower.nominee || '-'} (${borrower.nomineePhone || '-'})</td></tr>
-            </table>
-        `;
-        modal.style.display = 'flex';
-    }
+            for (let i = 0; i < rows.length; i++) {
+                const nameCol = rows[i].getElementsByTagName('td')[1];
+                const phoneCol = rows[i].getElementsByTagName('td')[2];
+                const loanIdCol = rows[i].getElementsByTagName('td')[0];
 
-    function filterTable() {
-        const input = document.getElementById('searchInput').value.toLowerCase();
-        const rows = document.getElementById('reportTableBody').getElementsByTagName('tr');
+                if (nameCol || phoneCol || loanIdCol) {
+                    const nameText = nameCol.textContent.toLowerCase();
+                    const phoneText = phoneCol.textContent.toLowerCase();
+                    const loanIdText = loanIdCol.textContent.toLowerCase();
 
-        for (let i = 0; i < rows.length; i++) {
-            const nameCol = rows[i].getElementsByTagName('td')[1];
-            const phoneCol = rows[i].getElementsByTagName('td')[2];
-            const loanIdCol = rows[i].getElementsByTagName('td')[0];
-
-            if (nameCol || phoneCol || loanIdCol) {
-                const nameText = nameCol.textContent.toLowerCase();
-                const phoneText = phoneCol.textContent.toLowerCase();
-                const loanIdText = loanIdCol.textContent.toLowerCase();
-
-                if (nameText.includes(input) || phoneText.includes(input) || loanIdText.includes(input)) {
-                    rows[i].style.display = "";
-                } else {
-                    rows[i].style.display = "none";
+                    if (nameText.includes(input) || phoneText.includes(input) || loanIdText.includes(input)) {
+                        rows[i].style.display = "";
+                    } else {
+                        rows[i].style.display = "none";
+                    }
                 }
             }
         }
-    }
 
-    function downloadPDF() {
-        const element = document.getElementById('printableArea');
-        const actions = element.querySelector('.modal-actions');
-        actions.style.display = 'none';
+        function downloadPDF() {
+            const element = document.getElementById('printableArea');
+            const actions = element.querySelector('.modal-actions');
+            actions.style.display = 'none';
 
-        let fileName = "Personal_Loan_Profile.pdf";
-        if (currentLoan) {
-            const cleanName = (currentLoan.borrowerName || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
-            const cleanId = (currentLoan.loanId || 'Loan').replace(/[^a-zA-Z0-9]/g, '_');
-            fileName = `${cleanName}_${cleanId}.pdf`;
+            let fileName = "Personal_Loan_Profile.pdf";
+            if (currentLoan) {
+                const cleanName = (currentLoan.borrowerName || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanId = (currentLoan.loanId || 'Loan').replace(/[^a-zA-Z0-9]/g, '_');
+                fileName = `${cleanName}_${cleanId}.pdf`;
+            }
+
+            const opt = {
+                margin:       10,
+                filename:     fileName,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(element).set(opt).save().then(() => {
+                actions.style.display = 'flex';
+            });
         }
 
-        const opt = {
-            margin:       10,
-            filename:     fileName,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+        function closeModal() {
+            document.getElementById('loanModal').style.display = 'none';
+        }
 
-        html2pdf().from(element).set(opt).save().then(() => {
-            actions.style.display = 'flex';
-        });
-    }
-
-    function closeModal() {
-        document.getElementById('loanModal').style.display = 'none';
-    }
-</script>
-
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
+        }
+    </script>
 </body>
 </html>
