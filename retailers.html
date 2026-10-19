@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
+        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -27,6 +28,11 @@
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
                 return;
+            }
+
+            // Restrict borrowers from accessing admin/staff pages
+            if (userRole === 'borrower') {
+                window.location.replace('borrower-portal.html');
             }
         })();
     </script>
@@ -131,7 +137,6 @@
             text-align: center;
             box-sizing: border-box;
         }
-
         /* Main Content Area */
         .main-content {
             margin-left: 260px;
@@ -140,25 +145,26 @@
             box-sizing: border-box;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: var(--white);
             padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08);
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05);
             border-top: 5px solid var(--navy);
         }
         .header {
+            font-family: 'Cinzel', serif;
+            color: var(--navy);
+            font-size: 24px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid var(--gold);
-            padding-bottom: 15px;
-            margin-bottom: 25px;
         }
         .header h2 {
-            font-family: 'Cinzel', serif;
-            color: var(--navy);
             margin: 0;
             font-size: 22px;
         }
@@ -249,6 +255,8 @@
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
+            <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
             <li><a href="retailers.html" class="active"><i class="fas fa-store"></i> Retailers & Staff</a></li>
             <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
         </ul>
@@ -358,6 +366,9 @@
                         <label><input type="checkbox" name="perm" value="creditvault-report.html"> Credit Vault Report</label>
                         <label><input type="checkbox" name="perm" value="personalloan-report.html"> Personal Loan Report</label>
                         <label><input type="checkbox" name="perm" value="allpayments-report.html"> All Payments Report</label>
+                        <label><input type="checkbox" name="perm" value="Support Mail"> Support Mail Inbox</label>
+                        <label><input type="checkbox" name="perm" value="reminders.html"> WhatsApp Reminders</label>
+                        <label><input type="checkbox" name="perm" value="retailers.html"> Retailers & Staff</label>
                     </div>
                 </div>
 
@@ -469,9 +480,11 @@
                     pass: staffPass,
                     role: 'staff',
                     name: document.getElementById('staffName').value.trim(),
-                    permissions: permissions
+                    permissions: permissions,
+                    modules: permissions // Added for Support Mail compatibility check
                 });
                 localStorage.setItem('velfincorp_users', JSON.stringify(users));
+                localStorage.setItem('velfincorp_staffs', JSON.stringify(users)); // Secondary save for specific staff verification
                 alert("Staff access created successfully!");
             }
 
