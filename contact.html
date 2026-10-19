@@ -1,54 +1,50 @@
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<script>
-    // Centralized Authentication & Security Protection Script
-    (function() {
-        const currentPage = window.location.pathname.split("/").pop() || "index.html";
-        const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-        const userRole = sessionStorage.getItem('velfincorp_role');
-
-        // 1. Prevent back/forward cache browsing after logout
-        window.pageshow = function(event) {
-            if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
-                window.location.replace('login.html');
-            }
-        };
-
-        // 2. Public pages that don't require login
-        const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-        if (publicPages.includes(currentPage)) {
-            return; // Allow public access
-        }
-
-        // 3. If not logged in, redirect to login page immediately
-        if (!loggedUser || !userRole) {
-            window.location.replace('login.html');
-            return;
-        }
-
-        // 4. Role-based Access Control (RBAC) Enforcement
-        if (userRole === 'borrower') {
-            // Borrowers are ONLY allowed inside the borrower portal
-            if (currentPage !== 'borrower-portal.html') {
-                window.location.replace('borrower-portal.html');
-            }
-        } else {
-            // Admin and Staff are NOT allowed inside the borrower portal
-            if (currentPage === 'borrower-portal.html') {
-                window.location.replace('dashboard.html');
-            }
-        }
-    })();
-</script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Contact Us</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        // Centralized Authentication & Security Protection Script
+        (function() {
+            const currentPage = window.location.pathname.split("/").pop() || "index.html";
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+
+            window.pageshow = function(event) {
+                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                    window.location.replace('login.html');
+                }
+            };
+
+            // Public pages that don't require login
+            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+            if (publicPages.includes(currentPage)) {
+                return; // Allow public access to contact page
+            }
+
+            if (!loggedUser || !userRole) {
+                window.location.replace('login.html');
+                return;
+            }
+
+            if (userRole === 'borrower') {
+                if (currentPage !== 'borrower-portal.html') {
+                    window.location.replace('borrower-portal.html');
+                }
+            } else {
+                if (currentPage === 'borrower-portal.html') {
+                    window.location.replace('dashboard.html');
+                }
+            }
+        })();
+    </script>
     <style>
         :root {
             --navy: #0F1D36;
@@ -157,18 +153,22 @@
 
     <div class="container">
         <h2>Contact Corporate Support</h2>
-        <form action="https://formspree.io/f/xlgppjyw" method="POST">
+        <form id="contactForm" onsubmit="return submitContactForm(event)">
             <div class="form-group">
                 <label>Full Name *</label>
-                <input type="text" name="name" required placeholder="Enter your full name">
+                <input type="text" id="contactName" required placeholder="Enter your full name">
             </div>
             <div class="form-group">
                 <label>Mobile / WhatsApp Number *</label>
-                <input type="tel" name="phone" required placeholder="10-digit mobile number">
+                <input type="tel" id="contactPhone" maxlength="10" required placeholder="10-digit mobile number">
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="contactEmail" placeholder="yourmail@domain.com (Optional)">
             </div>
             <div class="form-group">
                 <label>Inquiry / Message *</label>
-                <textarea name="message" rows="5" required placeholder="Describe your financial inquiry details here..."></textarea>
+                <textarea id="contactMessage" rows="5" required placeholder="Describe your financial inquiry details here..."></textarea>
             </div>
             <button type="submit" class="btn-submit">Submit Inquiry</button>
         </form>
@@ -184,5 +184,57 @@
         <div class="footer-bottom-text">&copy; 2026 Vel Fin Corp. All Rights Reserved. | Corporate Finance Division</div>
     </footer>
 
+    <script>
+        async function submitContactForm(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('contactName').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            const email = document.getElementById('contactEmail').value.trim() || 'No Email Provided';
+            const message = document.getElementById('contactMessage').value.trim();
+
+            if (phone.length !== 10 || isNaN(phone)) {
+                alert("Please enter a valid 10-digit Mobile Number.");
+                return false;
+            }
+
+            const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+            const dateStr = new Date().toLocaleString('en-IN', options);
+
+            // 1. Save to LocalStorage for Admin Inbox (mail-inbox.html)
+            let mails = [];
+            try {
+                mails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
+            } catch(e) {
+                mails = [];
+            }
+
+            mails.unshift({
+                name: name,
+                phone: phone,
+                email: email,
+                message: message,
+                date: dateStr,
+                reply: ""
+            });
+
+            localStorage.setItem('velfincorp_support_mails', JSON.stringify(mails));
+
+            // 2. Formspree API (Email Backup)
+            try {
+                fetch("https://formspree.io/f/xlgppjyw", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, phone, email, message, dateStr })
+                });
+            } catch(err) {
+                console.log("Formspree trigger passed.");
+            }
+
+            alert("Thank you! Your inquiry has been successfully sent. Our support team will review and reply to you shortly.");
+            document.getElementById('contactForm').reset();
+            return true;
+        }
+    </script>
 </body>
 </html>
