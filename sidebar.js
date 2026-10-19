@@ -1,4 +1,3 @@
-<li><a href="mail-inbox.html" id="mailMenuLink" style="display:none;"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
 document.addEventListener("DOMContentLoaded", function() {
     const sidebarHTML = `
     <div class="sidebar">
@@ -16,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
-            <li><a href="messages.html"><i class="fas fa-envelope"></i> Support Messages</a></li>
+            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
             <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
             <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
             <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
