@@ -344,7 +344,7 @@
                 <tr><td>Customer Name</td><td>${borrower.name || loan.borrowerName || '-'}</td></tr>
                 <tr><td>Phone Number</td><td>${borrower.phone || loan.phone || '-'}</td></tr>
                 <tr><td>WhatsApp Number</td><td>${borrower.whatsapp || '-'}</td></tr>
-                <tr><td>Aadhar Number</td><td>${borrower.aadhar || '-'}</td></tr>
+                <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
                 <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
                 <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
                 <tr><td>Occupation</td><td>${borrower.occupation || '-'}</td></tr>
@@ -405,6 +405,12 @@
 
     function closeModal() {
         document.getElementById('loanModal').style.display = 'none';
+    }
+
+    function handleLogout() {
+        sessionStorage.clear();
+        localStorage.removeItem('velfincorp_logged_user');
+        window.location.replace('login.html');
     }
 </script>
 
