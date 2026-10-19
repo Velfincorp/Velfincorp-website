@@ -288,6 +288,8 @@
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html" class="active"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
+            <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
             <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
             <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
         </ul>
@@ -396,7 +398,6 @@
             const modal = document.getElementById('paymentModal');
             const modalBody = document.getElementById('modalBody');
 
-            // Calculate total paid and pending balance for this borrower/loan
             let borrowerPayments = allPayments.filter(item => 
                 (p.borrowerId && item.borrowerId === p.borrowerId) || 
                 (p.borrower && item.borrower === p.borrower) ||
@@ -405,7 +406,6 @@
 
             let totalPaid = borrowerPayments.reduce((sum, item) => sum + (parseFloat(item.amount || item.paidAmount) || 0), 0);
             
-            // Check loan amount from localStorage if available
             let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
             let personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
             
@@ -416,7 +416,6 @@
             let totalLoanAmount = parseFloat(matchedLoan.productValue || matchedLoan.loanAmount || 18000);
             let pendingBalance = totalLoanAmount > totalPaid ? (totalLoanAmount - totalPaid) : 0;
 
-            // Repayment / Delay status check
             let delayStatus = "On Time (Regular)";
             let currentPaidAmt = parseFloat(p.amount || p.paidAmount || 0);
             let expectedEmi = parseFloat(matchedLoan.weeklyEmi || matchedLoan.installment || currentPaidAmt);
@@ -445,7 +444,7 @@
                     <tr><td>Borrower ID / Name</td><td>${p.borrower || borrower.name || '-'}</td></tr>
                     <tr><td>Phone Number</td><td>${p.phone || borrower.phone || '-'}</td></tr>
                     <tr><td>WhatsApp Number</td><td>${borrower.whatsapp || '-'}</td></tr>
-                    <tr><td>Aadhar Number</td><td>${borrower.aadhar || '-'}</td></tr>
+                    <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
                     <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
                     <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
                     <tr><td>Occupation</td><td>${borrower.occupation || '-'}</td></tr>
