@@ -555,7 +555,7 @@
             window.location.replace("login.html");
         }
 
-        // --- SUBMISSION LOGIC WITH BASE64 (BYPASSING CORS) ---
+        // --- DIRECT REST API SUBMISSION (BYPASSING CORS) ---
         async function validateAndSubmit(event) {
             event.preventDefault(); 
             
@@ -590,53 +590,67 @@
                 const fullAddress = document.getElementById('Address_Line_1').value + ", " + document.getElementById('Land_Mark').value;
                 const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + document.getElementById('Last_Name').value;
 
-                const newBorrower = {
-                    borrower_id: document.getElementById('Borrower_ID').value,
-                    issued_by: document.getElementById('Issued_by').value,
-                    retailer_code: document.getElementById('Retailer_Code').value,
-                    loan_date: document.getElementById('Loan_Date').value,
-                    full_name: fullName,
-                    dob: document.getElementById('Date_Of_Birth').value,
-                    relative_name: document.getElementById('Relationship').value + " " + document.getElementById('Relative_Name').value,
-                    aadhar_number: document.getElementById('Aadhar_Number').value,
-                    pan_number: document.getElementById('PAN_NUMBER').value,
-                    phone_number: document.getElementById('Phone_Number').value,
-                    whatsapp_number: document.getElementById('Whatsapp_Number').value,
-                    email: document.getElementById('Email').value || "",
-                    nominee_name: document.getElementById('Nominee_Name').value,
-                    nominee_contact: document.getElementById('Nominee_Contact_Number').value,
-                    address: fullAddress,
-                    city: document.getElementById('City_District').value,
-                    state: document.getElementById('State_Province').value,
-                    pincode: document.getElementById('Postal_Code').value,
-                    occupation: document.getElementById('Occupation').value,
-                    job_nature: document.getElementById('Nature_of_the_Job').value,
-                    payment_method: document.getElementById('Payment_Method').value,
-                    upi_id: document.getElementById('UPI_ID').value || "",
-                    bank_name: document.getElementById('Bank_Name').value || "",
-                    bank_account_no: document.getElementById('Bank_Account_Number').value || "",
-                    ifsc_code: document.getElementById('IFSC_Code').value || "",
-                    // Saving Base64 strings directly in Database text columns
-                    customer_photo_url: customerPhotoBase64,
-                    aadhar_front_url: aadharFrontBase64,
-                    aadhar_back_url: aadharBackBase64,
-                    pan_card_url: panCardBase64,
-                    ration_card_url: rationCardBase64,
-                    cibil_score_url: cibilScoreBase64
+                const documentId = 'vfc_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+
+                const payload = {
+                    documentId: documentId,
+                    data: {
+                        borrower_id: document.getElementById('Borrower_ID').value,
+                        issued_by: document.getElementById('Issued_by').value,
+                        retailer_code: document.getElementById('Retailer_Code').value || "",
+                        loan_date: document.getElementById('Loan_Date').value,
+                        full_name: fullName,
+                        dob: document.getElementById('Date_Of_Birth').value,
+                        relative_name: document.getElementById('Relationship').value + " " + document.getElementById('Relative_Name').value,
+                        aadhar_number: document.getElementById('Aadhar_Number').value,
+                        pan_number: document.getElementById('PAN_NUMBER').value,
+                        phone_number: document.getElementById('Phone_Number').value,
+                        whatsapp_number: document.getElementById('Whatsapp_Number').value,
+                        email: document.getElementById('Email').value || "",
+                        nominee_name: document.getElementById('Nominee_Name').value,
+                        nominee_contact: document.getElementById('Nominee_Contact_Number').value,
+                        address: fullAddress,
+                        city: document.getElementById('City_District').value,
+                        state: document.getElementById('State_Province').value,
+                        pincode: document.getElementById('Postal_Code').value,
+                        occupation: document.getElementById('Occupation').value,
+                        job_nature: document.getElementById('Nature_of_the_Job').value,
+                        payment_method: document.getElementById('Payment_Method').value,
+                        upi_id: document.getElementById('UPI_ID').value || "",
+                        bank_name: document.getElementById('Bank_Name').value || "",
+                        bank_account_no: document.getElementById('Bank_Account_Number').value || "",
+                        ifsc_code: document.getElementById('IFSC_Code').value || "",
+                        customer_photo_url: customerPhotoBase64,
+                        aadhar_front_url: aadharFrontBase64,
+                        aadhar_back_url: aadharBackBase64,
+                        pan_card_url: panCardBase64,
+                        ration_card_url: rationCardBase64,
+                        cibil_score_url: cibilScoreBase64
+                    }
                 };
 
-                // Save to Database
-                if(window.appwriteDatabases && window.VFC_DB) {
-                    await window.appwriteDatabases.createDocument(
-                        window.VFC_DB.DB_ID,
-                        window.VFC_DB.BORROWERS_ID,
-                        window.AppwriteID.unique(), 
-                        newBorrower
-                    );
-                    alert("Borrower Registration Successful! Data saved to Appwrite.");
-                    window.location.reload(); 
+                // Direct REST API fetch request
+                if(window.VFC_DB) {
+                    const endpoint = `https://cloud.appwrite.io/v1/databases/${window.VFC_DB.DB_ID}/collections/${window.VFC_DB.BORROWERS_ID}/documents`;
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Appwrite-Project': window.VFC_DB.PROJECT_ID
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        alert("Borrower Registration Successful! Data saved to Appwrite.");
+                        window.location.reload();
+                    } else {
+                        const errData = await response.json();
+                        throw new Error(errData.message || "Failed to save data");
+                    }
                 } else {
-                    alert("Error: Appwrite Database not connected. Check db.js file.");
+                    alert("Error: Appwrite Database configuration not found. Check db.js file.");
                 }
 
             } catch (error) {
