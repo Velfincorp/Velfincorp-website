@@ -555,7 +555,7 @@
             window.location.replace("login.html");
         }
 
-        // --- DIRECT REST API SUBMISSION (BYPASSING CORS) ---
+        // --- SUBMISSION VIA APPWRITE FUNCTION ENDPOINT (BYPASSING CORS) ---
         async function validateAndSubmit(event) {
             event.preventDefault(); 
             
@@ -629,28 +629,23 @@
                     }
                 };
 
-                // Direct REST API fetch request
-                if(window.VFC_DB) {
-                    const endpoint = `https://cloud.appwrite.io/v1/databases/${window.VFC_DB.DB_ID}/collections/${window.VFC_DB.BORROWERS_ID}/documents`;
-                    
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Appwrite-Project': window.VFC_DB.PROJECT_ID
-                        },
-                        body: JSON.stringify(payload)
-                    });
+                // Appwrite Function Endpoint (Bypassing CORS completely)
+                const endpoint = `https://starter-function-bhfh.sfo.appwrite.run`;
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-                    if (response.ok) {
-                        alert("Borrower Registration Successful! Data saved to Appwrite.");
-                        window.location.reload();
-                    } else {
-                        const errData = await response.json();
-                        throw new Error(errData.message || "Failed to save data");
-                    }
+                if (response.ok) {
+                    alert("Borrower Registration Successful! Data saved via Appwrite Function.");
+                    window.location.reload();
                 } else {
-                    alert("Error: Appwrite Database configuration not found. Check db.js file.");
+                    const errData = await response.json();
+                    throw new Error(errData.message || "Failed to save data");
                 }
 
             } catch (error) {
