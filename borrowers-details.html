@@ -9,6 +9,11 @@
     <title>Vel Fin Corp - Comprehensive Borrower Registration</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Appwrite SDK & Master Config (மிக முக்கியம்) -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
+
     <script>
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
@@ -273,7 +278,7 @@
                     </div>
                     <div class="form-group">
                         <label>Borrower ID *</label>
-                        <input type="text" id="Borrower_ID" readonly value="VFC/001/2026" style="background-color: #f1f5f9;">
+                        <input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9;">
                     </div>
                 </div>
 
@@ -296,7 +301,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Customer Photo *</label>
-                        <input type="file" id="Customer_Photo" accept="image/*" required>
+                        <input type="file" id="Customer_Photo" accept="image/*">
                     </div>
                     <div class="form-group">
                         <label>Loan Date *</label>
@@ -468,29 +473,29 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Upload Aadhar Front side *</label>
-                        <input type="file" id="Aadhar_Front" required>
+                        <input type="file" id="Aadhar_Front">
                     </div>
                     <div class="form-group">
                         <label>Upload Aadhar Back Side *</label>
-                        <input type="file" id="Aadhar_Back" required>
+                        <input type="file" id="Aadhar_Back">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Upload Pan Card *</label>
-                        <input type="file" id="Pan_Card" required>
+                        <input type="file" id="Pan_Card">
                     </div>
                     <div class="form-group">
                         <label>Upload Ration card front side *</label>
-                        <input type="file" id="Ration_Card" required>
+                        <input type="file" id="Ration_Card">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>CIBIL Score / Document *</label>
-                        <input type="file" id="CIBIL_Score" required>
+                        <input type="file" id="CIBIL_Score">
                     </div>
                     <div class="form-group">
                         <label>Email ID</label>
@@ -504,7 +509,9 @@
     </div>
 
     <script>
+        // Set Today's Date & Auto Generate Borrower ID
         document.getElementById('Loan_Date').valueAsDate = new Date();
+        document.getElementById('Borrower_ID').value = "VFC/" + Math.floor(1000 + Math.random() * 9000) + "/2026";
 
         function toggleRetailerFields() {
             const issuedBy = document.getElementById('Issued_by').value;
@@ -524,4 +531,117 @@
         }
 
         function showHidePaymentDetails() {
-            const
+            const payMethod = document.getElementById('Payment_Method').value;
+            if(payMethod === 'UPI') {
+                document.getElementById('upiGroup').classList.remove('hidden');
+                document.getElementById('bankFields').classList.add('hidden');
+            } else if (payMethod === 'e - NACH') {
+                document.getElementById('bankFields').classList.remove('hidden');
+                document.getElementById('upiGroup').classList.add('hidden');
+            } else {
+                document.getElementById('upiGroup').classList.add('hidden');
+                document.getElementById('bankFields').classList.add('hidden');
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            window.location.replace("login.html");
+        }
+
+        // --- FULL APPWRITE SUBMISSION LOGIC (WITH FILE UPLOADS) ---
+        async function validateAndSubmit(event) {
+            event.preventDefault(); 
+            
+            const submitBtn = document.querySelector('.btn-submit');
+            submitBtn.innerText = "Uploading Files & Saving Data...";
+            submitBtn.disabled = true;
+
+            try {
+                // 1. Helper function to upload a file and return its ID
+                async function uploadFile(fileElementId) {
+                    const fileInput = document.getElementById(fileElementId);
+                    if (fileInput && fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+                        const response = await window.appwriteStorage.createFile(
+                            window.VFC_DB.DOCUMENTS_BUCKET_ID,
+                            window.AppwriteID.unique(),
+                            file
+                        );
+                        return response.$id; // File ID in storage
+                    }
+                    return null; // If no file selected
+                }
+
+                // 2. Upload all files parallelly
+                const customerPhotoId = await uploadFile('Customer_Photo');
+                const aadharFrontId = await uploadFile('Aadhar_Front');
+                const aadharBackId = await uploadFile('Aadhar_Back');
+                const panCardId = await uploadFile('Pan_Card');
+                const rationCardId = await uploadFile('Ration_Card');
+                const cibilScoreId = await uploadFile('CIBIL_Score');
+
+                // 3. Collect Text Data
+                const fullAddress = document.getElementById('Address_Line_1').value + ", " + document.getElementById('Land_Mark').value;
+                const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + document.getElementById('Last_Name').value;
+
+                const newBorrower = {
+                    borrower_id: document.getElementById('Borrower_ID').value,
+                    issued_by: document.getElementById('Issued_by').value,
+                    retailer_code: document.getElementById('Retailer_Code').value,
+                    loan_date: document.getElementById('Loan_Date').value,
+                    full_name: fullName,
+                    dob: document.getElementById('Date_Of_Birth').value,
+                    relative_name: document.getElementById('Relationship').value + " " + document.getElementById('Relative_Name').value,
+                    aadhar_number: document.getElementById('Aadhar_Number').value,
+                    pan_number: document.getElementById('PAN_NUMBER').value,
+                    phone_number: document.getElementById('Phone_Number').value,
+                    whatsapp_number: document.getElementById('Whatsapp_Number').value,
+                    email: document.getElementById('Email').value || "",
+                    nominee_name: document.getElementById('Nominee_Name').value,
+                    nominee_contact: document.getElementById('Nominee_Contact_Number').value,
+                    address: fullAddress,
+                    city: document.getElementById('City_District').value,
+                    state: document.getElementById('State_Province').value,
+                    pincode: document.getElementById('Postal_Code').value,
+                    occupation: document.getElementById('Occupation').value,
+                    job_nature: document.getElementById('Nature_of_the_Job').value,
+                    payment_method: document.getElementById('Payment_Method').value,
+                    upi_id: document.getElementById('UPI_ID').value || "",
+                    bank_name: document.getElementById('Bank_Name').value || "",
+                    bank_account_no: document.getElementById('Bank_Account_Number').value || "",
+                    ifsc_code: document.getElementById('IFSC_Code').value || "",
+                    // Storing the uploaded file IDs
+                    customer_photo_url: customerPhotoId || "",
+                    aadhar_front_url: aadharFrontId || "",
+                    aadhar_back_url: aadharBackId || "",
+                    pan_card_url: panCardId || "",
+                    ration_card_url: rationCardId || "",
+                    cibil_score_url: cibilScoreId || ""
+                };
+
+                // 4. Save to Database
+                if(window.appwriteDatabases && window.VFC_DB) {
+                    await window.appwriteDatabases.createDocument(
+                        window.VFC_DB.DB_ID,
+                        window.VFC_DB.BORROWERS_ID,
+                        window.AppwriteID.unique(), 
+                        newBorrower
+                    );
+                    alert("Borrower Registration Successful! Files and Data saved to Appwrite.");
+                    window.location.reload(); 
+                } else {
+                    alert("Error: Appwrite Database not connected. Check db.js file.");
+                }
+
+            } catch (error) {
+                console.error("Appwrite Submission Error:", error);
+                alert("Error saving data: " + error.message);
+            } finally {
+                submitBtn.innerText = "Submit Registration";
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
