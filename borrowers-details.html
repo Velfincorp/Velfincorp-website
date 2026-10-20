@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Appwrite SDK & Master Config (மிக முக்கியம்) -->
+    <!-- Appwrite SDK & Master Config -->
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
 
@@ -555,39 +555,38 @@
             window.location.replace("login.html");
         }
 
-        // --- FULL APPWRITE SUBMISSION LOGIC (WITH FILE UPLOADS) ---
+        // --- SUBMISSION LOGIC WITH BASE64 (BYPASSING CORS) ---
         async function validateAndSubmit(event) {
             event.preventDefault(); 
             
             const submitBtn = document.querySelector('.btn-submit');
-            submitBtn.innerText = "Uploading Files & Saving Data...";
+            submitBtn.innerText = "Processing & Saving Data...";
             submitBtn.disabled = true;
 
             try {
-                // 1. Helper function to upload a file and return its ID
-                async function uploadFile(fileElementId) {
+                // Helper to convert file to Base64
+                async function convertFileToBase64(fileElementId) {
                     const fileInput = document.getElementById(fileElementId);
                     if (fileInput && fileInput.files.length > 0) {
                         const file = fileInput.files[0];
-                        const response = await window.appwriteStorage.createFile(
-                            window.VFC_DB.DOCUMENTS_BUCKET_ID,
-                            window.AppwriteID.unique(),
-                            file
-                        );
-                        return response.$id; // File ID in storage
+                        return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.readAsDataURL(file);
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = error => reject(error);
+                        });
                     }
-                    return null; // If no file selected
+                    return "";
                 }
 
-                // 2. Upload all files parallelly
-                const customerPhotoId = await uploadFile('Customer_Photo');
-                const aadharFrontId = await uploadFile('Aadhar_Front');
-                const aadharBackId = await uploadFile('Aadhar_Back');
-                const panCardId = await uploadFile('Pan_Card');
-                const rationCardId = await uploadFile('Ration_Card');
-                const cibilScoreId = await uploadFile('CIBIL_Score');
+                // Convert files
+                const customerPhotoBase64 = await convertFileToBase64('Customer_Photo');
+                const aadharFrontBase64 = await convertFileToBase64('Aadhar_Front');
+                const aadharBackBase64 = await convertFileToBase64('Aadhar_Back');
+                const panCardBase64 = await convertFileToBase64('Pan_Card');
+                const rationCardBase64 = await convertFileToBase64('Ration_Card');
+                const cibilScoreBase64 = await convertFileToBase64('CIBIL_Score');
 
-                // 3. Collect Text Data
                 const fullAddress = document.getElementById('Address_Line_1').value + ", " + document.getElementById('Land_Mark').value;
                 const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + document.getElementById('Last_Name').value;
 
@@ -617,16 +616,16 @@
                     bank_name: document.getElementById('Bank_Name').value || "",
                     bank_account_no: document.getElementById('Bank_Account_Number').value || "",
                     ifsc_code: document.getElementById('IFSC_Code').value || "",
-                    // Storing the uploaded file IDs
-                    customer_photo_url: customerPhotoId || "",
-                    aadhar_front_url: aadharFrontId || "",
-                    aadhar_back_url: aadharBackId || "",
-                    pan_card_url: panCardId || "",
-                    ration_card_url: rationCardId || "",
-                    cibil_score_url: cibilScoreId || ""
+                    // Saving Base64 strings directly in Database text columns
+                    customer_photo_url: customerPhotoBase64,
+                    aadhar_front_url: aadharFrontBase64,
+                    aadhar_back_url: aadharBackBase64,
+                    pan_card_url: panCardBase64,
+                    ration_card_url: rationCardBase64,
+                    cibil_score_url: cibilScoreBase64
                 };
 
-                // 4. Save to Database
+                // Save to Database
                 if(window.appwriteDatabases && window.VFC_DB) {
                     await window.appwriteDatabases.createDocument(
                         window.VFC_DB.DB_ID,
@@ -634,7 +633,7 @@
                         window.AppwriteID.unique(), 
                         newBorrower
                     );
-                    alert("Borrower Registration Successful! Files and Data saved to Appwrite.");
+                    alert("Borrower Registration Successful! Data saved to Appwrite.");
                     window.location.reload(); 
                 } else {
                     alert("Error: Appwrite Database not connected. Check db.js file.");
