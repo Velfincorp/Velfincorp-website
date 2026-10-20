@@ -229,7 +229,7 @@
             background-color: var(--gold);
             color: var(--navy);
         }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -434,6 +434,7 @@
                     </div>
                 </div>
 
+                <!-- UPI Fields -->
                 <div class="form-row hidden" id="upiGroup">
                     <div class="form-group">
                         <label>UPI ID *</label>
@@ -441,6 +442,7 @@
                     </div>
                 </div>
 
+                <!-- Bank Fields -->
                 <div id="bankFields" class="hidden">
                     <div class="form-row">
                         <div class="form-group">
@@ -470,6 +472,7 @@
                     </div>
                 </div>
 
+                <!-- File Uploads -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>Upload Aadhar Front side *</label>
@@ -532,15 +535,18 @@
 
         function showHidePaymentDetails() {
             const payMethod = document.getElementById('Payment_Method').value;
+            const upiGroup = document.getElementById('upiGroup');
+            const bankFields = document.getElementById('bankFields');
+            
             if(payMethod === 'UPI') {
-                document.getElementById('upiGroup').classList.remove('hidden');
-                document.getElementById('bankFields').classList.add('hidden');
+                upiGroup.classList.remove('hidden');
+                bankFields.classList.add('hidden');
             } else if (payMethod === 'e - NACH') {
-                document.getElementById('bankFields').classList.remove('hidden');
-                document.getElementById('upiGroup').classList.add('hidden');
+                bankFields.classList.remove('hidden');
+                upiGroup.classList.add('hidden');
             } else {
-                document.getElementById('upiGroup').classList.add('hidden');
-                document.getElementById('bankFields').classList.add('hidden');
+                upiGroup.classList.add('hidden');
+                bankFields.classList.add('hidden');
             }
         }
 
