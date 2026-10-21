@@ -512,7 +512,7 @@
     </div>
 
     <script>
-        // Run immediately when script loads
+        // Set Default Date and Generate ID on Load
         window.onload = function() {
             const loanDateEl = document.getElementById('Loan_Date');
             if(loanDateEl) loanDateEl.valueAsDate = new Date();
@@ -526,14 +526,16 @@
             
             if(!borrowerIdField) return;
 
-            const issuedBy = issuedByEl ? issuedByEl.value : 'Admin';
+            const issuedBy = issuedByEl ? issuedByEl.value : '';
             const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
             const randNum = Math.floor(1000 + Math.random() * 9000);
             
             if (issuedBy === 'Retailer' && retailerCode) {
                 borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
-            } else {
+            } else if (issuedBy === 'Admin') {
                 borrowerIdField.value = "VFC/ADM/" + randNum + "/2026";
+            } else {
+                borrowerIdField.value = "VFC/" + randNum + "/2026";
             }
         }
 
