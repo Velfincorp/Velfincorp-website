@@ -272,13 +272,13 @@
                         <label>Issued by *</label>
                         <select id="Issued_by" onchange="toggleRetailerFields()" required>
                             <option value="">-Select-</option>
-                            <option value="Admin">Admin</option>
+                            <option value="Admin" selected>Admin</option>
                             <option value="Retailer">Retailer</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Borrower ID *</label>
-                        <input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9;">
+                        <input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9; font-weight: bold; color: var(--navy);">
                     </div>
                 </div>
 
@@ -512,23 +512,26 @@
     </div>
 
     <script>
-        // Set Today's Date & Auto Generate Borrower ID based on Role (Admin vs Retailer)
-        document.getElementById('Loan_Date').valueAsDate = new Date();
+        // Set Today's Date & Auto Generate Borrower ID immediately on page load
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('Loan_Date').valueAsDate = new Date();
+            generateBorrowerID();
+        });
 
         function generateBorrowerID() {
             const issuedBy = document.getElementById('Issued_by').value;
             const retailerCode = document.getElementById('Retailer_Code').value;
             const randNum = Math.floor(1000 + Math.random() * 9000);
             
-            if (issuedBy === 'Retailer' && retailerCode) {
-                document.getElementById('Borrower_ID').value = "VFC/" + retailerCode + "/" + randNum + "/2026";
-            } else {
-                document.getElementById('Borrower_ID').value = "VFC/ADM/" + randNum + "/2026";
+            const borrowerIdField = document.getElementById('Borrower_ID');
+            if (borrowerIdField) {
+                if (issuedBy === 'Retailer' && retailerCode) {
+                    borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
+                } else {
+                    borrowerIdField.value = "VFC/ADM/" + randNum + "/2026";
+                }
             }
         }
-
-        // Initialize default Borrower ID on load
-        generateBorrowerID();
 
         function toggleRetailerFields() {
             const issuedBy = document.getElementById('Issued_by').value;
@@ -580,7 +583,6 @@
             submitBtn.disabled = true;
 
             try {
-                // Helper to upload file to Appwrite Storage Bucket automatically
                 async function uploadFileToStorage(fileElementId) {
                     const fileInput = document.getElementById(fileElementId);
                     if (fileInput && fileInput.files.length > 0) {
@@ -590,12 +592,11 @@
                             AppwriteID.unique(),
                             file
                         );
-                        return uploadedFile.\$id; // Returns Storage File ID
+                        return uploadedFile.\$id; 
                     }
                     return "";
                 }
 
-                // Upload files automatically to Storage Bucket
                 const customerPhotoId = await uploadFileToStorage('Customer_Photo');
                 const aadharFrontId = await uploadFileToStorage('Aadhar_Front');
                 const aadharBackId = await uploadFileToStorage('Aadhar_Back');
@@ -645,7 +646,6 @@
                     }
                 };
 
-                // Appwrite Function Endpoint
                 const endpoint = `https://starter-function-bhfh.sfo.appwrite.run`;
                 
                 const response = await fetch(endpoint, {
