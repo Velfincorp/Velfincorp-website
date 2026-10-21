@@ -270,7 +270,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Issued by *</label>
-                        <select id="Issued_by" required>
+                        <select id="Issued_by" onchange="toggleRetailerFields()" required>
                             <option value="">-Select-</option>
                             <option value="Admin">Admin</option>
                             <option value="Retailer">Retailer</option>
@@ -285,7 +285,7 @@
                 <div class="form-row hidden" id="retailerFieldsGroup">
                     <div class="form-group">
                         <label>Retailer Details *</label>
-                        <select id="Retailer_Details">
+                        <select id="Retailer_Details" onchange="autoFillRetailerCode()">
                             <option value="">-Select Retailer-</option>
                             <option value="RET001">Vel Retailer One</option>
                             <option value="RET002">Fin Partner Two</option>
@@ -426,7 +426,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Payment Method *</label>
-                        <select id="Payment_Method" required>
+                        <select id="Payment_Method" onchange="showHidePaymentDetails()" required>
                             <option value="">-Select-</option>
                             <option value="UPI">UPI</option>
                             <option value="e - NACH">e - NACH</option>
@@ -512,30 +512,12 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Set Today's Date
+        // Run immediately when script loads
+        window.onload = function() {
             const loanDateEl = document.getElementById('Loan_Date');
             if(loanDateEl) loanDateEl.valueAsDate = new Date();
-
-            // Attach Event Listeners safely
-            const issuedByEl = document.getElementById('Issued_by');
-            if(issuedByEl) {
-                issuedByEl.addEventListener('change', toggleRetailerFields);
-            }
-
-            const retailerDetailsEl = document.getElementById('Retailer_Details');
-            if(retailerDetailsEl) {
-                retailerDetailsEl.addEventListener('change', autoFillRetailerCode);
-            }
-
-            const paymentMethodEl = document.getElementById('Payment_Method');
-            if(paymentMethodEl) {
-                paymentMethodEl.addEventListener('change', showHidePaymentDetails);
-            }
-
-            // Generate initial ID
             generateBorrowerID();
-        });
+        };
 
         function generateBorrowerID() {
             const issuedByEl = document.getElementById('Issued_by');
