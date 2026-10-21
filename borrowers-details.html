@@ -301,7 +301,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Customer Photo *</label>
-                        <input type="file" id="Customer_Photo" accept="image/*">
+                        <input type="file" id="Customer_Photo" accept="image/*" required>
                     </div>
                     <div class="form-group">
                         <label>Loan Date *</label>
@@ -476,29 +476,29 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Upload Aadhar Front side *</label>
-                        <input type="file" id="Aadhar_Front">
+                        <input type="file" id="Aadhar_Front" required>
                     </div>
                     <div class="form-group">
                         <label>Upload Aadhar Back Side *</label>
-                        <input type="file" id="Aadhar_Back">
+                        <input type="file" id="Aadhar_Back" required>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Upload Pan Card *</label>
-                        <input type="file" id="Pan_Card">
+                        <input type="file" id="Pan_Card" required>
                     </div>
                     <div class="form-group">
                         <label>Upload Ration card front side *</label>
-                        <input type="file" id="Ration_Card">
+                        <input type="file" id="Ration_Card" required>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>CIBIL Score / Document *</label>
-                        <input type="file" id="CIBIL_Score">
+                        <input type="file" id="CIBIL_Score" required>
                     </div>
                     <div class="form-group">
                         <label>Email ID</label>
@@ -555,40 +555,40 @@
             window.location.replace("login.html");
         }
 
-        // --- SUBMISSION VIA APPWRITE FUNCTION ENDPOINT (BYPASSING CORS) ---
+        // --- AUTOMATED STORAGE UPLOAD & APPWRITE FUNCTION SUBMISSION ---
         async function validateAndSubmit(event) {
             event.preventDefault(); 
             
             const submitBtn = document.querySelector('.btn-submit');
-            submitBtn.innerText = "Processing & Saving Data...";
+            submitBtn.innerText = "Uploading Files & Saving Data...";
             submitBtn.disabled = true;
 
             try {
-                // Helper to convert file to Base64
-                async function convertFileToBase64(fileElementId) {
+                // Helper to upload file to Appwrite Storage Bucket automatically
+                async function uploadFileToStorage(fileElementId) {
                     const fileInput = document.getElementById(fileElementId);
                     if (fileInput && fileInput.files.length > 0) {
                         const file = fileInput.files[0];
-                        return new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.readAsDataURL(file);
-                            reader.onload = () => resolve(reader.result);
-                            reader.onerror = error => reject(error);
-                        });
+                        const uploadedFile = await window.appwriteStorage.createFile(
+                            VFC_DB.DOCUMENTS_BUCKET_ID,
+                            AppwriteID.unique(),
+                            file
+                        );
+                        return uploadedFile.\$id; // Returns Storage File ID
                     }
                     return "";
                 }
 
-                // Convert files
-                const customerPhotoBase64 = await convertFileToBase64('Customer_Photo');
-                const aadharFrontBase64 = await convertFileToBase64('Aadhar_Front');
-                const aadharBackBase64 = await convertFileToBase64('Aadhar_Back');
-                const panCardBase64 = await convertFileToBase64('Pan_Card');
-                const rationCardBase64 = await convertFileToBase64('Ration_Card');
-                const cibilScoreBase64 = await convertFileToBase64('CIBIL_Score');
+                // Upload files automatically to Storage Bucket
+                const customerPhotoId = await uploadFileToStorage('Customer_Photo');
+                const aadharFrontId = await uploadFileToStorage('Aadhar_Front');
+                const aadharBackId = await uploadFileToStorage('Aadhar_Back');
+                const panCardId = await uploadFileToStorage('Pan_Card');
+                const rationCardId = await uploadFileToStorage('Ration_Card');
+                const cibilScoreId = await uploadFileToStorage('CIBIL_Score');
 
-                const fullAddress = document.getElementById('Address_Line_1').value + ", " + document.getElementById('Land_Mark').value;
-                const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + document.getElementById('Last_Name').value;
+                const fullAddress = document.getElementById('Address_Line_1').value + ", " + (document.getElementById('Land_Mark').value || "");
+                const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + (document.getElementById('Last_Name').value || "");
 
                 const documentId = 'vfc_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
 
@@ -620,16 +620,16 @@
                         bank_name: document.getElementById('Bank_Name').value || "",
                         bank_account_no: document.getElementById('Bank_Account_Number').value || "",
                         ifsc_code: document.getElementById('IFSC_Code').value || "",
-                        customer_photo_url: customerPhotoBase64,
-                        aadhar_front_url: aadharFrontBase64,
-                        aadhar_back_url: aadharBackBase64,
-                        pan_card_url: panCardBase64,
-                        ration_card_url: rationCardBase64,
-                        cibil_score_url: cibilScoreBase64
+                        customer_photo_url: customerPhotoId,
+                        aadhar_front_url: aadharFrontId,
+                        aadhar_back_url: aadharBackId,
+                        pan_card_url: panCardId,
+                        ration_card_url: rationCardId,
+                        cibil_score_url: cibilScoreId
                     }
                 };
 
-                // Appwrite Function Endpoint (Bypassing CORS completely)
+                // Appwrite Function Endpoint
                 const endpoint = `https://starter-function-bhfh.sfo.appwrite.run`;
                 
                 const response = await fetch(endpoint, {
@@ -641,7 +641,7 @@
                 });
 
                 if (response.ok) {
-                    alert("Borrower Registration Successful! Data saved via Appwrite Function.");
+                    alert("Borrower Registration Successful! Files & Data saved automatically.");
                     window.location.reload();
                 } else {
                     const errData = await response.json();
