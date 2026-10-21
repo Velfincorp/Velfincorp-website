@@ -272,7 +272,7 @@
                         <label>Issued by *</label>
                         <select id="Issued_by" onchange="toggleRetailerFields()" required>
                             <option value="">-Select-</option>
-                            <option value="Admin" selected>Admin</option>
+                            <option value="Admin">Admin</option>
                             <option value="Retailer">Retailer</option>
                         </select>
                     </div>
@@ -512,24 +512,28 @@
     </div>
 
     <script>
-        // Set Today's Date & Auto Generate Borrower ID immediately on page load
-        document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById('Loan_Date').valueAsDate = new Date();
+        // Initialize fields on window load
+        window.onload = function() {
+            const loanDateEl = document.getElementById('Loan_Date');
+            if(loanDateEl) loanDateEl.valueAsDate = new Date();
             generateBorrowerID();
-        });
+        };
 
         function generateBorrowerID() {
-            const issuedBy = document.getElementById('Issued_by').value;
-            const retailerCode = document.getElementById('Retailer_Code').value;
+            const issuedByEl = document.getElementById('Issued_by');
+            const retailerCodeEl = document.getElementById('Retailer_Code');
+            const borrowerIdField = document.getElementById('Borrower_ID');
+            
+            if(!borrowerIdField) return;
+
+            const issuedBy = issuedByEl ? issuedByEl.value : 'Admin';
+            const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
             const randNum = Math.floor(1000 + Math.random() * 9000);
             
-            const borrowerIdField = document.getElementById('Borrower_ID');
-            if (borrowerIdField) {
-                if (issuedBy === 'Retailer' && retailerCode) {
-                    borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
-                } else {
-                    borrowerIdField.value = "VFC/ADM/" + randNum + "/2026";
-                }
+            if (issuedBy === 'Retailer' && retailerCode) {
+                borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
+            } else {
+                borrowerIdField.value = "VFC/ADM/" + randNum + "/2026";
             }
         }
 
