@@ -512,9 +512,23 @@
     </div>
 
     <script>
-        // Set Today's Date & Auto Generate Borrower ID
+        // Set Today's Date & Auto Generate Borrower ID based on Role (Admin vs Retailer)
         document.getElementById('Loan_Date').valueAsDate = new Date();
-        document.getElementById('Borrower_ID').value = "VFC/" + Math.floor(1000 + Math.random() * 9000) + "/2026";
+
+        function generateBorrowerID() {
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerCode = document.getElementById('Retailer_Code').value;
+            const randNum = Math.floor(1000 + Math.random() * 9000);
+            
+            if (issuedBy === 'Retailer' && retailerCode) {
+                document.getElementById('Borrower_ID').value = "VFC/" + retailerCode + "/" + randNum + "/2026";
+            } else {
+                document.getElementById('Borrower_ID').value = "VFC/ADM/" + randNum + "/2026";
+            }
+        }
+
+        // Initialize default Borrower ID on load
+        generateBorrowerID();
 
         function toggleRetailerFields() {
             const issuedBy = document.getElementById('Issued_by').value;
@@ -526,11 +540,13 @@
                 document.getElementById('Retailer_Details').value = '';
                 document.getElementById('Retailer_Code').value = '';
             }
+            generateBorrowerID();
         }
 
         function autoFillRetailerCode() {
             const ret = document.getElementById('Retailer_Details').value;
             document.getElementById('Retailer_Code').value = ret;
+            generateBorrowerID();
         }
 
         function showHidePaymentDetails() {
@@ -538,7 +554,7 @@
             const upiGroup = document.getElementById('upiGroup');
             const bankFields = document.getElementById('bankFields');
             
-            if(payMethod === 'UPI') {
+            if (payMethod === 'UPI') {
                 upiGroup.classList.remove('hidden');
                 bankFields.classList.add('hidden');
             } else if (payMethod === 'e - NACH') {
