@@ -371,4 +371,329 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Nominee Name *</label>
-                        <input type
+                        <input type="text" id="Nominee_Name" placeholder="Nominee Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nominee Contact Number *</label>
+                        <input type="text" id="Nominee_Contact_Number" maxlength="10" placeholder="10 digit number" required>
+                    </div>
+                </div>
+
+                <div class="section-heading">4. Address & Employment Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Address Line 1 *</label>
+                        <input type="text" id="Address_Line_1" placeholder="Door No / Street" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Land Mark</label>
+                        <input type="text" id="Land_Mark" placeholder="Nearby landmark">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>City / District *</label>
+                        <input type="text" id="City_District" placeholder="City or District" required>
+                    </div>
+                    <div class="form-group">
+                        <label>State / Province *</label>
+                        <input type="text" id="State_Province" placeholder="State" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Postal Code *</label>
+                        <input type="text" id="Postal_Code" maxlength="6" placeholder="Pincode" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Occupation *</label>
+                        <select id="Occupation" required>
+                            <option value="">-Select Occupation-</option>
+                            <option value="Salaried">Salaried</option>
+                            <option value="Business">Business</option>
+                            <option value="Self-Employed">Self-Employed</option>
+                            <option value="Daily Wages">Daily Wages</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nature of the Job *</label>
+                        <input type="text" id="Nature_of_the_Job" placeholder="Job description" required>
+                    </div>
+                </div>
+
+                <div class="section-heading">5. Payment Method & Document Uploads</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Payment Method *</label>
+                        <select id="Payment_Method" required>
+                            <option value="">-Select-</option>
+                            <option value="UPI">UPI</option>
+                            <option value="e - NACH">e - NACH</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- UPI Fields -->
+                <div class="form-row hidden" id="upiGroup">
+                    <div class="form-group">
+                        <label>UPI ID *</label>
+                        <input type="text" id="UPI_ID" placeholder="username@upi">
+                    </div>
+                </div>
+
+                <!-- Bank Fields -->
+                <div id="bankFields" class="hidden">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Bank Name *</label>
+                            <input type="text" id="Bank_Name" placeholder="Bank Name">
+                        </div>
+                        <div class="form-group">
+                            <label>Account Holder Name *</label>
+                            <input type="text" id="Account_Holder_Name" placeholder="Passbook Name">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Bank Account Number *</label>
+                            <input type="password" id="Bank_Account_Number" placeholder="Account Number">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Bank Account Number *</label>
+                            <input type="text" id="Confirm_Bank_Account_Number" placeholder="Re-enter Account Number">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>IFSC Code *</label>
+                            <input type="text" id="IFSC_Code" maxlength="11" placeholder="11 character IFSC">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Uploads -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Upload Aadhar Front side *</label>
+                        <input type="file" id="Aadhar_Front" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Aadhar Back Side *</label>
+                        <input type="file" id="Aadhar_Back" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Upload Pan Card *</label>
+                        <input type="file" id="Pan_Card" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Upload Ration card front side *</label>
+                        <input type="file" id="Ration_Card" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>CIBIL Score / Document *</label>
+                        <input type="file" id="CIBIL_Score" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email ID</label>
+                        <input type="email" id="Email" placeholder="customer@email.com">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Registration</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Set Today's Date
+            const loanDateEl = document.getElementById('Loan_Date');
+            if(loanDateEl) loanDateEl.valueAsDate = new Date();
+
+            // Attach Event Listeners safely
+            const issuedByEl = document.getElementById('Issued_by');
+            if(issuedByEl) {
+                issuedByEl.addEventListener('change', toggleRetailerFields);
+            }
+
+            const retailerDetailsEl = document.getElementById('Retailer_Details');
+            if(retailerDetailsEl) {
+                retailerDetailsEl.addEventListener('change', autoFillRetailerCode);
+            }
+
+            const paymentMethodEl = document.getElementById('Payment_Method');
+            if(paymentMethodEl) {
+                paymentMethodEl.addEventListener('change', showHidePaymentDetails);
+            }
+
+            // Generate initial ID
+            generateBorrowerID();
+        });
+
+        function generateBorrowerID() {
+            const issuedByEl = document.getElementById('Issued_by');
+            const retailerCodeEl = document.getElementById('Retailer_Code');
+            const borrowerIdField = document.getElementById('Borrower_ID');
+            
+            if(!borrowerIdField) return;
+
+            const issuedBy = issuedByEl ? issuedByEl.value : 'Admin';
+            const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
+            const randNum = Math.floor(1000 + Math.random() * 9000);
+            
+            if (issuedBy === 'Retailer' && retailerCode) {
+                borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
+            } else {
+                borrowerIdField.value = "VFC/ADM/" + randNum + "/2026";
+            }
+        }
+
+        function toggleRetailerFields() {
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerGroup = document.getElementById('retailerFieldsGroup');
+            if (issuedBy === 'Retailer') {
+                retailerGroup.classList.remove('hidden');
+            } else {
+                retailerGroup.classList.add('hidden');
+                document.getElementById('Retailer_Details').value = '';
+                document.getElementById('Retailer_Code').value = '';
+            }
+            generateBorrowerID();
+        }
+
+        function autoFillRetailerCode() {
+            const ret = document.getElementById('Retailer_Details').value;
+            document.getElementById('Retailer_Code').value = ret;
+            generateBorrowerID();
+        }
+
+        function showHidePaymentDetails() {
+            const payMethod = document.getElementById('Payment_Method').value;
+            const upiGroup = document.getElementById('upiGroup');
+            const bankFields = document.getElementById('bankFields');
+            
+            if (payMethod === 'UPI') {
+                upiGroup.classList.remove('hidden');
+                bankFields.classList.add('hidden');
+            } else if (payMethod === 'e - NACH') {
+                bankFields.classList.remove('hidden');
+                upiGroup.classList.add('hidden');
+            } else {
+                upiGroup.classList.add('hidden');
+                bankFields.classList.add('hidden');
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            window.location.replace("login.html");
+        }
+
+        // --- AUTOMATED STORAGE UPLOAD & APPWRITE FUNCTION SUBMISSION ---
+        async function validateAndSubmit(event) {
+            event.preventDefault(); 
+            
+            const submitBtn = document.querySelector('.btn-submit');
+            submitBtn.innerText = "Uploading Files & Saving Data...";
+            submitBtn.disabled = true;
+
+            try {
+                async function uploadFileToStorage(fileElementId) {
+                    const fileInput = document.getElementById(fileElementId);
+                    if (fileInput && fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+                        const uploadedFile = await window.appwriteStorage.createFile(
+                            VFC_DB.DOCUMENTS_BUCKET_ID,
+                            AppwriteID.unique(),
+                            file
+                        );
+                        return uploadedFile.\$id; 
+                    }
+                    return "";
+                }
+
+                const customerPhotoId = await uploadFileToStorage('Customer_Photo');
+                const aadharFrontId = await uploadFileToStorage('Aadhar_Front');
+                const aadharBackId = await uploadFileToStorage('Aadhar_Back');
+                const panCardId = await uploadFileToStorage('Pan_Card');
+                const rationCardId = await uploadFileToStorage('Ration_Card');
+                const cibilScoreId = await uploadFileToStorage('CIBIL_Score');
+
+                const fullAddress = document.getElementById('Address_Line_1').value + ", " + (document.getElementById('Land_Mark').value || "");
+                const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + (document.getElementById('Last_Name').value || "");
+
+                const documentId = 'vfc_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+
+                const payload = {
+                    documentId: documentId,
+                    data: {
+                        borrower_id: document.getElementById('Borrower_ID').value,
+                        issued_by: document.getElementById('Issued_by').value,
+                        retailer_code: document.getElementById('Retailer_Code').value || "",
+                        loan_date: document.getElementById('Loan_Date').value,
+                        full_name: fullName,
+                        dob: document.getElementById('Date_Of_Birth').value,
+                        relative_name: document.getElementById('Relationship').value + " " + document.getElementById('Relative_Name').value,
+                        aadhar_number: document.getElementById('Aadhar_Number').value,
+                        pan_number: document.getElementById('PAN_NUMBER').value,
+                        phone_number: document.getElementById('Phone_Number').value,
+                        whatsapp_number: document.getElementById('Whatsapp_Number').value,
+                        email: document.getElementById('Email').value || "",
+                        nominee_name: document.getElementById('Nominee_Name').value,
+                        nominee_contact: document.getElementById('Nominee_Contact_Number').value,
+                        address: fullAddress,
+                        city: document.getElementById('City_District').value,
+                        state: document.getElementById('State_Province').value,
+                        pincode: document.getElementById('Postal_Code').value,
+                        occupation: document.getElementById('Occupation').value,
+                        job_nature: document.getElementById('Nature_of_the_Job').value,
+                        payment_method: document.getElementById('Payment_Method').value,
+                        upi_id: document.getElementById('UPI_ID').value || "",
+                        bank_name: document.getElementById('Bank_Name').value || "",
+                        bank_account_no: document.getElementById('Bank_Account_Number').value || "",
+                        ifsc_code: document.getElementById('IFSC_Code').value || "",
+                        customer_photo_url: customerPhotoId,
+                        aadhar_front_url: aadharFrontId,
+                        aadhar_back_url: aadharBackId,
+                        pan_card_url: panCardId,
+                        ration_card_url: rationCardId,
+                        cibil_score_url: cibilScoreId
+                    }
+                };
+
+                const endpoint = `https://starter-function-bhfh.sfo.appwrite.run`;
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert("Borrower Registration Successful! Files & Data saved automatically.");
+                    window.location.reload();
+                } else {
+                    const errData = await response.json();
+                    throw new Error(errData.message || "Failed to save data");
+                }
+
+            } catch (error) {
+                console.error("Appwrite Submission Error:", error);
+                alert("Error saving data: " + error.message);
+            } finally {
+                submitBtn.innerText = "Submit Registration";
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
