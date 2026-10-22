@@ -547,30 +547,9 @@ window.location.replace("login.html");
 async function validateAndSubmit(event) {
 event.preventDefault();
 const submitBtn = document.querySelector('.btn-submit');
-submitBtn.innerText = "Uploading Files & Saving Data...";
+submitBtn.innerText = "Saving Data...";
 submitBtn.disabled = true;
 try {
-async function uploadFileToStorage(fileElementId) {
-const fileInput = document.getElementById(fileElementId);
-if (fileInput && fileInput.files.length > 0) {
-const file = fileInput.files[0];
-const uploadedFile = await window.appwriteStorage.createFile(
-VFC_DB.DOCUMENTS_BUCKET_ID,
-AppwriteID.unique(),
-file
-);
-return uploadedFile.$id;
-}
-return "";
-}
-
-const customerPhotoId = await uploadFileToStorage('Customer_Photo');
-const aadharFrontId = await uploadFileToStorage('Aadhar_Front');
-const aadharBackId = await uploadFileToStorage('Aadhar_Back');
-const panCardId = await uploadFileToStorage('Pan_Card');
-const rationCardId = await uploadFileToStorage('Ration_Card');
-const cibilScoreId = await uploadFileToStorage('CIBIL_Score');
-
 const fullAddress = document.getElementById('Address_Line_1').value + ", " + (document.getElementById('Land_Mark').value || "");
 const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + (document.getElementById('Last_Name').value || "");
 
@@ -601,13 +580,7 @@ payment_method: document.getElementById('Payment_Method').value,
 upi_id: document.getElementById('UPI_ID').value || "",
 bank_name: document.getElementById('Bank_Name').value || "",
 bank_account_no: document.getElementById('Bank_Account_Number').value || "",
-ifsc_code: document.getElementById('IFSC_Code').value || "",
-customer_photo: customerPhotoId,
-aadhar_front: aadharFrontId,
-aadhar_back: aadharBackId,
-pan_card: panCardId,
-ration_card: rationCardId,
-cibil_score: cibilScoreId
+ifsc_code: document.getElementById('IFSC_Code').value || ""
 };
 
 await window.appwriteDatabases.createDocument(
@@ -617,7 +590,7 @@ documentId,
 dataPayload
 );
 
-alert("Borrower Registration Successful! Files & Data saved automatically.");
+alert("Borrower Registration Successful! Data saved automatically.");
 window.location.reload();
 
 } catch (error) {
