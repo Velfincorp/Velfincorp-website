@@ -9,6 +9,8 @@
     <title>Vel Fin Corp - Retailer & Staff Registration</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script>
         // Centralized Authentication & Security Protection Script
         (function() {
@@ -391,9 +393,7 @@
             if (userType === 'retailer') {
                 retailerFields.style.display = 'block';
                 staffFields.style.display = 'none';
-
-                let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
-                codeInput.value = `VFC-RET-2026-00${retailers.length + 1}`;
+                codeInput.value = `VFC-RET-2026-001`;
 
                 document.getElementById('showroomName').setAttribute('required', 'true');
                 document.getElementById('ownerName').setAttribute('required', 'true');
@@ -408,9 +408,7 @@
             } else {
                 retailerFields.style.display = 'none';
                 staffFields.style.display = 'block';
-
-                let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
-                codeInput.value = `VFC-STF-2026-00${users.length + 1}`;
+                codeInput.value = `VFC-STF-2026-001`;
 
                 document.getElementById('staffName').setAttribute('required', 'true');
                 document.getElementById('staffPhone').setAttribute('required', 'true');
@@ -425,7 +423,7 @@
             }
         }
 
-        function saveData(event) {
+        async function saveData(event) {
             event.preventDefault();
             const userType = document.getElementById('userType').value;
 
@@ -433,39 +431,53 @@
                 const retailerId = document.getElementById('retailerPhone').value.trim();
                 const retailerPass = document.getElementById('retailerPass').value.trim();
 
-                const retailer = {
-                    code: document.getElementById('userCode').value,
-                    showroom: document.getElementById('showroomName').value.trim(),
-                    owner: document.getElementById('ownerName').value.trim(),
-                    whatsapp: retailerId,
+                const retailerPayload = {
+                    user_type: "retailer",
+                    unique_code: document.getElementById('userCode').value,
+                    show_room_name: document.getElementById('showroomName').value.trim(),
+                    owner_name: document.getElementById('ownerName').value.trim(),
+                    whatsapp_number: retailerId,
+                    password: retailerPass,
                     email: document.getElementById('retailerEmail').value.trim(),
                     city: document.getElementById('cityLocation').value.trim(),
                     address: document.getElementById('fullAddress').value.trim(),
-                    gst: document.getElementById('gstNumber').value.trim(),
-                    pan: document.getElementById('panNumber').value.trim(),
-                    aadhar: document.getElementById('aadharNumber').value.trim(),
-                    accountNumber: document.getElementById('accountNumber').value.trim(),
-                    ifsc: document.getElementById('ifscCode').value.trim(),
-                    date: new Date().toLocaleDateString()
+                    gst_number: document.getElementById('gstNumber').value.trim(),
+                    pan_number: document.getElementById('panNumber').value.trim(),
+                    aadhaar_number: document.getElementById('aadharNumber').value.trim(),
+                    bank_account_number: document.getElementById('accountNumber').value.trim(),
+                    ifsc_code: document.getElementById('ifscCode').value.trim()
                 };
 
-                // Save to retailers list
-                let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
-                retailers.push(retailer);
-                localStorage.setItem('velfincorp_retailers', JSON.stringify(retailers));
+                try {
+                    // Appwrite கிளவுட் டேட்டாபேஸில் சேமித்தல்
+                    await window.appwriteDatabases.createDocument(
+                        VFC_DB.DB_ID,
+                        '6ada05fd0007206813cf', // Retialers/Staffs Collection ID
+                        window.AppwriteID.unique(),
+                        retailerPayload
+                    );
 
-                // Also save to users list with standard access modules for Retailer (Borrower Details & Credit Vault Loan)
-                let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
-                users.push({
-                    id: retailerId,
-                    pass: retailerPass,
-                    role: 'retailer',
-                    name: retailer.showroom + ' (' + retailer.owner + ')',
-                    permissions: ['borrowers-details.html', 'creditvault.html']
-                });
-                localStorage.setItem('velfincorp_users', JSON.stringify(users));
+                    // Backup local storage copy for login verification compatibility
+                    let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
+                    retailers.push(retailerPayload);
+                    localStorage.setItem('velfincorp_retailers', JSON.stringify(retailers));
 
-                alert("Retailer registered & login access created successfully!");
+                    let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+                    users.push({
+                        id: retailerId,
+                        pass: retailerPass,
+                        role: 'retailer',
+                        name: retailerPayload.show_room_name + ' (' + retailerPayload.owner_name + ')',
+                        permissions: ['borrowers-details.html', 'creditvault.html']
+                    });
+                    localStorage.setItem('velfincorp_users', JSON.stringify(users));
+
+                    alert("Retailer registered & saved to Cloud Database successfully!");
+                } catch (err) {
+                    console.error("Error saving retailer to Appwrite:", err);
+                    alert("Cloud Database save failed: " + err.message);
+                    return;
+                }
             } else {
                 const staffId = document.getElementById('staffPhone').value.trim();
                 const staffPass = document.getElementById('staffPass').value.trim();
@@ -474,18 +486,50 @@
                 let permissions = [];
                 checkboxes.forEach((cb) => permissions.push(cb.value));
 
-                let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
-                users.push({
-                    id: staffId,
-                    pass: staffPass,
-                    role: 'staff',
-                    name: document.getElementById('staffName').value.trim(),
-                    permissions: permissions,
-                    modules: permissions // Added for Support Mail compatibility check
-                });
-                localStorage.setItem('velfincorp_users', JSON.stringify(users));
-                localStorage.setItem('velfincorp_staffs', JSON.stringify(users)); // Secondary save for specific staff verification
-                alert("Staff access created successfully!");
+                const staffPayload = {
+                    user_type: "staff",
+                    unique_code: document.getElementById('userCode').value,
+                    show_room_name: document.getElementById('staffName').value.trim(),
+                    owner_name: "-",
+                    whatsapp_number: staffId,
+                    password: staffPass,
+                    email: "-",
+                    city: "-",
+                    address: "-",
+                    gst_number: "-",
+                    pan_number: "-",
+                    aadhaar_number: "-",
+                    bank_account_number: "-",
+                    ifsc_code: "-"
+                };
+
+                try {
+                    // Appwrite கிளவுட் டேட்டாபேஸில் சேமித்தல்
+                    await window.appwriteDatabases.createDocument(
+                        VFC_DB.DB_ID,
+                        '6ada05fd0007206813cf', // Retialers/Staffs Collection ID
+                        window.AppwriteID.unique(),
+                        staffPayload
+                    );
+
+                    let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+                    users.push({
+                        id: staffId,
+                        pass: staffPass,
+                        role: 'staff',
+                        name: staffPayload.show_room_name,
+                        permissions: permissions,
+                        modules: permissions
+                    });
+                    localStorage.setItem('velfincorp_users', JSON.stringify(users));
+                    localStorage.setItem('velfincorp_staffs', JSON.stringify(users));
+
+                    alert("Staff access created and saved to Cloud Database successfully!");
+                } catch (err) {
+                    console.error("Error saving staff to Appwrite:", err);
+                    alert("Cloud Database save failed: " + err.message);
+                    return;
+                }
             }
 
             document.getElementById('registrationForm').reset();
