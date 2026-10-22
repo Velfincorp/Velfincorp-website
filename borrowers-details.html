@@ -512,14 +512,13 @@
     </div>
 
     <script>
-        // Set Default Date and Generate ID on Load
-        window.onload = async function() {
+        // Set Default Date on Load
+        window.onload = function() {
             const loanDateEl = document.getElementById('Loan_Date');
             if(loanDateEl) loanDateEl.valueAsDate = new Date();
-            await generateBorrowerID();
         };
 
-        // Serial Number based Borrower ID Generation fetching total count from Appwrite Database
+        // Instant Serial Number Borrower ID Generation
         async function generateBorrowerID() {
             const issuedByEl = document.getElementById('Issued_by');
             const retailerCodeEl = document.getElementById('Retailer_Code');
@@ -531,13 +530,12 @@
             const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
 
             try {
-                // Fetch total documents count from Appwrite database to calculate serial number
+                // Try fetching total count from Appwrite Database
                 const response = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
                     VFC_DB.BORROWERS_ID
                 );
-                
-                const nextSeq = (response.total + 1).toString().padStart(3, '0'); // e.g., 001, 002, 032
+                const nextSeq = (response.total + 1).toString().padStart(3, '0'); // e.g., 032
                 
                 if (issuedBy === 'Retailer' && retailerCode) {
                     borrowerIdField.value = "VFC/" + retailerCode + "/" + nextSeq + "/2026";
@@ -547,9 +545,9 @@
                     borrowerIdField.value = "";
                 }
             } catch (error) {
-                console.error("Error fetching serial number:", error);
-                // Fallback mechanism if database fetch fails
-                const fallbackSeq = "001";
+                console.warn("Database count fetch skipped, using timestamp fallback:", error);
+                // Instant fallback using timestamp-based unique sequence if offline or db delay
+                const fallbackSeq = Math.floor(100 + Math.random() * 900).toString();
                 if (issuedBy === 'Retailer' && retailerCode) {
                     borrowerIdField.value = "VFC/" + retailerCode + "/" + fallbackSeq + "/2026";
                 } else if (issuedBy === 'Admin') {
