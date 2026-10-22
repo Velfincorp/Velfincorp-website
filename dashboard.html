@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +9,8 @@
     <title>Vel Fin Corp - Main Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script>
         // Centralized Authentication & Security Protection Script
         (function() {
@@ -257,7 +259,6 @@
             background-color: var(--gold);
             color: var(--navy);
         }
-        /* Users table list */
         .users-table {
             width: 100%;
             border-collapse: collapse;
@@ -310,19 +311,19 @@
         <div class="cards-grid">
             <div class="card">
                 <h4>Total Active Loans Amount</h4>
-                <div class="amount green" id="plActiveAmount">₹840,000.00</div>
+                <div class="amount green" id="plActiveAmount">₹0.00</div>
             </div>
             <div class="card">
                 <h4>Total Amount Collected</h4>
-                <div class="amount green" id="plCollectedAmount">₹152,200.00</div>
+                <div class="amount green" id="plCollectedAmount">₹0.00</div>
             </div>
             <div class="card red-border">
                 <h4>Remaining Balance Amount</h4>
-                <div class="amount red" id="plRemainingBalance">₹687,800.00</div>
+                <div class="amount red" id="plRemainingBalance">₹0.00</div>
             </div>
             <div class="card">
                 <h4>Total Active Loans</h4>
-                <div class="amount" id="plActiveCount">25</div>
+                <div class="amount" id="plActiveCount">0</div>
             </div>
         </div>
 
@@ -330,19 +331,19 @@
         <div class="cards-grid">
             <div class="card">
                 <h4>Total Active Credit Vault Amount</h4>
-                <div class="amount green" id="cvActiveAmount">₹701,533.00</div>
+                <div class="amount green" id="cvActiveAmount">₹0.00</div>
             </div>
             <div class="card">
                 <h4>Total Amount Collected</h4>
-                <div class="amount green" id="cvCollectedAmount">₹129,130.50</div>
+                <div class="amount green" id="cvCollectedAmount">₹0.00</div>
             </div>
             <div class="card">
                 <h4>Total Active Vault Loans</h4>
-                <div class="amount" id="cvActiveCount">36</div>
+                <div class="amount" id="cvActiveCount">0</div>
             </div>
             <div class="card red-border">
                 <h4>Remaining Balance</h4>
-                <div class="amount red" id="cvRemainingBalance">₹572,402.50</div>
+                <div class="amount red" id="cvRemainingBalance">₹0.00</div>
             </div>
         </div>
 
@@ -399,39 +400,77 @@
             window.location.replace('login.html');
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             loadUsersList();
-            
-            let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
-            let personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
-            let payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
-
-            let cvTotalAmount = 701533.00, cvCollected = 129130.50, cvCount = 36;
-            let plTotalAmount = 840000.00, plCollected = 152200.00, plCount = 25;
-
-            if (creditVaultLoans.length > 0) {
-                cvTotalAmount = creditVaultLoans.reduce((sum, loan) => sum + (parseFloat(loan.productValue) || 0), 0);
-                cvCount = creditVaultLoans.filter(l => l.status === 'ACTIVE').length;
-            }
-            if (personalLoans.length > 0) {
-                plTotalAmount = personalLoans.reduce((sum, loan) => sum + (parseFloat(loan.loanAmount) || 0), 0);
-                plCount = personalLoans.filter(l => l.status === 'ACTIVE').length;
-            }
-            if (payments.length > 0) {
-                cvCollected = payments.filter(p => p.loanType === 'Credit Vault').reduce((sum, p) => sum + (parseFloat(p.paidAmount) || 0), cvCollected);
-                plCollected = payments.filter(p => p.loanType === 'Personal Loan').reduce((sum, p) => sum + (parseFloat(p.paidAmount) || 0), plCollected);
-            }
-
-            document.getElementById('cvActiveAmount').innerText = '₹' + cvTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('cvCollectedAmount').innerText = '₹' + cvCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('cvActiveCount').innerText = cvCount;
-            document.getElementById('cvRemainingBalance').innerText = '₹' + (cvTotalAmount - cvCollected).toLocaleString('en-IN', {minimumFractionDigits: 2});
-
-            document.getElementById('plActiveAmount').innerText = '₹' + plTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('plCollectedAmount').innerText = '₹' + plCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('plActiveCount').innerText = plCount;
-            document.getElementById('plRemainingBalance').innerText = '₹' + (plTotalAmount - plCollected).toLocaleString('en-IN', {minimumFractionDigits: 2});
+            await loadDashboardDataFromAppwrite();
         });
+
+        async function loadDashboardDataFromAppwrite() {
+            try {
+                // Appwrite-ல் இருந்து லோன்கள் மற்றும் பேமெண்ட் தரவுகளைப் பெறுதல்
+                const loansResponse = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID
+                );
+                const paymentsResponse = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.PAYMENTS_ID
+                );
+
+                const loans = loansResponse.documents || [];
+                const payments = paymentsResponse.documents || [];
+
+                let cvTotalAmount = 0, cvCollected = 0, cvCount = 0;
+                let plTotalAmount = 0, plCollected = 0, plCount = 0;
+
+                // லோன்களைப் பிரித்து கணக்கிடுதல் (Credit Vault மற்றும் Personal Loan)
+                loans.forEach(loan => {
+                    const amount = parseFloat(loan.loan_amount) || 0;
+                    const isCreditVault = loan.loan_id && (loan.loan_id.includes("VML") || loan.loan_id.includes("VEL") || loan.loan_id.includes("VFL"));
+
+                    if (isCreditVault) {
+                        if (loan.status === 'ACTIVE') {
+                            cvTotalAmount += amount;
+                            cvCount++;
+                        }
+                    } else {
+                        if (loan.status === 'ACTIVE') {
+                            plTotalAmount += amount;
+                            plCount++;
+                        }
+                    }
+                });
+
+                // பேமெண்ட்டுகளைக் கணக்கிடுதல்
+                payments.forEach(pay => {
+                    const paid = parseFloat(pay.amount_paid) || 0;
+                    // எந்த லோனைச் சேர்ந்தது என சோதித்தல் (loan_id மூலம்)
+                    const parentLoan = loans.find(l => l.loan_id === pay.loan_id);
+                    if (parentLoan) {
+                        const isCV = parentLoan.loan_id.includes("VML") || parentLoan.loan_id.includes("VEL") || parentLoan.loan_id.includes("VFL");
+                        if (isCV) {
+                            cvCollected += paid;
+                        } else {
+                            plCollected += paid;
+                        }
+                    }
+                });
+
+                // டாஷ்போர்டில் மதிப்புகளை அद्यுடனுக்குடன் ஏற்றுதல்
+                document.getElementById('cvActiveAmount').innerText = '₹' + cvTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('cvCollectedAmount').innerText = '₹' + cvCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('cvActiveCount').innerText = cvCount;
+                document.getElementById('cvRemainingBalance').innerText = '₹' + (cvTotalAmount - cvCollected).toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+                document.getElementById('plActiveAmount').innerText = '₹' + plTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('plCollectedAmount').innerText = '₹' + plCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('plActiveCount').innerText = plCount;
+                document.getElementById('plRemainingBalance').innerText = '₹' + (plTotalAmount - plCollected).toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+            } catch (error) {
+                console.error("Error loading dashboard metrics from Appwrite:", error);
+            }
+        }
 
         function loadUsersList() {
             const tbody = document.getElementById('usersTableBody');
@@ -486,10 +525,9 @@
                 pass: userPass, 
                 role: userRole, 
                 permissions: permissions,
-                modules: permissions // Saved for Mail Inbox compatibility
+                modules: permissions 
             });
             localStorage.setItem('velfincorp_users', JSON.stringify(users));
-            // Save secondary copy for staff checking
             localStorage.setItem('velfincorp_staffs', JSON.stringify(users));
 
             alert(`Access successfully created for Mobile: ${userId} with ${permissions.length} module permissions!`);
