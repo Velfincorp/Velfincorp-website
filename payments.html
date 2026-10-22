@@ -444,26 +444,31 @@
 
             const paymentId = "PAY/" + Math.floor(100 + Math.random() * 900) + "/2026";
 
-            // Appwrite டேட்டாபேஸில் பேமெண்ட்டைச் சேமித்தல் (PAYMENTS_ID 컬렉션 தேவைப்பட்டால் db.js-ல் இணைத்துக் கொள்ளலாம்)
+            // Appwrite டேட்டாபேஸில் பேமெண்ட்டைச் சேமித்தல்
             try {
-                let paymentLoansList = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
-                paymentLoansList.push({
-                    paymentId: paymentId,
-                    borrower: borrowerName,
-                    phone: borrowerPhone,
-                    loanId: loanId,
-                    amount: paidAmount.toString(),
-                    balance: balanceAmount.toString(),
-                    date: paymentDate,
-                    mode: paymentMode,
-                    delay: delayDetails,
-                    paidInst: paidInst,
-                    remInst: remInst,
-                    loanType: loanId.includes("VML") || loanId.includes("VEL") || loanId.includes("VFL") ? 'Credit Vault' : 'Personal Loan'
-                });
-                localStorage.setItem('velfincorp_payments', JSON.stringify(paymentLoansList));
+                await window.appwriteDatabases.createDocument(
+                    VFC_DB.DB_ID,
+                    VFC_DB.PAYMENTS_ID,
+                    window.AppwriteID.unique(),
+                    {
+                        payment_id: paymentId,
+                        loan_id: loanId,
+                        borrower_name: borrowerName,
+                        phone_number: borrowerPhone,
+                        amount_paid: paidAmount.toString(),
+                        balance_amount: balanceAmount.toString(),
+                        paid_installment: paidInst.toString(),
+                        remaining_installment: remInst.toString(),
+                        payment_date: paymentDate,
+                        payment_mode: paymentMode,
+                        delayed_details: delayDetails
+                    }
+                );
+                console.log("Payment saved to Appwrite Cloud Database!");
             } catch (err) {
-                console.error("Error saving payment:", err);
+                console.error("Error saving payment to Appwrite:", err);
+                alert("Database save failed: " + err.message);
+                return;
             }
 
             // MSG91 API மூலம் WhatsApp Receipt அனுப்புவது
@@ -545,10 +550,10 @@
 
                 const result = await response.json();
                 console.log("MSG91 Response:", result);
-                alert("Payment submitted successfully and WhatsApp receipt sent automatically via MSG91!");
+                alert("Payment successfully saved to Cloud Database and WhatsApp receipt sent automatically via MSG91!");
             } catch (error) {
                 console.error("Error sending WhatsApp message:", error);
-                alert("Payment saved, but automated WhatsApp dispatch failed due to network.");
+                alert("Payment saved to database, but automated WhatsApp dispatch failed due to network.");
             }
 
             document.getElementById('paymentForm').reset();
