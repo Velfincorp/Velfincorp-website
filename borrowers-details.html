@@ -1,681 +1,630 @@
 <!DOCTYPE html>
 <html lang="ta">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Vel Fin Corp - Comprehensive Borrower Registration</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Appwrite SDK & Master Config -->
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
-    <script src="db.js"></script>
-
-    <script>
-        (function() {
-            const currentPage = window.location.pathname.split("/").pop() || "index.html";
-            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-            const userRole = sessionStorage.getItem('velfincorp_role');
-
-            window.pageshow = function(event) {
-                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
-                    window.location.replace('login.html');
-                }
-            };
-
-            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) return;
-
-            if (!loggedUser || !userRole) {
-                window.location.replace('login.html');
-                return;
-            }
-
-            if (userRole === 'borrower') {
-                if (currentPage !== 'borrower-portal.html') {
-                    window.location.replace('borrower-portal.html');
-                }
-            } else {
-                if (currentPage === 'borrower-portal.html') {
-                    window.location.replace('dashboard.html');
-                }
-            }
-        })();
-    </script>
-    <style>
-        :root {
-            --navy: #0F1D36;
-            --gold: #C5A059;
-            --bg-color: #F8F9FB;
-            --text-main: #2D3748;
-            --white: #FFFFFF;
-            --danger: #C53030;
-        }
-        body {
-            font-family: 'Manrope', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            min-height: 100vh;
-        }
-        .sidebar {
-            width: 260px;
-            background-color: var(--navy);
-            color: var(--white);
-            display: flex;
-            flex-direction: column;
-            border-right: 3px solid var(--gold);
-            position: fixed;
-            height: 100vh;
-            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
-            overflow-y: auto;
-        }
-        .sidebar-brand {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0,0,0,0.1);
-        }
-        .sidebar-logo {
-            height: 40px;
-            width: 40px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 2px solid var(--gold);
-            background: var(--white);
-            padding: 2px;
-        }
-        .sidebar-title {
-            font-family: 'Cinzel', serif;
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--gold);
-            letter-spacing: 1px;
-        }
-        .sidebar-menu {
-            list-style: none;
-            padding: 15px 0;
-            margin: 0;
-            flex: 1;
-        }
-        .sidebar-menu li a {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px 25px;
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: 0.3s;
-            border-left: 4px solid transparent;
-        }
-        .sidebar-menu li a:hover, .sidebar-menu li a.active {
-            background-color: rgba(197, 160, 89, 0.15);
-            color: var(--gold);
-            border-left-color: var(--gold);
-        }
-        .sidebar-menu li a i {
-            width: 20px;
-            text-align: center;
-            color: var(--gold);
-        }
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-        .btn-logout {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 10px;
-            width: 100%;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: 40px;
-            box-sizing: border-box;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: var(--white);
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05);
-            border-top: 5px solid var(--navy);
-        }
-        h2 {
-            font-family: 'Cinzel', serif;
-            text-align: center;
-            color: var(--navy);
-            margin-bottom: 5px;
-        }
-        .subtitle {
-            text-align: center;
-            color: var(--gold);
-            font-weight: 600;
-            margin-bottom: 30px;
-            font-size: 15px;
-        }
-        .section-heading {
-            font-family: 'Cinzel', serif;
-            color: var(--navy);
-            font-size: 16px;
-            border-bottom: 2px solid var(--gold);
-            padding-bottom: 8px;
-            margin: 30px 0 20px 0;
-            font-weight: bold;
-        }
-        .form-row {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .form-group {
-            flex: 1;
-            min-width: 250px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--navy);
-            font-size: 13px;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 11px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--gold);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
-        }
-        .btn-submit {
-            background-color: var(--navy);
-            color: white;
-            padding: 14px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 30px;
-            transition: 0.3s;
-        }
-        .btn-submit:hover {
-            background-color: var(--gold);
-            color: var(--navy);
-        }
-        .hidden { display: none !important; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Vel Fin Corp - Comprehensive Borrower Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+<script src="db.js"></script>
+<script>
+(function() {
+const currentPage = window.location.pathname.split("/").pop() || "index.html";
+const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+const userRole = sessionStorage.getItem('velfincorp_role');
+window.pageshow = function(event) {
+if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+window.location.replace('login.html');
+}
+};
+const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+if (publicPages.includes(currentPage)) return;
+if (!loggedUser || !userRole) {
+window.location.replace('login.html');
+return;
+}
+if (userRole === 'borrower') {
+if (currentPage !== 'borrower-portal.html') {
+window.location.replace('borrower-portal.html');
+}
+} else {
+if (currentPage === 'borrower-portal.html') {
+window.location.replace('dashboard.html');
+}
+}
+})();
+</script>
+<style>
+:root {
+--navy: #0F1D36;
+--gold: #C5A059;
+--bg-color: #F8F9FB;
+--text-main: #2D3748;
+--white: #FFFFFF;
+--danger: #C53030;
+}
+body {
+font-family: 'Manrope', Arial, sans-serif;
+background-color: var(--bg-color);
+color: var(--text-main);
+margin: 0;
+display: flex;
+min-height: 100vh;
+}
+.sidebar {
+width: 260px;
+background-color: var(--navy);
+color: var(--white);
+display: flex;
+flex-direction: column;
+border-right: 3px solid var(--gold);
+position: fixed;
+height: 100vh;
+box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
+overflow-y: auto;
+}
+.sidebar-brand {
+padding: 20px;
+display: flex;
+align-items: center;
+gap: 12px;
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+background: rgba(0,0,0,0.1);
+}
+.sidebar-logo {
+height: 40px;
+width: 40px;
+object-fit: cover;
+border-radius: 50%;
+border: 2px solid var(--gold);
+background: var(--white);
+padding: 2px;
+}
+.sidebar-title {
+font-family: 'Cinzel', serif;
+font-size: 16px;
+font-weight: bold;
+color: var(--gold);
+letter-spacing: 1px;
+}
+.sidebar-menu {
+list-style: none;
+padding: 15px 0;
+margin: 0;
+flex: 1;
+}
+.sidebar-menu li a {
+display: flex;
+align-items: center;
+gap: 15px;
+padding: 12px 25px;
+color: #cbd5e1;
+text-decoration: none;
+font-size: 14px;
+font-weight: 500;
+transition: 0.3s;
+border-left: 4px solid transparent;
+}
+.sidebar-menu li a:hover, .sidebar-menu li a.active {
+background-color: rgba(197, 160, 89, 0.15);
+color: var(--gold);
+border-left-color: var(--gold);
+}
+.sidebar-menu li a i {
+width: 20px;
+text-align: center;
+color: var(--gold);
+}
+.sidebar-footer {
+padding: 20px;
+border-top: 1px solid rgba(255, 255, 255, 0.1);
+text-align: center;
+}
+.btn-logout {
+background-color: var(--danger);
+color: white;
+border: none;
+padding: 10px;
+width: 100%;
+border-radius: 6px;
+font-weight: bold;
+cursor: pointer;
+text-decoration: none;
+display: block;
+text-align: center;
+box-sizing: border-box;
+}
+.main-content {
+margin-left: 260px;
+flex: 1;
+padding: 40px;
+box-sizing: border-box;
+}
+.container {
+max-width: 900px;
+margin: 0 auto;
+background: var(--white);
+padding: 40px;
+border-radius: 8px;
+box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05);
+border-top: 5px solid var(--navy);
+}
+h2 {
+font-family: 'Cinzel', serif;
+text-align: center;
+color: var(--navy);
+margin-bottom: 5px;
+}
+.subtitle {
+text-align: center;
+color: var(--gold);
+font-weight: 600;
+margin-bottom: 30px;
+font-size: 15px;
+}
+.section-heading {
+font-family: 'Cinzel', serif;
+color: var(--navy);
+font-size: 16px;
+border-bottom: 2px solid var(--gold);
+padding-bottom: 8px;
+margin: 30px 0 20px 0;
+font-weight: bold;
+}
+.form-row {
+display: flex;
+gap: 20px;
+margin-bottom: 20px;
+flex-wrap: wrap;
+}
+.form-group {
+flex: 1;
+min-width: 250px;
+}
+label {
+display: block;
+margin-bottom: 8px;
+font-weight: 600;
+color: var(--navy);
+font-size: 13px;
+}
+input, select, textarea {
+width: 100%;
+padding: 11px;
+border: 1px solid #cbd5e1;
+border-radius: 6px;
+font-size: 14px;
+box-sizing: border-box;
+}
+input:focus, select:focus, textarea:focus {
+border-color: var(--gold);
+outline: none;
+box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
+}
+.btn-submit {
+background-color: var(--navy);
+color: white;
+padding: 14px 20px;
+border: none;
+border-radius: 6px;
+cursor: pointer;
+width: 100%;
+font-size: 16px;
+font-weight: bold;
+margin-top: 30px;
+transition: 0.3s;
+}
+.btn-submit:hover {
+background-color: var(--gold);
+color: var(--navy);
+}
+.hidden { display: none !important; }
+</style>
 </head>
 <body>
-
-    <div class="sidebar">
-        <div class="sidebar-brand">
-            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
-            <div class="sidebar-title">VEL FIN CORP</div>
-        </div>
-        <ul class="sidebar-menu">
-            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
-            <li><a href="borrowers-details.html" class="active"><i class="fas fa-users"></i> Borrower Details</a></li>
-            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
-            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
-            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
-            <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
-            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
-            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
-            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
-            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
-            <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
-            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
-            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
-        </ul>
-        <div class="sidebar-footer">
-            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <div class="container">
-            <h2>VEL FIN CORP</h2>
-            <div class="subtitle">Borrower Registration & Loan Application</div>
-
-            <form id="borrowerRegistrationForm" onsubmit="return validateAndSubmit(event)">
-                
-                <div class="section-heading">1. General & Retailer Details</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Issued by *</label>
-                        <select id="Issued_by" onchange="toggleRetailerFields()" required>
-                            <option value="">-Select-</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Retailer">Retailer</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Borrower ID *</label>
-                        <input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9; font-weight: bold; color: var(--navy);" placeholder="Auto-generated ID">
-                    </div>
-                </div>
-
-                <div class="form-row hidden" id="retailerFieldsGroup">
-                    <div class="form-group">
-                        <label>Retailer Details *</label>
-                        <select id="Retailer_Details" onchange="autoFillRetailerCode()">
-                            <option value="">-Select Retailer-</option>
-                            <option value="RET001">Vel Retailer One</option>
-                            <option value="RET002">Fin Partner Two</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Retailer Code *</label>
-                        <input type="text" id="Retailer_Code" readonly placeholder="Auto-filled code">
-                    </div>
-                </div>
-
-                <div class="section-heading">2. Personal & Family Information</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Customer Photo *</label>
-                        <input type="file" id="Customer_Photo" accept="image/*" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Loan Date *</label>
-                        <input type="date" id="Loan_Date" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Customer Name *</label>
-                        <div style="display: flex; gap: 10px;">
-                            <select id="Name_Prefix" style="width: 100px;">
-                                <option value="Mr">Mr</option>
-                                <option value="Mrs">Mrs</option>
-                                <option value="Ms">Ms</option>
-                            </select>
-                            <input type="text" id="First_Name" placeholder="First Name" required style="flex: 1;">
-                            <input type="text" id="Last_Name" placeholder="Last Name" style="flex: 1;">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Date of Birth (DOB) *</label>
-                        <input type="date" id="Date_Of_Birth" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Relationship *</label>
-                        <select id="Relationship" required>
-                            <option value="">-Select-</option>
-                            <option value="Son of">Son Of</option>
-                            <option value="Daughter of">Daughter Of</option>
-                            <option value="Wife of">Wife Of</option>
-                            <option value="Care of">Care Of</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Son / Daughter / Spouse Name *</label>
-                        <input type="text" id="Relative_Name" placeholder="Enter relative name" required>
-                    </div>
-                </div>
-
-                <div class="section-heading">3. Identity Proofs & Contact Details</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Aadhar Number *</label>
-                        <input type="text" id="Aadhar_Number" placeholder="12 digit Aadhar" maxlength="14" required>
-                    </div>
-                    <div class="form-group">
-                        <label>PAN Number *</label>
-                        <input type="text" id="PAN_NUMBER" placeholder="ABCDE1234F" maxlength="10" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Phone Number *</label>
-                        <input type="text" id="Phone_Number" maxlength="10" placeholder="10 digit number" required>
-                    </div>
-                    <div class="form-group">
-                        <label>WhatsApp Number *</label>
-                        <input type="text" id="Whatsapp_Number" maxlength="10" placeholder="10 digit number" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Nominee Name *</label>
-                        <input type="text" id="Nominee_Name" placeholder="Nominee Name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Nominee Contact Number *</label>
-                        <input type="text" id="Nominee_Contact_Number" maxlength="10" placeholder="10 digit number" required>
-                    </div>
-                </div>
-
-                <div class="section-heading">4. Address & Employment Details</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Address Line 1 *</label>
-                        <input type="text" id="Address_Line_1" placeholder="Door No / Street" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Land Mark</label>
-                        <input type="text" id="Land_Mark" placeholder="Nearby landmark">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>City / District *</label>
-                        <input type="text" id="City_District" placeholder="City or District" required>
-                    </div>
-                    <div class="form-group">
-                        <label>State / Province *</label>
-                        <input type="text" id="State_Province" placeholder="State" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Postal Code *</label>
-                        <input type="text" id="Postal_Code" maxlength="6" placeholder="Pincode" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Occupation *</label>
-                        <select id="Occupation" required>
-                            <option value="">-Select Occupation-</option>
-                            <option value="Salaried">Salaried</option>
-                            <option value="Business">Business</option>
-                            <option value="Self-Employed">Self-Employed</option>
-                            <option value="Daily Wages">Daily Wages</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Nature of the Job *</label>
-                        <input type="text" id="Nature_of_the_Job" placeholder="Job description" required>
-                    </div>
-                </div>
-
-                <div class="section-heading">5. Payment Method & Document Uploads</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Payment Method *</label>
-                        <select id="Payment_Method" onchange="showHidePaymentDetails()" required>
-                            <option value="">-Select-</option>
-                            <option value="UPI">UPI</option>
-                            <option value="e - NACH">e - NACH</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- UPI Fields -->
-                <div class="form-row hidden" id="upiGroup">
-                    <div class="form-group">
-                        <label>UPI ID *</label>
-                        <input type="text" id="UPI_ID" placeholder="username@upi">
-                    </div>
-                </div>
-
-                <!-- Bank Fields -->
-                <div id="bankFields" class="hidden">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Bank Name *</label>
-                            <input type="text" id="Bank_Name" placeholder="Bank Name">
-                        </div>
-                        <div class="form-group">
-                            <label>Account Holder Name *</label>
-                            <input type="text" id="Account_Holder_Name" placeholder="Passbook Name">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Bank Account Number *</label>
-                            <input type="password" id="Bank_Account_Number" placeholder="Account Number">
-                        </div>
-                        <div class="form-group">
-                            <label>Confirm Bank Account Number *</label>
-                            <input type="text" id="Confirm_Bank_Account_Number" placeholder="Re-enter Account Number">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>IFSC Code *</label>
-                            <input type="text" id="IFSC_Code" maxlength="11" placeholder="11 character IFSC">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- File Uploads -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Upload Aadhar Front side *</label>
-                        <input type="file" id="Aadhar_Front" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Aadhar Back Side *</label>
-                        <input type="file" id="Aadhar_Back" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Upload Pan Card *</label>
-                        <input type="file" id="Pan_Card" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Ration card front side *</label>
-                        <input type="file" id="Ration_Card" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>CIBIL Score / Document *</label>
-                        <input type="file" id="CIBIL_Score" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Email ID</label>
-                        <input type="email" id="Email" placeholder="customer@email.com">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-submit">Submit Registration</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        window.onload = function() {
-            const loanDateEl = document.getElementById('Loan_Date');
-            if(loanDateEl) loanDateEl.valueAsDate = new Date();
-            generateBorrowerID();
-        };
-
-        function generateBorrowerID() {
-            const issuedByEl = document.getElementById('Issued_by');
-            const retailerCodeEl = document.getElementById('Retailer_Code');
-            const borrowerIdField = document.getElementById('Borrower_ID');
-            
-            if(!borrowerIdField) return;
-
-            const issuedBy = issuedByEl ? issuedByEl.value : '';
-            const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
-            const randNum = Math.floor(100 + Math.random() * 900);
-            
-            if (issuedBy === 'Retailer' && retailerCode) {
-                borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
-            } else if (issuedBy === 'Admin') {
-                borrowerIdField.value = "VFC/" + randNum + "/2026";
-            } else {
-                borrowerIdField.value = "";
-            }
-        }
-
-        function toggleRetailerFields() {
-            const issuedBy = document.getElementById('Issued_by').value;
-            const retailerGroup = document.getElementById('retailerFieldsGroup');
-            if (issuedBy === 'Retailer') {
-                retailerGroup.classList.remove('hidden');
-            } else {
-                retailerGroup.classList.add('hidden');
-                document.getElementById('Retailer_Details').value = '';
-                document.getElementById('Retailer_Code').value = '';
-            }
-            generateBorrowerID();
-        }
-
-        function autoFillRetailerCode() {
-            const ret = document.getElementById('Retailer_Details').value;
-            document.getElementById('Retailer_Code').value = ret;
-            generateBorrowerID();
-        }
-
-        function showHidePaymentDetails() {
-            const payMethod = document.getElementById('Payment_Method').value;
-            const upiGroup = document.getElementById('upiGroup');
-            const bankFields = document.getElementById('bankFields');
-            
-            if (payMethod === 'UPI') {
-                upiGroup.classList.remove('hidden');
-                bankFields.classList.add('hidden');
-            } else if (payMethod === 'e - NACH') {
-                bankFields.classList.remove('hidden');
-                upiGroup.classList.add('hidden');
-            } else {
-                upiGroup.classList.add('hidden');
-                bankFields.classList.add('hidden');
-            }
-        }
-
-        function handleLogout() {
-            sessionStorage.clear();
-            window.location.replace("login.html");
-        }
-
-        async function validateAndSubmit(event) {
-            event.preventDefault(); 
-            
-            const submitBtn = document.querySelector('.btn-submit');
-            submitBtn.innerText = "Uploading Files & Saving Data...";
-            submitBtn.disabled = true;
-
-            try {
-                async function uploadFileToStorage(fileElementId) {
-                    const fileInput = document.getElementById(fileElementId);
-                    if (fileInput && fileInput.files.length > 0) {
-                        const file = fileInput.files[0];
-                        const uploadedFile = await window.appwriteStorage.createFile(
-                            VFC_DB.DOCUMENTS_BUCKET_ID,
-                            AppwriteID.unique(),
-                            file
-                        );
-                        return uploadedFile.\$id; 
-                    }
-                    return "";
-                }
-
-                const customerPhotoId = await uploadFileToStorage('Customer_Photo');
-                const aadharFrontId = await uploadFileToStorage('Aadhar_Front');
-                const aadharBackId = await uploadFileToStorage('Aadhar_Back');
-                const panCardId = await uploadFileToStorage('Pan_Card');
-                const rationCardId = await uploadFileToStorage('Ration_Card');
-                const cibilScoreId = await uploadFileToStorage('CIBIL_Score');
-
-                const fullAddress = document.getElementById('Address_Line_1').value + ", " + (document.getElementById('Land_Mark').value || "");
-                const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + (document.getElementById('Last_Name').value || "");
-
-                const documentId = 'vfc_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
-
-                const payload = {
-                    documentId: documentId,
-                    data: {
-                        borrower_id: document.getElementById('Borrower_ID').value,
-                        issued_by: document.getElementById('Issued_by').value,
-                        retailer_code: document.getElementById('Retailer_Code').value || "",
-                        loan_date: document.getElementById('Loan_Date').value,
-                        full_name: fullName,
-                        dob: document.getElementById('Date_Of_Birth').value,
-                        relative_name: document.getElementById('Relationship').value + " " + document.getElementById('Relative_Name').value,
-                        aadhar_number: document.getElementById('Aadhar_Number').value,
-                        pan_number: document.getElementById('PAN_NUMBER').value,
-                        phone_number: document.getElementById('Phone_Number').value,
-                        whatsapp_number: document.getElementById('Whatsapp_Number').value,
-                        email: document.getElementById('Email').value || "",
-                        nominee_name: document.getElementById('Nominee_Name').value,
-                        nominee_contact: document.getElementById('Nominee_Contact_Number').value,
-                        address: fullAddress,
-                        city: document.getElementById('City_District').value,
-                        state: document.getElementById('State_Province').value,
-                        pincode: document.getElementById('Postal_Code').value,
-                        occupation: document.getElementById('Occupation').value,
-                        job_nature: document.getElementById('Nature_of_the_Job').value,
-                        payment_method: document.getElementById('Payment_Method').value,
-                        upi_id: document.getElementById('UPI_ID').value || "",
-                        bank_name: document.getElementById('Bank_Name').value || "",
-                        bank_account_no: document.getElementById('Bank_Account_Number').value || "",
-                        ifsc_code: document.getElementById('IFSC_Code').value || "",
-                        customer_photo_url: customerPhotoId,
-                        aadhar_front_url: aadharFrontId,
-                        aadhar_back_url: aadharBackId,
-                        pan_card_url: panCardId,
-                        ration_card_url: rationCardId,
-                        cibil_score_url: cibilScoreId
-                    }
-                };
-
-                const endpoint = `https://starter-function-bhfh.sfo.appwrite.run`;
-                
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    alert("Borrower Registration Successful! Files & Data saved automatically.");
-                    window.location.reload();
-                } else {
-                    const errData = await response.json();
-                    throw new Error(errData.message || "Failed to save data");
-                }
-
-            } catch (error) {
-                console.error("Appwrite Submission Error:", error);
-                alert("Error saving data: " + error.message);
-            } finally {
-                submitBtn.innerText = "Submit Registration";
-                submitBtn.disabled = false;
-            }
-        }
-    </script>
+<div class="sidebar">
+<div class="sidebar-brand">
+<img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
+<div class="sidebar-title">VEL FIN CORP</div>
+</div>
+<ul class="sidebar-menu">
+<li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
+<li><a href="borrowers-details.html" class="active"><i class="fas fa-users"></i> Borrower Details</a></li>
+<li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
+<li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+<li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
+<li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
+<li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+<li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
+<li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+<li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
+<li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
+<li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
+<li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
+</ul>
+<div class="sidebar-footer">
+<button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</div>
+</div>
+<div class="main-content">
+<div class="container">
+<h2>VEL FIN CORP</h2>
+<div class="subtitle">Borrower Registration & Loan Application</div>
+<form id="borrowerRegistrationForm" onsubmit="return validateAndSubmit(event)">
+<div class="section-heading">1. General & Retailer Details</div>
+<div class="form-row">
+<div class="form-group">
+<label>Issued by *</label>
+<select id="Issued_by" onchange="toggleRetailerFields()" required>
+<option value="">-Select-</option>
+<option value="Admin">Admin</option>
+<option value="Retailer">Retailer</option>
+</select>
+</div>
+<div class="form-group">
+<label>Borrower ID *</label>
+<input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9; font-weight: bold; color: var(--navy);" placeholder="Auto-generated ID">
+</div>
+</div>
+<div class="form-row hidden" id="retailerFieldsGroup">
+<div class="form-group">
+<label>Retailer Details *</label>
+<select id="Retailer_Details" onchange="autoFillRetailerCode()">
+<option value="">-Select Retailer-</option>
+<option value="RET001">Vel Retailer One</option>
+<option value="RET002">Fin Partner Two</option>
+</select>
+</div>
+<div class="form-group">
+<label>Retailer Code *</label>
+<input type="text" id="Retailer_Code" readonly placeholder="Auto-filled code">
+</div>
+</div>
+<div class="section-heading">2. Personal & Family Information</div>
+<div class="form-row">
+<div class="form-group">
+<label>Customer Photo *</label>
+<input type="file" id="Customer_Photo" accept="image/*" required>
+</div>
+<div class="form-group">
+<label>Loan Date *</label>
+<input type="date" id="Loan_Date" required>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Customer Name *</label>
+<div style="display: flex; gap: 10px;">
+<select id="Name_Prefix" style="width: 100px;">
+<option value="Mr">Mr</option>
+<option value="Mrs">Mrs</option>
+<option value="Ms">Ms</option>
+</select>
+<input type="text" id="First_Name" placeholder="First Name" required style="flex: 1;">
+<input type="text" id="Last_Name" placeholder="Last Name" style="flex: 1;">
+</div>
+</div>
+<div class="form-group">
+<label>Date of Birth (DOB) *</label>
+<input type="date" id="Date_Of_Birth" required>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Relationship *</label>
+<select id="Relationship" required>
+<option value="">-Select-</option>
+<option value="Son of">Son Of</option>
+<option value="Daughter of">Daughter Of</option>
+<option value="Wife of">Wife Of</option>
+<option value="Care of">Care Of</option>
+</select>
+</div>
+<div class="form-group">
+<label>Son / Daughter / Spouse Name *</label>
+<input type="text" id="Relative_Name" placeholder="Enter relative name" required>
+</div>
+</div>
+<div class="section-heading">3. Identity Proofs & Contact Details</div>
+<div class="form-row">
+<div class="form-group">
+<label>Aadhar Number *</label>
+<input type="text" id="Aadhar_Number" placeholder="12 digit Aadhar" maxlength="14" required>
+</div>
+<div class="form-group">
+<label>PAN Number *</label>
+<input type="text" id="PAN_NUMBER" placeholder="ABCDE1234F" maxlength="10" required>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Phone Number *</label>
+<input type="text" id="Phone_Number" maxlength="10" placeholder="10 digit number" required>
+</div>
+<div class="form-group">
+<label>WhatsApp Number *</label>
+<input type="text" id="Whatsapp_Number" maxlength="10" placeholder="10 digit number" required>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Nominee Name *</label>
+<input type="text" id="Nominee_Name" placeholder="Nominee Name" required>
+</div>
+<div class="form-group">
+<label>Nominee Contact Number *</label>
+<input type="text" id="Nominee_Contact_Number" maxlength="10" placeholder="10 digit number" required>
+</div>
+</div>
+<div class="section-heading">4. Address & Employment Details</div>
+<div class="form-row">
+<div class="form-group">
+<label>Address Line 1 *</label>
+<input type="text" id="Address_Line_1" placeholder="Door No / Street" required>
+</div>
+<div class="form-group">
+<label>Land Mark</label>
+<input type="text" id="Land_Mark" placeholder="Nearby landmark">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>City / District *</label>
+<input type="text" id="City_District" placeholder="City or District" required>
+</div>
+<div class="form-group">
+<label>State / Province *</label>
+<input type="text" id="State_Province" placeholder="State" required>
+</div>
+<div class="form-group">
+<label>Postal Code *</label>
+<input type="text" id="Postal_Code" maxlength="6" placeholder="Pincode" required>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Occupation *</label>
+<select id="Occupation" required>
+<option value="">-Select Occupation-</option>
+<option value="Salaried">Salaried</option>
+<option value="Business">Business</option>
+<option value="Self-Employed">Self-Employed</option>
+<option value="Daily Wages">Daily Wages</option>
+</select>
+</div>
+<div class="form-group">
+<label>Nature of the Job *</label>
+<input type="text" id="Nature_of_the_Job" placeholder="Job description" required>
+</div>
+</div>
+<div class="section-heading">5. Payment Method & Document Uploads</div>
+<div class="form-row">
+<div class="form-group">
+<label>Payment Method *</label>
+<select id="Payment_Method" onchange="showHidePaymentDetails()" required>
+<option value="">-Select-</option>
+<option value="UPI">UPI</option>
+<option value="e - NACH">e - NACH</option>
+</select>
+</div>
+</div>
+<div class="form-row hidden" id="upiGroup">
+<div class="form-group">
+<label>UPI ID *</label>
+<input type="text" id="UPI_ID" placeholder="username@upi">
+</div>
+</div>
+<div id="bankFields" class="hidden">
+<div class="form-row">
+<div class="form-group">
+<label>Bank Name *</label>
+<input type="text" id="Bank_Name" placeholder="Bank Name">
+</div>
+<div class="form-group">
+<label>Account Holder Name *</label>
+<input type="text" id="Account_Holder_Name" placeholder="Passbook Name">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Bank Account Number *</label>
+<input type="password" id="Bank_Account_Number" placeholder="Account Number">
+</div>
+<div class="form-group">
+<label>Confirm Bank Account Number *</label>
+<input type="text" id="Confirm_Bank_Account_Number" placeholder="Re-enter Account Number">
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>IFSC Code *</label>
+<input type="text" id="IFSC_Code" maxlength="11" placeholder="11 character IFSC">
+</div>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Upload Aadhar Front side *</label>
+<input type="file" id="Aadhar_Front" required>
+</div>
+<div class="form-group">
+<label>Upload Aadhar Back Side *</label>
+<input type="file" id="Aadhar_Back" required>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Upload Pan Card *</label>
+<input type="file" id="Pan_Card" required>
+</div>
+<div class="form-group">
+<label>Upload Ration card front side *</label>
+<input type="file" id="Ration_Card" required>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>CIBIL Score / Document *</label>
+<input type="file" id="CIBIL_Score" required>
+</div>
+<div class="form-group">
+<label>Email ID</label>
+<input type="email" id="Email" placeholder="customer@email.com">
+</div>
+</div>
+<button type="submit" class="btn-submit">Submit Registration</button>
+</form>
+</div>
+</div>
+<script>
+window.onload = function() {
+const loanDateEl = document.getElementById('Loan_Date');
+if(loanDateEl) loanDateEl.valueAsDate = new Date();
+generateBorrowerID();
+};
+function generateBorrowerID() {
+const issuedByEl = document.getElementById('Issued_by');
+const retailerCodeEl = document.getElementById('Retailer_Code');
+const borrowerIdField = document.getElementById('Borrower_ID');
+if(!borrowerIdField) return;
+const issuedBy = issuedByEl ? issuedByEl.value : '';
+const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
+const randNum = Math.floor(100 + Math.random() * 900);
+if (issuedBy === 'Retailer' && retailerCode) {
+borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
+} else if (issuedBy === 'Admin') {
+borrowerIdField.value = "VFC/" + randNum + "/2026";
+} else {
+borrowerIdField.value = "";
+}
+}
+function toggleRetailerFields() {
+const issuedBy = document.getElementById('Issued_by').value;
+const retailerGroup = document.getElementById('retailerFieldsGroup');
+if (issuedBy === 'Retailer') {
+retailerGroup.classList.remove('hidden');
+} else {
+retailerGroup.classList.add('hidden');
+document.getElementById('Retailer_Details').value = '';
+document.getElementById('Retailer_Code').value = '';
+}
+generateBorrowerID();
+}
+function autoFillRetailerCode() {
+const ret = document.getElementById('Retailer_Details').value;
+document.getElementById('Retailer_Code').value = ret;
+generateBorrowerID();
+}
+function showHidePaymentDetails() {
+const payMethod = document.getElementById('Payment_Method').value;
+const upiGroup = document.getElementById('upiGroup');
+const bankFields = document.getElementById('bankFields');
+if (payMethod === 'UPI') {
+upiGroup.classList.remove('hidden');
+bankFields.classList.add('hidden');
+} else if (payMethod === 'e - NACH') {
+bankFields.classList.remove('hidden');
+upiGroup.classList.add('hidden');
+} else {
+upiGroup.classList.add('hidden');
+bankFields.classList.add('hidden');
+}
+}
+function handleLogout() {
+sessionStorage.clear();
+window.location.replace("login.html");
+}
+async function validateAndSubmit(event) {
+event.preventDefault();
+const submitBtn = document.querySelector('.btn-submit');
+submitBtn.innerText = "Uploading Files & Saving Data...";
+submitBtn.disabled = true;
+try {
+async function uploadFileToStorage(fileElementId) {
+const fileInput = document.getElementById(fileElementId);
+if (fileInput && fileInput.files.length > 0) {
+const file = fileInput.files[0];
+const uploadedFile = await window.appwriteStorage.createFile(
+VFC_DB.DOCUMENTS_BUCKET_ID,
+AppwriteID.unique(),
+file
+);
+return uploadedFile.\$id;
+}
+return "";
+}
+const customerPhotoId = await uploadFileToStorage('Customer_Photo');
+const aadharFrontId = await uploadFileToStorage('Aadhar_Front');
+const aadharBackId = await uploadFileToStorage('Aadhar_Back');
+const panCardId = await uploadFileToStorage('Pan_Card');
+const rationCardId = await uploadFileToStorage('Ration_Card');
+const cibilScoreId = await uploadFileToStorage('CIBIL_Score');
+const fullAddress = document.getElementById('Address_Line_1').value + ", " + (document.getElementById('Land_Mark').value || "");
+const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + (document.getElementById('Last_Name').value || "");
+const documentId = 'vfc_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+const payload = {
+documentId: documentId,
+data: {
+borrower_id: document.getElementById('Borrower_ID').value,
+issued_by: document.getElementById('Issued_by').value,
+retailer_code: document.getElementById('Retailer_Code').value || "",
+loan_date: document.getElementById('Loan_Date').value,
+full_name: fullName,
+dob: document.getElementById('Date_Of_Birth').value,
+relative_name: document.getElementById('Relationship').value + " " + document.getElementById('Relative_Name').value,
+aadhar_number: document.getElementById('Aadhar_Number').value,
+pan_number: document.getElementById('PAN_NUMBER').value,
+phone_number: document.getElementById('Phone_Number').value,
+whatsapp_number: document.getElementById('Whatsapp_Number').value,
+email: document.getElementById('Email').value || "",
+nominee_name: document.getElementById('Nominee_Name').value,
+nominee_contact: document.getElementById('Nominee_Contact_Number').value,
+address: fullAddress,
+city: document.getElementById('City_District').value,
+state: document.getElementById('State_Province').value,
+pincode: document.getElementById('Postal_Code').value,
+occupation: document.getElementById('Occupation').value,
+job_nature: document.getElementById('Nature_of_the_Job').value,
+payment_method: document.getElementById('Payment_Method').value,
+upi_id: document.getElementById('UPI_ID').value || "",
+bank_name: document.getElementById('Bank_Name').value || "",
+bank_account_no: document.getElementById('Bank_Account_Number').value || "",
+ifsc_code: document.getElementById('IFSC_Code').value || "",
+customer_photo_url: customerPhotoId,
+aadhar_front_url: aadharFrontId,
+aadhar_back_url: aadharBackId,
+pan_card_url: panCardId,
+ration_card_url: rationCardId,
+cibil_score_url: cibilScoreId
+}
+};
+const endpoint = `https://starter-function-bhfh.sfo.appwrite.run`;
+const response = await fetch(endpoint, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json'
+},
+body: JSON.stringify(payload)
+});
+if (response.ok) {
+alert("Borrower Registration Successful! Files & Data saved automatically.");
+window.location.reload();
+} else {
+const errData = await response.json();
+throw new Error(errData.message || "Failed to save data");
+}
+} catch (error) {
+console.error("Appwrite Submission Error:", error);
+alert("Error saving data: " + error.message);
+} finally {
+submitBtn.innerText = "Submit Registration";
+submitBtn.disabled = false;
+}
+}
+</script>
 </body>
 </html>
