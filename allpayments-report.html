@@ -9,6 +9,8 @@
     <title>Vel Fin Corp - All Payments Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         (function() {
@@ -317,7 +319,7 @@
                     </tr>
                 </thead>
                 <tbody id="allPaymentsTableBody">
-                    <!-- Dynamic rows -->
+                    <tr><td colspan="7" style="text-align: center;">Loading payments from database...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -343,112 +345,66 @@
     <script>
         let currentPayment = null;
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadPaymentsData();
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadPaymentsData();
         });
 
-        function loadPaymentsData() {
+        async function loadPaymentsData() {
             const tbody = document.getElementById('allPaymentsTableBody');
-            let payments = [];
-            let borrowers = [];
-
             try {
-                payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
-                borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
-            } catch(e) {
-                payments = [];
-                borrowers = [];
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.PAYMENTS_ID
+                );
+                const payments = response.documents;
+
+                if (!payments || payments.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No payment records found in database.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                payments.forEach((p, index) => {
+                    const tr = document.createElement('tr');
+                    tr.onclick = () => showPaymentDetails(p);
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${p.payment_id || '-'}</strong></td>
+                        <td>${p.borrower_name || '-'}</td>
+                        <td>${p.phone_number || '-'}</td>
+                        <td>₹${p.amount_paid || '0.00'}</td>
+                        <td>${p.payment_date || '-'}</td>
+                        <td>${p.payment_mode || '-'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(error) {
+                console.error("Error loading payments report:", error);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
             }
-
-            if (!Array.isArray(payments) || payments.length === 0) {
-                payments = [
-                    {
-                        paymentId: "PAY/001/2026",
-                        borrowerId: "VFC/001/2026",
-                        borrower: "VFC/001/2026 - Mr. Rajapriyan D",
-                        phone: "8778003840",
-                        amount: "5000.00",
-                        date: "15-Oct-2026",
-                        mode: "e-NACH"
-                    }
-                ];
-            }
-
-            tbody.innerHTML = '';
-            payments.forEach((p, index) => {
-                let borrower = borrowers.find(b => b.borrowerId === p.borrowerId || (p.borrower && p.borrower.includes(b.borrowerId)) || b.phone === p.phone) || {};
-
-                const tr = document.createElement('tr');
-                tr.onclick = () => showPaymentDetails(p, borrower, payments);
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><strong>${p.paymentId || 'PAY/001/2026'}</strong></td>
-                    <td>${p.borrower || borrower.name || '-'}</td>
-                    <td>${p.phone || borrower.phone || '-'}</td>
-                    <td>₹${p.amount || p.paidAmount || '0.00'}</td>
-                    <td>${p.date || '-'}</td>
-                    <td>${p.mode || p.loanType || 'e-NACH'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
         }
 
-        function showPaymentDetails(p, borrower, allPayments) {
+        function showPaymentDetails(p) {
             currentPayment = p;
             const modal = document.getElementById('paymentModal');
             const modalBody = document.getElementById('modalBody');
 
-            let borrowerPayments = allPayments.filter(item => 
-                (p.borrowerId && item.borrowerId === p.borrowerId) || 
-                (p.borrower && item.borrower === p.borrower) ||
-                (p.phone && item.phone === p.phone)
-            );
-
-            let totalPaid = borrowerPayments.reduce((sum, item) => sum + (parseFloat(item.amount || item.paidAmount) || 0), 0);
-            
-            let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
-            let personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
-            
-            let matchedLoan = creditVaultLoans.concat(personalLoans).find(l => 
-                l.borrowerId === p.borrowerId || (p.borrower && p.borrower.includes(l.loanId))
-            ) || {};
-
-            let totalLoanAmount = parseFloat(matchedLoan.productValue || matchedLoan.loanAmount || 18000);
-            let pendingBalance = totalLoanAmount > totalPaid ? (totalLoanAmount - totalPaid) : 0;
-
-            let delayStatus = "On Time (Regular)";
-            let currentPaidAmt = parseFloat(p.amount || p.paidAmount || 0);
-            let expectedEmi = parseFloat(matchedLoan.weeklyEmi || matchedLoan.installment || currentPaidAmt);
-            
-            if (currentPaidAmt < expectedEmi) {
-                delayStatus = "Underpaid / Partial Payment";
-            } else if (p.isDelayed || p.delayDays > 0) {
-                delayStatus = "Paid with Delay";
-            }
-
             modalBody.innerHTML = `
                 <table class="profile-table">
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Payment Information</th></tr>
-                    <tr><td>Payment ID</td><td>${p.paymentId || 'PAY/001/2026'}</td></tr>
-                    <tr><td>Amount Paid (This Transaction)</td><td style="color: #2F855A; font-weight: bold;">₹${currentPaidAmt.toFixed(2)}</td></tr>
-                    <tr><td>Payment Date</td><td>${p.date || '-'}</td></tr>
-                    <tr><td>Payment Mode</td><td>${p.mode || p.loanType || 'e-NACH'}</td></tr>
-                    <tr><td>Repayment Status</td><td>${delayStatus}</td></tr>
+                    <tr><td>Payment ID</td><td>${p.payment_id || '-'}</td></tr>
+                    <tr><td>Loan ID</td><td>${p.loan_id || '-'}</td></tr>
+                    <tr><td>Amount Paid (This Transaction)</td><td style="color: #2F855A; font-weight: bold;">₹${p.amount_paid || '0.00'}</td></tr>
+                    <tr><td>Expected Balance Amount</td><td>₹${p.balance_amount || '0.00'}</td></tr>
+                    <tr><td>Paid Installment</td><td>${p.paid_installment || '-'}</td></tr>
+                    <tr><td>Remaining Installment</td><td>${p.remaining_installment || '-'}</td></tr>
+                    <tr><td>Payment Date</td><td>${p.payment_date || '-'}</td></tr>
+                    <tr><td>Payment Mode</td><td>${p.payment_mode || '-'}</td></tr>
+                    <tr><td>Delayed Details</td><td>${p.delayed_details || 'On Time'}</td></tr>
 
-                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Loan Financial Summary</th></tr>
-                    <tr><td>Total Loan Amount</td><td>₹${totalLoanAmount.toFixed(2)}</td></tr>
-                    <tr><td>Total Paid So Far</td><td style="color: #2F855A; font-weight: bold;">₹${totalPaid.toFixed(2)}</td></tr>
-                    <tr><td>Pending Balance Amount</td><td style="color: #C53030; font-weight: bold;">₹${pendingBalance.toFixed(2)}</td></tr>
-
-                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Details</th></tr>
-                    <tr><td>Borrower ID / Name</td><td>${p.borrower || borrower.name || '-'}</td></tr>
-                    <tr><td>Phone Number</td><td>${p.phone || borrower.phone || '-'}</td></tr>
-                    <tr><td>WhatsApp Number</td><td>${borrower.whatsapp || '-'}</td></tr>
-                    <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
-                    <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
-                    <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
-                    <tr><td>Occupation</td><td>${borrower.occupation || '-'}</td></tr>
-                    <tr><td>Nominee Details</td><td>${borrower.nominee || '-'} (${borrower.nomineePhone || '-'})</td></tr>
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Details</th></tr>
+                    <tr><td>Borrower Name & Loan</td><td>${p.borrower_name || '-'}</td></tr>
+                    <tr><td>Phone Number</td><td>${p.phone_number || '-'}</td></tr>
                 </table>
             `;
             modal.style.display = 'flex';
@@ -484,8 +440,8 @@
 
             let fileName = "Payment_Financial_Report.pdf";
             if (currentPayment) {
-                const cleanName = (currentPayment.borrower || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
-                const cleanId = (currentPayment.paymentId || 'Payment').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanName = (currentPayment.borrower_name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanId = (currentPayment.payment_id || 'Payment').replace(/[^a-zA-Z0-9]/g, '_');
                 fileName = `${cleanName}_${cleanId}.pdf`;
             }
 
