@@ -256,6 +256,14 @@
             width: 35%;
             background: #f1f5f9;
         }
+        .doc-link {
+            color: #2b6cb0;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .doc-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -362,6 +370,15 @@
             }
         });
 
+        function getFileViewUrl(fileId) {
+            if (!fileId) return '#';
+            try {
+                return window.appwriteStorage.getFileView(VFC_DB.DOCUMENTS_BUCKET_ID, fileId);
+            } catch(e) {
+                return '#';
+            }
+        }
+
         function showProfile(b) {
             currentBorrower = b;
             const modal = document.getElementById('profileModal');
@@ -383,7 +400,7 @@
                 <table class="profile-table">
                     <tr><td>Borrower ID</td><td>${b.borrower_id || '-'}</td></tr>
                     <tr><td>Customer Name</td><td>${b.full_name || '-'}</td></tr>
-                    <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
+                    <tr><td>Aadhar Number</td><td>${b.aadhar_number || '-'}</td></tr>
                     <tr><td>PAN Number</td><td>${b.pan_number || '-'}</td></tr>
                     <tr><td>Phone Number</td><td>${b.phone_number || '-'}</td></tr>
                     <tr><td>WhatsApp</td><td>${b.whatsapp_number || '-'}</td></tr>
@@ -393,6 +410,12 @@
                     <tr><td>Nominee Details</td><td>${b.nominee_name || '-'} (${b.nominee_contact || '-'})</td></tr>
                     <tr><td>Loan Date</td><td>${b.loan_date || '-'}</td></tr>
                     ${paymentDetailsHTML}
+                    <tr><td>Customer Photo</td><td>${b.customer_photo ? `<a href="\${getFileViewUrl(b.customer_photo)}" target="_blank" class="doc-link"><i class="fas fa-image"></i> View Photo</a>` : '-'}</td></tr>
+                    <tr><td>Aadhar Front</td><td>${b.aadhar_front ? `<a href="\${getFileViewUrl(b.aadhar_front)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Aadhar Front</a>` : '-'}</td></tr>
+                    <tr><td>Aadhar Back</td><td>${b.aadhar_back ? `<a href="\${getFileViewUrl(b.aadhar_back)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Aadhar Back</a>` : '-'}</td></tr>
+                    <tr><td>PAN Card</td><td>${b.pan_card ? `<a href="\${getFileViewUrl(b.pan_card)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View PAN Card</a>` : '-'}</td></tr>
+                    <tr><td>Ration Card</td><td>${b.ration_card ? `<a href="\${getFileViewUrl(b.ration_card)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Ration Card</a>` : '-'}</td></tr>
+                    <tr><td>CIBIL Score / Document</td><td>${b.cibil_score ? `<a href="\${getFileViewUrl(b.cibil_score)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View CIBIL Document</a>` : '-'}</td></tr>
                 </table>
             `;
             modal.style.display = 'flex';
