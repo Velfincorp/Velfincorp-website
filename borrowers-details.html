@@ -278,7 +278,7 @@
                     </div>
                     <div class="form-group">
                         <label>Borrower ID *</label>
-                        <input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9; font-weight: bold; color: var(--navy);">
+                        <input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9; font-weight: bold; color: var(--navy);" placeholder="Auto-generated ID">
                     </div>
                 </div>
 
@@ -512,14 +512,15 @@
     </div>
 
     <script>
-        // Set Default Date on Load
-        window.onload = function() {
+        // Set Default Date and Generate ID on Load
+        window.onload = async function() {
             const loanDateEl = document.getElementById('Loan_Date');
             if(loanDateEl) loanDateEl.valueAsDate = new Date();
-            generateBorrowerID();
+            await generateBorrowerID();
         };
 
-        function generateBorrowerID() {
+        // Serial Number based Borrower ID Generation fetching total count from Appwrite Database
+        async function generateBorrowerID() {
             const issuedByEl = document.getElementById('Issued_by');
             const retailerCodeEl = document.getElementById('Retailer_Code');
             const borrowerIdField = document.getElementById('Borrower_ID');
@@ -528,18 +529,38 @@
 
             const issuedBy = issuedByEl ? issuedByEl.value : '';
             const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
-            const randNum = Math.floor(100 + Math.random() * 900); // 3 digit sequence matching Zoho pattern
-            
-            if (issuedBy === 'Retailer' && retailerCode) {
-                borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
-            } else if (issuedBy === 'Admin') {
-                borrowerIdField.value = "VFC/" + randNum + "/2026";
-            } else {
-                borrowerIdField.value = "";
+
+            try {
+                // Fetch total documents count from Appwrite database to calculate serial number
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.BORROWERS_ID
+                );
+                
+                const nextSeq = (response.total + 1).toString().padStart(3, '0'); // e.g., 001, 002, 032
+                
+                if (issuedBy === 'Retailer' && retailerCode) {
+                    borrowerIdField.value = "VFC/" + retailerCode + "/" + nextSeq + "/2026";
+                } else if (issuedBy === 'Admin') {
+                    borrowerIdField.value = "VFC/" + nextSeq + "/2026";
+                } else {
+                    borrowerIdField.value = "";
+                }
+            } catch (error) {
+                console.error("Error fetching serial number:", error);
+                // Fallback mechanism if database fetch fails
+                const fallbackSeq = "001";
+                if (issuedBy === 'Retailer' && retailerCode) {
+                    borrowerIdField.value = "VFC/" + retailerCode + "/" + fallbackSeq + "/2026";
+                } else if (issuedBy === 'Admin') {
+                    borrowerIdField.value = "VFC/" + fallbackSeq + "/2026";
+                } else {
+                    borrowerIdField.value = "";
+                }
             }
         }
 
-        function toggleRetailerFields() {
+        async function toggleRetailerFields() {
             const issuedBy = document.getElementById('Issued_by').value;
             const retailerGroup = document.getElementById('retailerFieldsGroup');
             if (issuedBy === 'Retailer') {
@@ -549,13 +570,13 @@
                 document.getElementById('Retailer_Details').value = '';
                 document.getElementById('Retailer_Code').value = '';
             }
-            generateBorrowerID();
+            await generateBorrowerID();
         }
 
-        function autoFillRetailerCode() {
+        async function autoFillRetailerCode() {
             const ret = document.getElementById('Retailer_Details').value;
             document.getElementById('Retailer_Code').value = ret;
-            generateBorrowerID();
+            await generateBorrowerID();
         }
 
         function showHidePaymentDetails() {
