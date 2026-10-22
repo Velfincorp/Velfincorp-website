@@ -602,15 +602,14 @@ upi_id: document.getElementById('UPI_ID').value || "",
 bank_name: document.getElementById('Bank_Name').value || "",
 bank_account_no: document.getElementById('Bank_Account_Number').value || "",
 ifsc_code: document.getElementById('IFSC_Code').value || "",
-customer_photo_url: customerPhotoId,
-aadhar_front_url: aadharFrontId,
-aadhar_back_url: aadharBackId,
-pan_card_url: panCardId,
-ration_card_url: rationCardId,
-cibil_score_url: cibilScoreId
+customer_photo: customerPhotoId,
+aadhar_front: aadharFrontId,
+aadhar_back: aadharBackId,
+pan_card: panCardId,
+ration_card: rationCardId,
+cibil_score: cibilScoreId
 };
 
-// Directly save to Appwrite Database without relying on Functions endpoint
 await window.appwriteDatabases.createDocument(
 VFC_DB.DB_ID,
 VFC_DB.BORROWERS_ID,
