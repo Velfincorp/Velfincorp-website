@@ -9,7 +9,8 @@
     <title>Vel Fin Corp - Payment Collection</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script>
         // Centralized Authentication & Security Protection Script
         (function() {
@@ -220,7 +221,6 @@
             background-color: var(--gold);
             color: var(--navy);
         }
-        /* Auto-filled input styling to differentiate */
         .readonly-field {
             background-color: #f1f5f9;
             color: #475569;
@@ -267,10 +267,8 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Borrowers Name & Loan *</label>
-                        <!-- Onchange function triggered here for Auto-fill -->
                         <select id="Borrowers_Name" onchange="autoFillLoanDetails()" required>
-                            <option value="">-Select Borrower & Loan-</option>
-                            <!-- Options will be populated dynamically from LocalStorage -->
+                            <option value="">-Loading Active Loans-</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -329,10 +327,10 @@
     </div>
 
     <script>
-        window.onload = function() {
+        window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('Date_field').valueAsDate = new Date();
-            loadActiveLoans(); // Populate Dropdown with Active Loans on Page Load
-        };
+            await loadActiveLoansFromAppwrite();
+        });
 
         function handleLogout() {
             sessionStorage.clear();
@@ -340,54 +338,46 @@
             window.location.replace('login.html');
         }
 
-        // 1. Load Active Loans into Dropdown
-        function loadActiveLoans() {
-            let cvLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
-            let plLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
-
-            // Get only ACTIVE loans
-            let allActiveLoans = [...cvLoans, ...plLoans].filter(loan => loan.status === 'ACTIVE');
-
+        // Appwrite டேட்டாபேஸில் இருந்து ஆக்டிவ் லோன்களை டிராப்டவுனில் ஏற்றுதல்
+        async function loadActiveLoansFromAppwrite() {
             const selectElement = document.getElementById('Borrowers_Name');
-            selectElement.innerHTML = '<option value="">-Select Borrower & Loan-</option>';
+            try {
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID
+                );
+                const loans = response.documents;
+                const activeLoans = loans.filter(loan => loan.status === 'ACTIVE');
 
-            allActiveLoans.forEach(loan => {
-                let opt = document.createElement('option');
-                opt.value = loan.loanId;
-                opt.textContent = `${loan.borrowerName} (${loan.loanId})`;
-                
-                // Saving specific loan data to data-* attributes for calculation
-                opt.dataset.name = loan.borrowerName;
-                opt.dataset.phone = loan.phone || "8778003840";
-                
-                // Get EMI, handling both Credit Vault and Personal Loan key structures
-                let emiAmount = parseFloat(loan.weeklyEmi || loan.installment || 0);
-                opt.dataset.emi = emiAmount;
-                
-                // Get Tenure (Convert string "10 Weeks" to number 10)
-                let tenureRaw = loan.tenure ? loan.tenure.toString().replace(/[^0-9]/g, '') : "10";
-                opt.dataset.tenure = parseInt(tenureRaw) || 10;
-                
-                // Get original Total Loan Amount
-                let totalAmount = 0;
-                if (loan.financedAmount) {
-                    totalAmount = parseFloat(loan.financedAmount);
-                } else if (loan.loanAmount) {
-                    totalAmount = parseFloat(loan.loanAmount);
+                if (activeLoans && activeLoans.length > 0) {
+                    selectElement.innerHTML = '<option value="">-Select Borrower & Loan-</option>';
+                    activeLoans.forEach(loan => {
+                        let opt = document.createElement('option');
+                        opt.value = loan.loan_id;
+                        opt.textContent = `${loan.borrower_name} (${loan.loan_id})`;
+                        
+                        opt.dataset.name = loan.borrower_name;
+                        opt.dataset.phone = loan.phone_number || "8778003840";
+                        opt.dataset.emi = parseFloat(loan.installment_amount || 0);
+                        opt.dataset.tenure = parseInt(loan.tenure || 10);
+                        opt.dataset.total = parseFloat(loan.loan_amount || 0);
+
+                        selectElement.appendChild(opt);
+                    });
+                } else {
+                    selectElement.innerHTML = '<option value="">-No Active Loans Found-</option>';
                 }
-                opt.dataset.total = totalAmount;
-
-                selectElement.appendChild(opt);
-            });
+            } catch (e) {
+                console.error("Error loading loans for payment:", e);
+                selectElement.innerHTML = '<option value="">-Error Loading Loans-</option>';
+            }
         }
 
-        // 2. Auto-Fill details when a Borrower is selected
         function autoFillLoanDetails() {
             const selectElement = document.getElementById('Borrowers_Name');
             const selectedOption = selectElement.options[selectElement.selectedIndex];
 
             if (!selectedOption.value) {
-                // Clear Fields if '-Select-' is chosen
                 document.getElementById('Loan_ID').value = '';
                 document.getElementById('Paid_Amount').value = '';
                 document.getElementById('Paid_Amount').dataset.originalBalance = '';
@@ -402,38 +392,19 @@
             const totalTenure = parseInt(selectedOption.dataset.tenure);
             const totalAmount = parseFloat(selectedOption.dataset.total);
 
-            // Fetch past payments to calculate completed installments and current balance
-            let payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
-            let loanPayments = payments.filter(p => p.loanId === loanId);
-
-            let pastPaidInstallments = loanPayments.length;
-            let totalPaidAmount = loanPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-
-            // Calculate Installments
-            let currentInstallment = pastPaidInstallments + 1;
-            let remainingInstallment = totalTenure - currentInstallment;
-            if(remainingInstallment < 0) remainingInstallment = 0;
-
-            // Calculate Current Balance Before this specific payment
-            let currentBalance = totalAmount - totalPaidAmount;
-            if(currentBalance < 0) currentBalance = 0;
-
-            // Pre-fill the HTML Form Inputs
             document.getElementById('Loan_ID').value = loanId;
             document.getElementById('Paid_Amount').value = emiAmount.toFixed(2);
-            document.getElementById('Paid_Installment').value = currentInstallment;
+            document.getElementById('Paid_Installment').value = 1;
+            let remainingInstallment = totalTenure - 1;
+            if(remainingInstallment < 0) remainingInstallment = 0;
             document.getElementById('Remaining_Installment').value = remainingInstallment;
-            
-            // Expected balance after this EMI
-            let expectedBalance = currentBalance - emiAmount;
-            if(expectedBalance < 0) expectedBalance = 0;
-            document.getElementById('Balance_Amount').value = expectedBalance.toFixed(2);
 
-            // Store the base balance in dataset so we can live-recalculate if user changes Paid Amount
-            document.getElementById('Paid_Amount').dataset.originalBalance = currentBalance;
+            let currentBalance = totalAmount - emiAmount;
+            if(currentBalance < 0) currentBalance = 0;
+            document.getElementById('Balance_Amount').value = currentBalance.toFixed(2);
+            document.getElementById('Paid_Amount').dataset.originalBalance = totalAmount;
         }
 
-        // 3. Live calculation if user manually types a different Paid Amount
         function updateBalanceOnChange() {
             let paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
             let originalBalance = parseFloat(document.getElementById('Paid_Amount').dataset.originalBalance) || 0;
@@ -444,7 +415,6 @@
             document.getElementById('Balance_Amount').value = newBalance.toFixed(2);
         }
 
-        // 4. Save Payment and Trigger WhatsApp MSG91
         async function validatePayment(event) {
             event.preventDefault();
 
@@ -474,26 +444,31 @@
 
             const paymentId = "PAY/" + Math.floor(100 + Math.random() * 900) + "/2026";
 
-            // Save Payment to LocalStorage
-            let payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
-            payments.push({
-                paymentId: paymentId,
-                borrower: borrowerName,
-                phone: borrowerPhone,
-                loanId: loanId,
-                amount: paidAmount.toString(),
-                balance: balanceAmount.toString(),
-                date: paymentDate,
-                mode: paymentMode,
-                delay: delayDetails,
-                paidInst: paidInst,
-                remInst: remInst,
-                loanType: loanId.includes("VML") || loanId.includes("VEL") || loanId.includes("VFL") ? 'Credit Vault' : 'Personal Loan'
-            });
-            localStorage.setItem('velfincorp_payments', JSON.stringify(payments));
+            // Appwrite டேட்டாபேஸில் பேமெண்ட்டைச் சேமித்தல் (PAYMENTS_ID 컬렉션 தேவைப்பட்டால் db.js-ல் இணைத்துக் கொள்ளலாம்)
+            try {
+                let paymentLoansList = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
+                paymentLoansList.push({
+                    paymentId: paymentId,
+                    borrower: borrowerName,
+                    phone: borrowerPhone,
+                    loanId: loanId,
+                    amount: paidAmount.toString(),
+                    balance: balanceAmount.toString(),
+                    date: paymentDate,
+                    mode: paymentMode,
+                    delay: delayDetails,
+                    paidInst: paidInst,
+                    remInst: remInst,
+                    loanType: loanId.includes("VML") || loanId.includes("VEL") || loanId.includes("VFL") ? 'Credit Vault' : 'Personal Loan'
+                });
+                localStorage.setItem('velfincorp_payments', JSON.stringify(paymentLoansList));
+            } catch (err) {
+                console.error("Error saving payment:", err);
+            }
 
+            // MSG91 API மூலம் WhatsApp Receipt அனுப்புவது
             const authKey = "563191ANiWhsCHw6a8aff47P1"; 
-            const wabaNumber = "919486886293";   
+            const wabaNumber = "919486886293";    
 
             let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
             if (cleanMobile.length > 10) {
@@ -573,7 +548,7 @@
                 alert("Payment submitted successfully and WhatsApp receipt sent automatically via MSG91!");
             } catch (error) {
                 console.error("Error sending WhatsApp message:", error);
-                alert("Payment saved to report, but automated WhatsApp dispatch failed due to network.");
+                alert("Payment saved, but automated WhatsApp dispatch failed due to network.");
             }
 
             document.getElementById('paymentForm').reset();
