@@ -563,18 +563,20 @@ return uploadedFile.$id;
 }
 return "";
 }
+
 const customerPhotoId = await uploadFileToStorage('Customer_Photo');
 const aadharFrontId = await uploadFileToStorage('Aadhar_Front');
 const aadharBackId = await uploadFileToStorage('Aadhar_Back');
 const panCardId = await uploadFileToStorage('Pan_Card');
 const rationCardId = await uploadFileToStorage('Ration_Card');
 const cibilScoreId = await uploadFileToStorage('CIBIL_Score');
+
 const fullAddress = document.getElementById('Address_Line_1').value + ", " + (document.getElementById('Land_Mark').value || "");
 const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + (document.getElementById('Last_Name').value || "");
+
 const documentId = 'vfc_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
-const payload = {
-documentId: documentId,
-data: {
+
+const dataPayload = {
 borrower_id: document.getElementById('Borrower_ID').value,
 issued_by: document.getElementById('Issued_by').value,
 retailer_code: document.getElementById('Retailer_Code').value || "",
@@ -606,23 +608,19 @@ aadhar_back_url: aadharBackId,
 pan_card_url: panCardId,
 ration_card_url: rationCardId,
 cibil_score_url: cibilScoreId
-}
 };
-const endpoint = "https://starter-function-bhfh.sfo.appwrite.run";
-const response = await fetch(endpoint, {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json'
-},
-body: JSON.stringify(payload)
-});
-if (response.ok) {
+
+// Directly save to Appwrite Database without relying on Functions endpoint
+await window.appwriteDatabases.createDocument(
+VFC_DB.DB_ID,
+VFC_DB.BORROWERS_ID,
+documentId,
+dataPayload
+);
+
 alert("Borrower Registration Successful! Files & Data saved automatically.");
 window.location.reload();
-} else {
-const errData = await response.json();
-throw new Error(errData.message || "Failed to save data");
-}
+
 } catch (error) {
 console.error("Appwrite Submission Error:", error);
 alert("Error saving data: " + error.message);
