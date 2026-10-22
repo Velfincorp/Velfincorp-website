@@ -528,14 +528,14 @@
 
             const issuedBy = issuedByEl ? issuedByEl.value : '';
             const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
-            const randNum = Math.floor(1000 + Math.random() * 9000);
+            const randNum = Math.floor(100 + Math.random() * 900); // 3 digit sequence matching Zoho pattern
             
             if (issuedBy === 'Retailer' && retailerCode) {
                 borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
             } else if (issuedBy === 'Admin') {
-                borrowerIdField.value = "VFC/ADM/" + randNum + "/2026";
-            } else {
                 borrowerIdField.value = "VFC/" + randNum + "/2026";
+            } else {
+                borrowerIdField.value = "";
             }
         }
 
