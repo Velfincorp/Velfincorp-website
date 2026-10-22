@@ -262,7 +262,7 @@
             // Appwrite டேட்டாபேஸில் இருந்து கிரெடிட் வால்ட் லோன்களைப் பெறுதல்
             const response = await window.appwriteDatabases.listDocuments(
                 VFC_DB.DB_ID,
-                VFC_DB.CREDIT_VAULT_ID // db.js-ல் இந்தக் கலெக்‌ஷன் ஐடி இருக்க வேண்டும்
+                VFC_DB.CREDIT_VAULT_ID
             );
             const loans = response.documents;
 
@@ -280,9 +280,9 @@
                     <td>${loan.borrower_name || '-'}</td>
                     <td>${loan.phone_number || '-'}</td>
                     <td>${loan.product_name || '-'}</td>
-                    <td>₹${loan.product_value || '0'}</td>
-                    <td>${loan.tenure_weeks || '-'} Weeks</td>
-                    <td>₹${loan.weekly_emi || '0'}</td>
+                    <td>₹${loan.loan_amount || '0'}</td>
+                    <td>${loan.tenure || '-'}</td>
+                    <td>₹${loan.installment_amount || '0'}</td>
                     <td><span style="color: #2F855A; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
                 `;
                 tbody.appendChild(tr);
@@ -303,11 +303,10 @@
                 <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Loan Information</th></tr>
                 <tr><td>Loan ID</td><td>${loan.loan_id || '-'}</td></tr>
                 <tr><td>Loan Type</td><td>${loan.loan_type || '-'}</td></tr>
-                <tr><td>Product Name</td><td>${loan.product_name || '-'}</td></tr>
-                <tr><td>Product Value</td><td>₹${loan.product_value || '-'}</td></tr>
-                <tr><td>Customer Down Payment</td><td>₹${loan.customer_down_payment || '-'}</td></tr>
+                <tr><td>Product Value</td><td>₹${loan.loan_amount || '-'}</td></tr>
                 <tr><td>Disbursed Amount</td><td>₹${loan.disbursed_amount || '-'}</td></tr>
-                <tr><td>Tenure & Weekly EMI</td><td>${loan.tenure_weeks || '-'} Weeks | ₹${loan.weekly_emi || '-'} per week</td></tr>
+                <tr><td>Tenure & Weekly EMI</td><td>${loan.tenure || '-'} | ₹${loan.installment_amount || '-'} per week</td></tr>
+                <tr><td>Loan Date</td><td>${loan.loan_date || '-'}</td></tr>
                 <tr><td>Loan Status</td><td>${loan.status || 'ACTIVE'}</td></tr>
                 
                 <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Details</th></tr>
