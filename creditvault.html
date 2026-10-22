@@ -257,7 +257,7 @@
             <h2>VEL FIN CORP</h2>
             <div class="subtitle">Credit Vault - Product Loan Application</div>
 
-            <form id="creditVaultForm" onsubmit="return validateCreditVault(event)">
+            <form id="creditVaultForm" onsubmit="validateCreditVault(event)">
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -501,21 +501,34 @@
             const weeklyEmi = document.getElementById('Weekly_EMI_Amount').value;
             const tenureWeeks = document.getElementById('Tenure_Weeks').value;
             const loanId = document.getElementById('Loan_ID').value;
+            const disbursedAmount = document.getElementById('Disbursed_Amount').value;
+            const loanStatus = document.getElementById('Status').value;
 
-            // LocalStorage-ல் சேமித்தல்
-            let creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
-            creditVaultLoans.push({
-                loanId: loanId,
-                borrowerName: borrowerName,
-                phone: borrowerPhone,
-                productName: productName,
-                productValue: productVal.toString(),
-                tenure: tenureWeeks + " Weeks",
-                weeklyEmi: weeklyEmi,
-                status: "ACTIVE",
-                loanDate: new Date().toLocaleDateString()
-            });
-            localStorage.setItem('velfincorp_creditvault', JSON.stringify(creditVaultLoans));
+            // Appwrite டேட்டாபேஸில் லோனை சேமித்தல்
+            try {
+                await window.appwriteDatabases.createDocument(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    window.AppwriteID.unique(),
+                    {
+                        loan_id: loanId,
+                        borrower_name: borrowerName,
+                        phone_number: borrowerPhone,
+                        loan_type: loanType,
+                        loan_amount: productVal.toString(),
+                        disbursed_amount: disbursedAmount,
+                        installment_amount: weeklyEmi,
+                        tenure: tenureWeeks + " Weeks",
+                        status: loanStatus,
+                        loan_date: new Date().toLocaleDateString()
+                    }
+                );
+                console.log("Loan saved to Appwrite Database!");
+            } catch (err) {
+                console.error("Error saving loan to Appwrite:", err);
+                alert("Database save failed: " + err.message);
+                return false;
+            }
 
             // MSG91 API மூலம் Welcome Message அனுப்புவது
             const authKey = "563191ANiWhsCHw6a8aff47P1"; 
@@ -589,10 +602,10 @@
 
                 const result = await response.json();
                 console.log("MSG91 Welcome Response:", result);
-                alert("Credit Vault loan successfully saved and Welcome Message sent automatically via WhatsApp!");
+                alert("Credit Vault loan successfully saved to Cloud Database and Welcome Message sent via WhatsApp!");
             } catch (error) {
                 console.error("Error sending WhatsApp welcome message:", error);
-                alert("Loan saved, but automated WhatsApp welcome message failed due to network.");
+                alert("Loan saved to database, but automated WhatsApp welcome message failed due to network.");
             }
 
             document.getElementById('creditVaultForm').reset();
