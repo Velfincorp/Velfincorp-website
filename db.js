@@ -16,7 +16,9 @@ const VFC_DB = {
     BORROWERS_ID: '6ad71e920004bbc106eb',
     LOANS_ID: '6ad71f29001d4ff46c50',
     PAYMENTS_ID: '6ad71ee900312b70ce69',
-    DOCUMENTS_BUCKET_ID: '6ad728e7001cd61e6b73' // புதிய Storage ID சேர்க்கப்பட்டுள்ளது
+    CREDIT_VAULT_ID: '6ad71f29001d4ff46c50', // Credit Vault கலெக்‌ஷனுக்காக இணைக்கப்பட்டுள்ளது
+    PERSONAL_LOAN_ID: '6ad71f29001d4ff46c50', // Personal Loan கலெக்‌ஷனுக்காக இணைக்கப்பட்டுள்ளது
+    DOCUMENTS_BUCKET_ID: '6ad728e7001cd61e6b73' // Storage ID
 };
 
 // Global variables
