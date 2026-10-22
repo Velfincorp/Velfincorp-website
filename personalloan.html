@@ -9,6 +9,8 @@
     <title>Vel Fin Corp - Personal Loan Application</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script>
         // Centralized Authentication & Security Protection Script
         (function() {
@@ -260,9 +262,7 @@
                     <div class="form-group">
                         <label>Borrowers Details *</label>
                         <select id="Borrowers_Details" required>
-                            <option value="">-Select Borrower-</option>
-                            <option value="Ravichandran" data-phone="9876543210">Ravichandran (VFC/001/2026)</option>
-                            <option value="Thowlath Basha" data-phone="8778003840">Thowlath Basha (VFC/002/2026)</option>
+                            <option value="">-Loading Borrowers-</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -332,10 +332,35 @@
             window.location.replace('login.html');
         }
 
-        window.onload = function() {
+        window.addEventListener('DOMContentLoaded', async () => {
             const year = new Date().getFullYear();
             document.getElementById('Loan_ID').value = "VPL/022/" + year;
-        };
+
+            // Appwrite டேட்டாபேஸில் இருந்து உண்மையான பாரோவர்களைப் 불러와 டிராப்டவுனில் நிரப்புதல்
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            try {
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.BORROWERS_ID
+                );
+                const borrowers = response.documents;
+                if (borrowers && borrowers.length > 0) {
+                    borrowerSelect.innerHTML = '<option value="">-Select Borrower-</option>';
+                    borrowers.forEach(b => {
+                        const opt = document.createElement('option');
+                        opt.value = b.full_name;
+                        opt.dataset.phone = b.phone_number || '';
+                        opt.textContent = `${b.full_name} (${b.borrower_id})`;
+                        borrowerSelect.appendChild(opt);
+                    });
+                } else {
+                    borrowerSelect.innerHTML = '<option value="">-No Borrowers Found-</option>';
+                }
+            } catch (e) {
+                console.error("Error loading borrowers:", e);
+                borrowerSelect.innerHTML = '<option value="">-Error Loading Borrowers-</option>';
+            }
+        });
 
         function calculatePersonalLoan() {
             const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
@@ -382,24 +407,37 @@
                 return false;
             }
 
-            // 1. LocalStorage-ல் பர்சனல் லோனைச் சேமித்தல் (Reportக்காக)
-            let personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
-            personalLoans.push({
-                loanId: loanId,
-                borrowerName: customerName,
-                phone: customerPhone,
-                loanType: loanType,
-                loanAmount: loanAmount.toString(),
-                disbursedAmount: document.getElementById('Disbursed_Amount').value,
-                installment: emiAmount,
-                status: document.getElementById('Status').value,
-                loanDate: new Date().toLocaleDateString()
-            });
-            localStorage.setItem('velfincorp_personalloan', JSON.stringify(personalLoans));
+            // Appwrite டேட்டாபேஸில் பர்சனல் லோனைச் சேமித்தல்
+            try {
+                const documentId = 'vpl_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+                const loanPayload = {
+                    loan_id: loanId,
+                    borrower_name: customerName,
+                    phone_number: customerPhone,
+                    loan_type: loanType,
+                    loan_amount: loanAmount.toString(),
+                    disbursed_amount: document.getElementById('Disbursed_Amount').value,
+                    installment_amount: emiAmount,
+                    tenure: tenure.toString(),
+                    status: document.getElementById('Status').value,
+                    loan_date: new Date().toLocaleDateString()
+                };
 
-            // 2. MSG91 API மூலம் Welcome Message அனுப்புவது
+                await window.appwriteDatabases.createDocument(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID, // db.js-ல் உள்ள Loans Collection ID
+                    documentId,
+                    loanPayload
+                );
+            } catch (err) {
+                console.error("Error saving loan to database:", err);
+                alert("Database save failed: " + err.message);
+                return false;
+            }
+
+            // MSG91 API மூலம் Welcome Message அனுப்புவது
             const authKey = "563191ANiWhsCHw6a8aff47P1"; 
-            const wabaNumber = "919486886293";   
+            const wabaNumber = "919486886293";    
             
             let cleanMobile = customerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
             if (cleanMobile.length > 10) {
@@ -431,7 +469,6 @@
             let templateName = "";
             let componentsBody = {};
 
-            // Zoho Creator டெம்ப்ளேட் லாஜி்க்கின்படி பிரித்தல்
             if (loanType === "Daily") {
                 templateName = "vel_fin_daily_welcome";
                 componentsBody = {
