@@ -409,7 +409,6 @@
 
             // Appwrite டேட்டாபேஸில் பர்சனல் லோனைச் சேமித்தல்
             try {
-                const documentId = 'vpl_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
                 const loanPayload = {
                     loan_id: loanId,
                     borrower_name: customerName,
@@ -425,10 +424,11 @@
 
                 await window.appwriteDatabases.createDocument(
                     VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID, // db.js-ல் உள்ள Loans Collection ID
-                    documentId,
+                    VFC_DB.LOANS_ID,
+                    window.AppwriteID.unique(),
                     loanPayload
                 );
+                console.log("Personal Loan saved to Appwrite Database!");
             } catch (err) {
                 console.error("Error saving loan to database:", err);
                 alert("Database save failed: " + err.message);
@@ -524,7 +524,7 @@
             };
 
             try {
-                const response = await fetch("https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/", {
+                const response = await fetch("https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/", {
                     method: "POST",
                     headers: {
                         "authkey": authKey,
@@ -539,10 +539,10 @@
 
                 const result = await response.json();
                 console.log("MSG91 Personal Loan Response:", result);
-                alert("Personal loan successfully saved and Welcome Message sent automatically via WhatsApp!");
+                alert("Personal loan successfully saved to Cloud Database and Welcome Message sent automatically via WhatsApp!");
             } catch (error) {
                 console.error("Error sending WhatsApp message:", error);
-                alert("Personal loan saved, but automated WhatsApp welcome message failed due to network.");
+                alert("Personal loan saved to database, but automated WhatsApp welcome message failed due to network.");
             }
 
             document.getElementById('personalLoanForm').reset();
