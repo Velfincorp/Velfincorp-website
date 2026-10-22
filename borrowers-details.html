@@ -486,6 +486,7 @@ const loanDateEl = document.getElementById('Loan_Date');
 if(loanDateEl) loanDateEl.valueAsDate = new Date();
 generateBorrowerID();
 };
+
 function generateBorrowerID() {
 const issuedByEl = document.getElementById('Issued_by');
 const retailerCodeEl = document.getElementById('Retailer_Code');
@@ -502,6 +503,7 @@ borrowerIdField.value = "VFC/" + randNum + "/2026";
 borrowerIdField.value = "";
 }
 }
+
 function toggleRetailerFields() {
 const issuedBy = document.getElementById('Issued_by').value;
 const retailerGroup = document.getElementById('retailerFieldsGroup');
@@ -514,11 +516,13 @@ document.getElementById('Retailer_Code').value = '';
 }
 generateBorrowerID();
 }
+
 function autoFillRetailerCode() {
 const ret = document.getElementById('Retailer_Details').value;
 document.getElementById('Retailer_Code').value = ret;
 generateBorrowerID();
 }
+
 function showHidePaymentDetails() {
 const payMethod = document.getElementById('Payment_Method').value;
 const upiGroup = document.getElementById('upiGroup');
@@ -534,10 +538,12 @@ upiGroup.classList.add('hidden');
 bankFields.classList.add('hidden');
 }
 }
+
 function handleLogout() {
 sessionStorage.clear();
 window.location.replace("login.html");
 }
+
 async function validateAndSubmit(event) {
 event.preventDefault();
 const submitBtn = document.querySelector('.btn-submit');
@@ -553,7 +559,7 @@ VFC_DB.DOCUMENTS_BUCKET_ID,
 AppwriteID.unique(),
 file
 );
-return uploadedFile.\$id;
+return uploadedFile.$id;
 }
 return "";
 }
@@ -602,7 +608,7 @@ ration_card_url: rationCardId,
 cibil_score_url: cibilScoreId
 }
 };
-const endpoint = `https://starter-function-bhfh.sfo.appwrite.run`;
+const endpoint = "https://starter-function-bhfh.sfo.appwrite.run";
 const response = await fetch(endpoint, {
 method: 'POST',
 headers: {
