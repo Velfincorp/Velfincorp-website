@@ -267,7 +267,7 @@ color: var(--navy);
 </div>
 <div class="form-group">
 <label>Borrower ID *</label>
-<input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9; font-weight: bold; color: var(--navy);" placeholder="Auto-generated ID">
+<input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9; font-weight: bold; color: var(--navy);" placeholder="Generating ID...">
 </div>
 </div>
 <div class="form-row hidden" id="retailerFieldsGroup">
@@ -481,30 +481,41 @@ color: var(--navy);
 </div>
 </div>
 <script>
-window.onload = function() {
+window.onload = async function() {
 const loanDateEl = document.getElementById('Loan_Date');
 if(loanDateEl) loanDateEl.valueAsDate = new Date();
-generateBorrowerID();
+await generateSequentialBorrowerID();
 };
 
-function generateBorrowerID() {
+async function generateSequentialBorrowerID() {
 const issuedByEl = document.getElementById('Issued_by');
 const retailerCodeEl = document.getElementById('Retailer_Code');
 const borrowerIdField = document.getElementById('Borrower_ID');
 if(!borrowerIdField) return;
+
 const issuedBy = issuedByEl ? issuedByEl.value : '';
 const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
-const randNum = Math.floor(100 + Math.random() * 900);
+
+try {
+const response = await window.appwriteDatabases.listDocuments(
+VFC_DB.DB_ID,
+VFC_DB.BORROWERS_ID
+);
+const nextSeq = (response.total || response.documents.length) + 1;
+const paddedSeq = String(nextSeq).padStart(3, '0');
+
 if (issuedBy === 'Retailer' && retailerCode) {
-borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
-} else if (issuedBy === 'Admin') {
-borrowerIdField.value = "VFC/" + randNum + "/2026";
-} else {
-borrowerIdField.value = "";
+borrowerIdField.value = `VFC/${retailerCode}/${paddedSeq}/2026`;
+} else if (issuedBy === 'Admin' || issuedBy === '') {
+borrowerIdField.value = `VFC/${paddedSeq}/2026`;
+}
+} catch (e) {
+console.error("Error generating ID:", e);
+borrowerIdField.value = "VFC/001/2026";
 }
 }
 
-function toggleRetailerFields() {
+async function toggleRetailerFields() {
 const issuedBy = document.getElementById('Issued_by').value;
 const retailerGroup = document.getElementById('retailerFieldsGroup');
 if (issuedBy === 'Retailer') {
@@ -514,13 +525,13 @@ retailerGroup.classList.add('hidden');
 document.getElementById('Retailer_Details').value = '';
 document.getElementById('Retailer_Code').value = '';
 }
-generateBorrowerID();
+await generateSequentialBorrowerID();
 }
 
-function autoFillRetailerCode() {
+async function autoFillRetailerCode() {
 const ret = document.getElementById('Retailer_Details').value;
 document.getElementById('Retailer_Code').value = ret;
-generateBorrowerID();
+await generateSequentialBorrowerID();
 }
 
 function showHidePaymentDetails() {
@@ -547,11 +558,36 @@ window.location.replace("login.html");
 async function validateAndSubmit(event) {
 event.preventDefault();
 const submitBtn = document.querySelector('.btn-submit');
-submitBtn.innerText = "Saving Data...";
+submitBtn.innerText = "Uploading Files & Saving Data...";
 submitBtn.disabled = true;
+
 try {
+async function uploadFileToStorage(fileElementId) {
+const fileInput = document.getElementById(fileElementId);
+if (fileInput && fileInput.files.length > 0) {
+const file = fileInput.files[0];
+const uploadedFile = await window.appwriteStorage.createFile(
+VFC_DB.DOCUMENTS_BUCKET_ID,
+AppwriteID.unique(),
+file
+);
+return uploadedFile.\$id;
+}
+return "";
+}
+
+const photoId = await uploadFileToStorage('Customer_Photo');
+const aadharFrontId = await uploadFileToStorage('Aadhar_Front');
+const aadharBackId = await uploadFileToStorage('Aadhar_Back');
+const panCardId = await uploadFileToStorage('Pan_Card');
+const rationCardId = await uploadFileToStorage('Ration_Card');
+const cibilId = await uploadFileToStorage('CIBIL_Score');
+
 const fullAddress = document.getElementById('Address_Line_1').value + ", " + (document.getElementById('Land_Mark').value || "");
-const fullName = document.getElementById('Name_Prefix').value + " " + document.getElementById('First_Name').value + " " + (document.getElementById('Last_Name').value || "");
+const prefix = document.getElementById('Name_Prefix').value;
+const firstName = document.getElementById('First_Name').value;
+const lastName = document.getElementById('Last_Name').value;
+const fullName = prefix + " " + firstName + (lastName ? " " + lastName : "");
 
 const documentId = 'vfc_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
 
@@ -568,7 +604,7 @@ pan_number: document.getElementById('PAN_NUMBER').value,
 phone_number: document.getElementById('Phone_Number').value,
 whatsapp_number: document.getElementById('Whatsapp_Number').value,
 email: document.getElementById('Email').value || "",
-nominee_name: document.getElementById('Nominee_Name').value,
+nominee_name: document.getElementById('Nominee_Name.value') || document.getElementById('Nominee_Name').value,
 nominee_contact: document.getElementById('Nominee_Contact_Number').value,
 address: fullAddress,
 city: document.getElementById('City_District').value,
@@ -580,7 +616,13 @@ payment_method: document.getElementById('Payment_Method').value,
 upi_id: document.getElementById('UPI_ID').value || "",
 bank_name: document.getElementById('Bank_Name').value || "",
 bank_account_no: document.getElementById('Bank_Account_Number').value || "",
-ifsc_code: document.getElementById('IFSC_Code').value || ""
+ifsc_code: document.getElementById('IFSC_Code').value || "",
+customer_photo: photoId,
+aadhar_front: aadharFrontId,
+aadhar_back: aadharBackId,
+pan_card: panCardId,
+ration_card: rationCardId,
+cibil_score: cibilId
 };
 
 await window.appwriteDatabases.createDocument(
@@ -590,7 +632,7 @@ documentId,
 dataPayload
 );
 
-alert("Borrower Registration Successful! Data saved automatically.");
+alert("Borrower Registration Successful! Files & Data saved successfully.");
 window.location.reload();
 
 } catch (error) {
