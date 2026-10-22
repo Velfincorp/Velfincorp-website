@@ -9,6 +9,8 @@
     <title>Vel Fin Corp - Personal Loan Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         // Centralized Authentication & Security Protection Script
@@ -348,7 +350,7 @@
                     </tr>
                 </thead>
                 <tbody id="reportTableBody">
-                    <!-- Dynamic Data -->
+                    <tr><td colspan="8" style="text-align: center;">Loading personal loans from database...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -374,118 +376,65 @@
     <script>
         let currentLoan = null;
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadReportData();
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadReportData();
         });
 
-        function loadReportData() {
+        async function loadReportData() {
             const tbody = document.getElementById('reportTableBody');
-            let loans = [];
-            let borrowers = [];
-            let payments = [];
-
             try {
-                loans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
-                borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
-                payments = JSON.parse(localStorage.getItem('velfincorp_payments') || '[]');
-            } catch(e) {
-                loans = [];
-                borrowers = [];
-                payments = [];
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID
+                );
+                const loans = response.documents;
+
+                if (!loans || loans.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No personal loans found in database.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                loans.forEach((loan) => {
+                    const tr = document.createElement('tr');
+                    tr.onclick = () => showLoanDetails(loan);
+                    tr.innerHTML = `
+                        <td><strong>${loan.loan_id || '-'}</strong></td>
+                        <td>${loan.borrower_name || '-'}</td>
+                        <td>${loan.phone_number || '-'}</td>
+                        <td>${loan.loan_type || 'Weekly'}</td>
+                        <td>₹${loan.loan_amount || '0'}</td>
+                        <td>₹${loan.disbursed_amount || '0'}</td>
+                        <td>₹${loan.installment_amount || '0'}</td>
+                        <td><span style="color: #2F855A; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(error) {
+                console.error("Error loading personal loan reports:", error);
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
             }
-
-            if (loans.length === 0) {
-                loans = [
-                    {
-                        loanId: "VPL/022/2026",
-                        borrowerId: "VFC/001/2026",
-                        borrowerName: "Ravichandran Chennan",
-                        phone: "9876543210",
-                        loanType: "Weekly",
-                        loanAmount: "10000",
-                        disbursedAmount: "8500",
-                        installment: "1000",
-                        status: "ACTIVE",
-                        loanDate: "10-Oct-2026"
-                    },
-                    {
-                        loanId: "VPL/017/2026",
-                        borrowerId: "VFC/002/2026",
-                        borrowerName: "Thowlath Basha Rjka",
-                        phone: "8778003840",
-                        loanType: "Daily",
-                        loanAmount: "5000",
-                        disbursedAmount: "4250",
-                        installment: "50",
-                        status: "ACTIVE",
-                        loanDate: "12-Oct-2026"
-                    }
-                ];
-            }
-
-            tbody.innerHTML = '';
-            loans.forEach((loan) => {
-                let borrower = borrowers.find(b => b.borrowerId === loan.borrowerId || (b.name && b.name.includes(loan.borrowerName)) || b.phone === loan.phone) || {};
-                
-                // Calculate paid amount and pending balance for this loan
-                let loanPayments = payments.filter(p => p.loanId === loan.loanId || (p.borrower && p.borrower.includes(loan.loanId)));
-                let totalPaid = loanPayments.reduce((sum, p) => sum + (parseFloat(p.amount || p.paidAmount) || 0), 0);
-                let loanAmt = parseFloat(loan.loanAmount || 0);
-                let pendingAmt = loanAmt > 0 ? (loanAmt - totalPaid) : 0;
-
-                const tr = document.createElement('tr');
-                tr.onclick = () => showLoanDetails(loan, borrower, totalPaid, pendingAmt, loanPayments);
-                tr.innerHTML = `
-                    <td><strong>${loan.loanId || '-'}</strong></td>
-                    <td>${loan.borrowerName || borrower.name || '-'}</td>
-                    <td>${loan.phone || borrower.phone || '-'}</td>
-                    <td>${loan.loanType || 'Weekly'}</td>
-                    <td>₹${loan.loanAmount || '0'}</td>
-                    <td>₹${loan.disbursedAmount || '0'}</td>
-                    <td>₹${loan.installment || '0'}</td>
-                    <td><span style="color: #2F855A; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
         }
 
-        function showLoanDetails(loan, borrower, totalPaid, pendingAmt, loanPayments) {
+        function showLoanDetails(loan) {
             currentLoan = loan;
             const modal = document.getElementById('loanModal');
             const modalBody = document.getElementById('modalBody');
 
-            // Check delay details from payments if any
-            let delayInfo = "No delays recorded";
-            if (loanPayments.length > 0) {
-                let delayedPayments = loanPayments.filter(p => p.isDelayed === true || p.delayDays > 0);
-                if (delayedPayments.length > 0) {
-                    delayInfo = `${delayedPayments.length} installment(s) paid with delay.`;
-                }
-            }
-
             modalBody.innerHTML = `
                 <table class="profile-table">
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Personal Loan Financial Status</th></tr>
-                    <tr><td>Loan ID</td><td>${loan.loanId || '-'}</td></tr>
-                    <tr><td>Loan Type & Date</td><td>${loan.loanType || '-'} | Started on: ${loan.loanDate || '-'}</td></tr>
-                    <tr><td>Total Loan Amount</td><td>₹${loan.loanAmount || '0'}</td></tr>
-                    <tr><td>Disbursed Amount</td><td>₹${loan.disbursedAmount || '0'}</td></tr>
-                    <tr><td>Installment Amount</td><td>₹${loan.installment || '-'}</td></tr>
-                    <tr><td>Total Amount Paid</td><td style="color: #2F855A; font-weight: bold;">₹${totalPaid.toFixed(2)}</td></tr>
-                    <tr><td>Pending Balance</td><td style="color: #C53030; font-weight: bold;">₹${pendingAmt.toFixed(2)}</td></tr>
-                    <tr><td>Repayment / Delay Status</td><td>${delayInfo}</td></tr>
+                    <tr><td>Loan ID</td><td>${loan.loan_id || '-'}</td></tr>
+                    <tr><td>Loan Type & Date</td><td>${loan.loan_type || '-'} | Started on: ${loan.loan_date || '-'}</td></tr>
+                    <tr><td>Total Loan Amount</td><td>₹${loan.loan_amount || '0'}</td></tr>
+                    <tr><td>Disbursed Amount</td><td>₹${loan.disbursed_amount || '0'}</td></tr>
+                    <tr><td>Installment Amount</td><td>₹${loan.installment_amount || '-'}</td></tr>
+                    <tr><td>Tenure</td><td>${loan.tenure || '-'} periods</td></tr>
                     <tr><td>Loan Status</td><td>${loan.status || 'ACTIVE'}</td></tr>
 
-                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Details</th></tr>
-                    <tr><td>Borrower ID</td><td>${borrower.borrowerId || loan.borrowerId || '-'}</td></tr>
-                    <tr><td>Customer Name</td><td>${borrower.name || loan.borrowerName || '-'}</td></tr>
-                    <tr><td>Phone Number</td><td>${borrower.phone || loan.phone || '-'}</td></tr>
-                    <tr><td>WhatsApp Number</td><td>${borrower.whatsapp || '-'}</td></tr>
-                    <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
-                    <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
-                    <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
-                    <tr><td>Occupation</td><td>${borrower.occupation || '-'}</td></tr>
-                    <tr><td>Nominee Details</td><td>${borrower.nominee || '-'} (${borrower.nomineePhone || '-'})</td></tr>
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Details</th></tr>
+                    <tr><td>Customer Name</td><td>${loan.borrower_name || '-'}</td></tr>
+                    <tr><td>Phone Number</td><td>${loan.phone_number || '-'}</td></tr>
                 </table>
             `;
             modal.style.display = 'flex';
@@ -521,8 +470,8 @@
 
             let fileName = "Personal_Loan_Profile.pdf";
             if (currentLoan) {
-                const cleanName = (currentLoan.borrowerName || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
-                const cleanId = (currentLoan.loanId || 'Loan').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanName = (currentLoan.borrower_name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanId = (currentLoan.loan_id || 'Loan').replace(/[^a-zA-Z0-9]/g, '_');
                 fileName = `${cleanName}_${cleanId}.pdf`;
             }
 
