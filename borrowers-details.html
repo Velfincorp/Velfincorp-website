@@ -512,14 +512,12 @@
     </div>
 
     <script>
-        // Set Default Date on Load
         window.onload = function() {
             const loanDateEl = document.getElementById('Loan_Date');
             if(loanDateEl) loanDateEl.valueAsDate = new Date();
             generateBorrowerID();
         };
 
-        // Corrected and Robust Borrower ID Generation Function
         function generateBorrowerID() {
             const issuedByEl = document.getElementById('Issued_by');
             const retailerCodeEl = document.getElementById('Retailer_Code');
@@ -529,7 +527,7 @@
 
             const issuedBy = issuedByEl ? issuedByEl.value : '';
             const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
-            const randNum = Math.floor(100 + Math.random() * 900); // 3 digit sequence matching Zoho pattern
+            const randNum = Math.floor(100 + Math.random() * 900);
             
             if (issuedBy === 'Retailer' && retailerCode) {
                 borrowerIdField.value = "VFC/" + retailerCode + "/" + randNum + "/2026";
@@ -581,7 +579,6 @@
             window.location.replace("login.html");
         }
 
-        // --- AUTOMATED STORAGE UPLOAD & APPWRITE FUNCTION SUBMISSION ---
         async function validateAndSubmit(event) {
             event.preventDefault(); 
             
