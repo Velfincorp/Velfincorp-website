@@ -9,9 +9,10 @@
     <title>Vel Fin Corp - Borrower Details Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -179,7 +180,6 @@
             background-color: #f8fafc;
             cursor: pointer;
         }
-        /* Modal for Full Profile Details */
         .modal {
             display: none;
             position: fixed;
@@ -301,7 +301,7 @@
                     </tr>
                 </thead>
                 <tbody id="borrowerTableBody">
-                    <!-- Dynamic rows -->
+                    <tr><td colspan="6" style="text-align: center;">Loading borrowers from database...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -327,62 +327,39 @@
     <script>
         let currentBorrower = null;
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             const tbody = document.getElementById('borrowerTableBody');
-            let borrowers = [];
             try {
-                borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
-            } catch(e) {
-                borrowers = [];
-            }
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.BORROWERS_ID
+                );
 
-            if (!Array.isArray(borrowers) || borrowers.length === 0) {
-                borrowers = [
-                    {
-                        borrowerId: "VFC/001/2026",
-                        name: "Mr. Rajapriyan D",
-                        phone: "8778003840",
-                        whatsapp: "+919787762734",
-                        aadhar: "[Aadhaar Redacted]",
-                        pan: "HPHPR9283H",
-                        occupation: "Business",
-                        city: "Sengam, Tamil Nadu",
-                        address: "117, Elagunni, Mariayman koil Street, Near Temple",
-                        relationship: "Son of",
-                        relativeName: "Durairaj",
-                        nominee: "Durairaj",
-                        nomineePhone: "9787762734",
-                        loanDate: "13-Oct-2026",
-                        paymentMethod: "e - NACH",
-                        bankName: "State Bank of India",
-                        accountHolder: "Rajapriyan D",
-                        accountNumber: "384729104321",
-                        ifsc: "SBIN0001234",
-                        upiId: "-",
-                        photo: "customer-sample.jpg",
-                        aadharFront: "Aadhar_Front.jpg",
-                        aadharBack: "Aadhar_Back.jpg",
-                        panCard: "Pan_Card.jpg",
-                        rationCard: "Ration_Card.jpg",
-                        cibil: "CIBIL_Score.pdf"
-                    }
-                ];
-            }
+                const borrowers = response.documents;
 
-            tbody.innerHTML = '';
-            borrowers.forEach((b) => {
-                const tr = document.createElement('tr');
-                tr.onclick = () => showProfile(b);
-                tr.innerHTML = `
-                    <td>${b.borrowerId || 'VFC/001/2026'}</td>
-                    <td>${b.name || '-'}</td>
-                    <td>${b.phone || '-'}</td>
-                    <td>${b.whatsapp || '-'}</td>
-                    <td>${b.occupation || '-'}</td>
-                    <td>${b.city || '-'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+                if (!borrowers || borrowers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No borrowers found in database.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                borrowers.forEach((b) => {
+                    const tr = document.createElement('tr');
+                    tr.onclick = () => showProfile(b);
+                    tr.innerHTML = `
+                        <td>${b.borrower_id || '-'}</td>
+                        <td>${b.full_name || '-'}</td>
+                        <td>${b.phone_number || '-'}</td>
+                        <td>${b.whatsapp_number || '-'}</td>
+                        <td>${b.occupation || '-'}</td>
+                        <td>${b.city || '-'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(error) {
+                console.error("Error fetching borrowers:", error);
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
+            }
         });
 
         function showProfile(b) {
@@ -391,37 +368,31 @@
             const body = document.getElementById('modalBody');
 
             let paymentDetailsHTML = '';
-            if (b.paymentMethod === 'UPI') {
+            if (b.payment_method === 'UPI') {
                 paymentDetailsHTML = `<tr><td>Payment Method</td><td>UPI</td></tr>
-                                      <tr><td>UPI ID</td><td>${b.upiId || '-'}</td></tr>`;
+                                    <tr><td>UPI ID</td><td>${b.upi_id || '-'}</td></tr>`;
             } else {
                 paymentDetailsHTML = `<tr><td>Payment Method</td><td>e - NACH (Bank Auto Debit)</td></tr>
-                                      <tr><td>Bank Name</td><td>${b.bankName || '-'}</td></tr>
-                                      <tr><td>Account Holder Name</td><td>${b.accountHolder || '-'}</td></tr>
-                                      <tr><td>Bank Account Number</td><td>${b.accountNumber || '-'}</td></tr>
-                                      <tr><td>IFSC Code</td><td>${b.ifsc || '-'}</td></tr>`;
+                                    <tr><td>Bank Name</td><td>${b.bank_name || '-'}</td></tr>
+                                    <tr><td>Account Holder Name</td><td>${b.account_holder_name || '-'}</td></tr>
+                                    <tr><td>Bank Account Number</td><td>${b.bank_account_no || '-'}</td></tr>
+                                    <tr><td>IFSC Code</td><td>${b.ifsc_code || '-'}</td></tr>`;
             }
 
             body.innerHTML = `
                 <table class="profile-table">
-                    <tr><td>Borrower ID</td><td>${b.borrowerId || '-'}</td></tr>
-                    <tr><td>Customer Name</td><td>${b.name || '-'}</td></tr>
+                    <tr><td>Borrower ID</td><td>${b.borrower_id || '-'}</td></tr>
+                    <tr><td>Customer Name</td><td>${b.full_name || '-'}</td></tr>
                     <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
-                    <tr><td>PAN Number</td><td>${b.pan || '-'}</td></tr>
-                    <tr><td>Phone Number</td><td>${b.phone || '-'}</td></tr>
-                    <tr><td>WhatsApp</td><td>${b.whatsapp || '-'}</td></tr>
-                    <tr><td>Relationship</td><td>${b.relationship || '-'} (${b.relativeName || '-'})</td></tr>
-                    <tr><td>Occupation & Job</td><td>${b.occupation || '-'}</td></tr>
-                    <tr><td>Address (with Landmark)</td><td>${b.address || '-'}, ${b.city || '-'}</td></tr>
-                    <tr><td>Nominee Details</td><td>${b.nominee || '-'} (${b.nomineePhone || '-'})</td></tr>
-                    <tr><td>Loan Date</td><td>${b.loanDate || '-'}</td></tr>
+                    <tr><td>PAN Number</td><td>${b.pan_number || '-'}</td></tr>
+                    <tr><td>Phone Number</td><td>${b.phone_number || '-'}</td></tr>
+                    <tr><td>WhatsApp</td><td>${b.whatsapp_number || '-'}</td></tr>
+                    <tr><td>Relationship & Relative Name</td><td>${b.relative_name || '-'}</td></tr>
+                    <tr><td>Occupation & Job</td><td>${b.occupation || '-'} (${b.job_nature || '-'})</td></tr>
+                    <tr><td>Address</td><td>${b.address || '-'}, ${b.city || '-'}, ${b.state || '-'} - ${b.pincode || '-'}</td></tr>
+                    <tr><td>Nominee Details</td><td>${b.nominee_name || '-'} (${b.nominee_contact || '-'})</td></tr>
+                    <tr><td>Loan Date</td><td>${b.loan_date || '-'}</td></tr>
                     ${paymentDetailsHTML}
-                    <tr><td>Customer Photo</td><td><span style="color: #2F855A; font-weight: bold;"><i class="fas fa-image"></i> ${b.photo || 'Uploaded Photo.jpg'}</span></td></tr>
-                    <tr><td>Upload Aadhar Front side</td><td><span style="color: #2B6CB0;"><i class="fas fa-file-pdf"></i> ${b.aadharFront || 'Aadhar_Front.jpg'}</span></td></tr>
-                    <tr><td>Upload Aadhar Back Side</td><td><span style="color: #2B6CB0;"><i class="fas fa-file-pdf"></i> ${b.aadharBack || 'Aadhar_Back.jpg'}</span></td></tr>
-                    <tr><td>Upload Pan Card</td><td><span style="color: #2B6CB0;"><i class="fas fa-file-pdf"></i> ${b.panCard || 'Pan_Card.jpg'}</span></td></tr>
-                    <tr><td>Upload Ration Card</td><td><span style="color: #2B6CB0;"><i class="fas fa-file-pdf"></i> ${b.rationCard || 'Ration_Card.jpg'}</span></td></tr>
-                    <tr><td>CIBIL Score / Document</td><td><span style="color: #2B6CB0;"><i class="fas fa-file-pdf"></i> ${b.cibil || 'CIBIL_Score.pdf'}</span></td></tr>
                 </table>
             `;
             modal.style.display = 'flex';
@@ -434,8 +405,8 @@
 
             let fileName = "Borrower_Profile.pdf";
             if (currentBorrower) {
-                const cleanName = (currentBorrower.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
-                const cleanId = (currentBorrower.borrowerId || 'ID').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanName = (currentBorrower.full_name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanId = (currentBorrower.borrower_id || 'ID').replace(/[^a-zA-Z0-9]/g, '_');
                 fileName = `${cleanName}_${cleanId}.pdf`;
             }
 
