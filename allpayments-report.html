@@ -449,12 +449,16 @@
                 margin:       10,
                 filename:     fileName,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
+                html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             html2pdf().from(element).set(opt).save().then(() => {
                 actions.style.display = 'flex';
+            }).catch(err => {
+                console.error("PDF Generation Error:", err);
+                actions.style.display = 'flex';
+                alert("PDF Generation failed. Please try using the Print button.");
             });
         }
 
