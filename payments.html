@@ -280,11 +280,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Paid Amount (₹) *</label>
-                        <input type="number" id="Paid_Amount" oninput="updateBalanceOnChange()" placeholder="0.00" required>
+                        <input type="number" step="0.01" id="Paid_Amount" oninput="updateBalanceOnChange()" placeholder="0.00" required>
                     </div>
                     <div class="form-group">
                         <label>Expected Balance Amount (₹)</label>
-                        <input type="number" id="Balance_Amount" class="readonly-field" readonly placeholder="0.00">
+                        <input type="number" step="0.01" id="Balance_Amount" class="readonly-field" readonly placeholder="0.00">
                     </div>
                 </div>
 
@@ -327,6 +327,21 @@
     </div>
 
     <script>
+        // Appwrite Functions இன்ஸ்டன்ஸை முறையாக உருவாக்குதல்
+        let appwriteFunctionsInstance = null;
+        try {
+            if (window.appwriteClient) {
+                appwriteFunctionsInstance = new window.Appwrite.Functions(window.appwriteClient);
+            } else if (window.Appwrite && VFC_DB) {
+                const client = new window.Appwrite.Client()
+                    .setEndpoint(VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1')
+                    .setProject(VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e');
+                appwriteFunctionsInstance = new window.Appwrite.Functions(client);
+            }
+        } catch (err) {
+            console.error("Error initializing Appwrite Functions:", err);
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('Date_field').valueAsDate = new Date();
             await loadActiveLoansFromAppwrite();
@@ -338,7 +353,6 @@
             window.location.replace('login.html');
         }
 
-        // Appwrite டேட்டாபேஸில் இருந்து ஆக்டிவ் லோன்களை டிராப்டவுனில் ஏற்றுதல்
         async function loadActiveLoansFromAppwrite() {
             const selectElement = document.getElementById('Borrowers_Name');
             try {
@@ -442,7 +456,19 @@
                 return;
             }
 
-            const paymentId = "PAY/" + Math.floor(100 + Math.random() * 900) + "/2026";
+            // Payment ID-ஐ சீரான வரிசையில் (Sequential Order) உருவாக்குதல்
+            let paymentId = "PAY/001/2026";
+            try {
+                const paymentsList = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.PAYMENTS_ID
+                );
+                const nextSeq = (paymentsList.total || paymentsList.documents.length) + 1;
+                paymentId = `PAY/${String(nextSeq).padStart(3, '0')}/2026`;
+            } catch (err) {
+                console.warn("Could not fetch payment count for sequential ID, using fallback:", err);
+                paymentId = "PAY/" + Math.floor(100 + Math.random() * 900) + "/2026";
+            }
 
             // Appwrite டேட்டாபேஸில் பேமெண்ட்டைச் சேமித்தல்
             try {
@@ -455,8 +481,8 @@
                         loan_id: loanId,
                         borrower_name: borrowerName,
                         phone_number: borrowerPhone,
-                        amount_paid: paidAmount.toString(),
-                        balance_amount: balanceAmount.toString(),
+                        amount_paid: paidAmount.toFixed(2),
+                        balance_amount: balanceAmount.toFixed(2),
                         paid_installment: paidInst.toString(),
                         remaining_installment: remInst.toString(),
                         payment_date: paymentDate,
@@ -471,7 +497,7 @@
                 return;
             }
 
-            // Appwrite Function மூலம் WhatsApp Receipt அனுப்புவது (CORS எரரை தவிர்க்க)
+            // Appwrite Function மூலம் WhatsApp Receipt அனுப்புவது
             let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
             if (cleanMobile.length > 10) {
                 cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
@@ -486,18 +512,22 @@
             let templateName = (remInst <= 0 || balanceAmount <= 0) ? "vel_fin_loan_closed" : "vel_fin_payment_receipt";
 
             try {
-                const execution = await window.appwriteFunctions.createExecution(
+                if (!appwriteFunctionsInstance) {
+                    throw new Error("Appwrite Functions instance is not initialized.");
+                }
+
+                const execution = await appwriteFunctionsInstance.createExecution(
                     '6adb02310009b131da2d',
                     JSON.stringify({
                         mobile: finalMobile,
                         templateName: templateName,
                         borrowerName: borrowerName,
                         loanType: loanTypeDisp,
-                        paidAmount: paidAmount.toString(),
+                        paidAmount: paidAmount.toFixed(2),
                         paymentDate: paymentDate,
                         paidInst: paidInst.toString(),
                         remInst: remInst.toString(),
-                        balanceAmount: balanceAmount.toString(),
+                        balanceAmount: balanceAmount.toFixed(2),
                         delayDetails: delayDetails
                     })
                 );
@@ -511,6 +541,7 @@
 
             document.getElementById('paymentForm').reset();
             document.getElementById('Date_field').valueAsDate = new Date();
+            await loadActiveLoansFromAppwrite();
         }
     </script>
 </body>
