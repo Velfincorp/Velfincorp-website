@@ -444,12 +444,15 @@
                 const stdDown = productVal * 0.30;
                 document.getElementById('Standard_Down_Payment').value = stdDown.toFixed(2);
                 
-                let custDown = document.getElementById('Customer_Down_Payment').value;
-                if (!custDown) {
+                let custDownInput = document.getElementById('Customer_Down_Payment').value;
+                let custDown = parseFloat(custDownInput);
+
+                if (isNaN(custDown) || custDownInput === '') {
                     custDown = stdDown;
                     document.getElementById('Customer_Down_Payment').value = stdDown.toFixed(2);
-                } else {
-                    custDown = parseFloat(custDown);
+                } else if (custDown <= 1.0) {
+                    // If user types fraction like 0.3 or 0.25, convert to actual rupee amount automatically
+                    custDown = productVal * custDown;
                 }
 
                 let setupFee = productVal * 0.04;
@@ -485,7 +488,13 @@
         async function validateCreditVault(event) {
             event.preventDefault();
             const productVal = parseFloat(document.getElementById('Product_Value').value) || 0;
-            const custDown = parseFloat(document.getElementById('Customer_Down_Payment').value) || 0;
+            
+            let custDownInput = document.getElementById('Customer_Down_Payment').value;
+            let custDown = parseFloat(custDownInput) || 0;
+            if (custDown <= 1.0) {
+                custDown = productVal * custDown;
+            }
+            
             const minDown = productVal * 0.25;
 
             if (custDown < minDown) {
