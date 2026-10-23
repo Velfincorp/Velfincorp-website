@@ -471,10 +471,7 @@
                 return;
             }
 
-            // MSG91 API மூலம் WhatsApp Receipt அனுப்புவது
-            const authKey = "563191ANiWhsCHw6a8aff47P1"; 
-            const wabaNumber = "919486886293";    
-
+            // Appwrite Function மூலம் WhatsApp Receipt அனுப்புவது (CORS எரரை தவிர்க்க)
             let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
             if (cleanMobile.length > 10) {
                 cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
@@ -486,74 +483,30 @@
                 loanTypeDisp = "பொருள் கடன் (Credit Vault)";
             }
 
-            let templateName = "";
-            let componentsBody = {};
-
-            if (remInst <= 0 || balanceAmount <= 0) {
-                templateName = "vel_fin_loan_closed";
-                componentsBody = {
-                    "body_1": { "type": "text", "value": borrowerName },
-                    "body_2": { "type": "text", "value": loanTypeDisp },
-                    "body_3": { "type": "text", "value": paidAmount.toString() },
-                    "body_4": { "type": "text", "value": paymentDate },
-                    "body_5": { "type": "text", "value": paidInst.toString() },
-                    "body_6": { "type": "text", "value": "0" },
-                    "body_7": { "type": "text", "value": "0.00" },
-                    "body_8": { "type": "text", "value": "Completed" }
-                };
-            } else {
-                templateName = "vel_fin_payment_receipt";
-                componentsBody = {
-                    "body_1": { "type": "text", "value": borrowerName },
-                    "body_2": { "type": "text", "value": loanTypeDisp },
-                    "body_3": { "type": "text", "value": paidAmount.toString() },
-                    "body_4": { "type": "text", "value": paymentDate },
-                    "body_5": { "type": "text", "value": paidInst.toString() },
-                    "body_6": { "type": "text", "value": remInst.toString() },
-                    "body_7": { "type": "text", "value": balanceAmount.toString() },
-                    "body_8": { "type": "text", "value": delayDetails }
-                };
-            }
-
-            const payload = {
-                "messaging_product": "whatsapp",
-                "type": "template",
-                "template": {
-                    "name": templateName,
-                    "language": {
-                        "code": "ta",
-                        "policy": "deterministic"
-                    },
-                    "namespace": "dc938b84_8f2e_4371_9a2e_11c1f8a734e8",
-                    "to_and_components": [
-                        {
-                            "to": [finalMobile],
-                            "components": componentsBody
-                        }
-                    ]
-                }
-            };
+            let templateName = (remInst <= 0 || balanceAmount <= 0) ? "vel_fin_loan_closed" : "vel_fin_payment_receipt";
 
             try {
-                const response = await fetch("https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/", {
-                    method: "POST",
-                    headers: {
-                        "authkey": authKey,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        "integrated_number": wabaNumber,
-                        "content_type": "template",
-                        "payload": payload
+                const execution = await window.appwriteFunctions.createExecution(
+                    '6adb02310009b131da2d',
+                    JSON.stringify({
+                        mobile: finalMobile,
+                        templateName: templateName,
+                        borrowerName: borrowerName,
+                        loanType: loanTypeDisp,
+                        paidAmount: paidAmount.toString(),
+                        paymentDate: paymentDate,
+                        paidInst: paidInst.toString(),
+                        remInst: remInst.toString(),
+                        balanceAmount: balanceAmount.toString(),
+                        delayDetails: delayDetails
                     })
-                });
+                );
 
-                const result = await response.json();
-                console.log("MSG91 Response:", result);
-                alert("Payment successfully saved to Cloud Database and WhatsApp receipt sent automatically via MSG91!");
+                console.log("Appwrite Function Execution:", execution);
+                alert("Payment successfully saved to Cloud Database and WhatsApp receipt sent automatically!");
             } catch (error) {
-                console.error("Error sending WhatsApp message:", error);
-                alert("Payment saved to database, but automated WhatsApp dispatch failed due to network.");
+                console.error("Error triggering WhatsApp function:", error);
+                alert("Payment saved to database, but automated WhatsApp dispatch failed: " + error.message);
             }
 
             document.getElementById('paymentForm').reset();
