@@ -280,7 +280,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Paid Amount (₹) *</label>
-                        <input type="number" step="0.01" id="Paid_Amount" oninput="updateBalanceOnChange()" placeholder="0.00" required>
+                        <input type="number" step="0.01" id="Paid_Amount" oninput="updateCalculations()" placeholder="0.00" required>
                     </div>
                     <div class="form-group">
                         <label>Expected Balance Amount (₹)</label>
@@ -327,12 +327,12 @@
     </div>
 
     <script>
-        // Appwrite Functions இன்ஸ்டன்ஸை முறையாக உருவாக்குதல்
+        // Appwrite Functions இன்ஸ்டன்ஸை பாதுகாப்பாக உருவாக்குதல்
         let appwriteFunctionsInstance = null;
         try {
             if (window.appwriteClient) {
                 appwriteFunctionsInstance = new window.Appwrite.Functions(window.appwriteClient);
-            } else if (window.Appwrite && VFC_DB) {
+            } else if (window.Appwrite && typeof VFC_DB !== 'undefined') {
                 const client = new window.Appwrite.Client()
                     .setEndpoint(VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1')
                     .setProject(VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e');
@@ -387,14 +387,13 @@
             }
         }
 
-        function autoFillLoanDetails() {
+        async function autoFillLoanDetails() {
             const selectElement = document.getElementById('Borrowers_Name');
             const selectedOption = selectElement.options[selectElement.selectedIndex];
 
             if (!selectedOption.value) {
                 document.getElementById('Loan_ID').value = '';
                 document.getElementById('Paid_Amount').value = '';
-                document.getElementById('Paid_Amount').dataset.originalBalance = '';
                 document.getElementById('Paid_Installment').value = '';
                 document.getElementById('Remaining_Installment').value = '';
                 document.getElementById('Balance_Amount').value = '';
@@ -408,24 +407,46 @@
 
             document.getElementById('Loan_ID').value = loanId;
             document.getElementById('Paid_Amount').value = emiAmount.toFixed(2);
-            document.getElementById('Paid_Installment').value = 1;
-            let remainingInstallment = totalTenure - 1;
-            if(remainingInstallment < 0) remainingInstallment = 0;
-            document.getElementById('Remaining_Installment').value = remainingInstallment;
 
-            let currentBalance = totalAmount - emiAmount;
-            if(currentBalance < 0) currentBalance = 0;
+            // ஏற்கனவே செலுத்திய பேமெண்ட்களை டேட்டாபேஸில் இருந்து சரிபார்த்து சரியான தவணை எண்ணிக்கையைக் கணக்கிடுதல்
+            let paidCount = 0;
+            try {
+                const paymentsResp = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.PAYMENTS_ID
+                );
+                const loanPayments = paymentsResp.documents.filter(p => p.loan_id === loanId);
+                paidCount = loanPayments.length;
+            } catch (err) {
+                console.warn("Could not fetch existing payments count:", err);
+            }
+
+            const currentPaidInst = paidCount + 1;
+            let remainingInst = totalTenure - currentPaidInst;
+            if (remainingInst < 0) remainingInst = 0;
+
+            document.getElementById('Paid_Installment').value = currentPaidInst;
+            document.getElementById('Remaining_Installment').value = remainingInst;
+
+            // இதுவரை செலுத்திய மொத்தத் தொகையைக் கணக்கிட்டு பேலன்ஸை துல்லியமாக காட்டுதல்
+            let totalPaidSoFar = emiAmount * paidCount;
+            let currentBalance = totalAmount - totalPaidSoFar - emiAmount;
+            if (currentBalance < 0) currentBalance = 0;
+
             document.getElementById('Balance_Amount').value = currentBalance.toFixed(2);
-            document.getElementById('Paid_Amount').dataset.originalBalance = totalAmount;
+            document.getElementById('Paid_Amount').dataset.totalAmount = totalAmount;
+            document.getElementById('Paid_Amount').dataset.totalPaidSoFar = totalPaidSoFar;
         }
 
-        function updateBalanceOnChange() {
+        // செலுத்தும் தொகை மாறும்போது பேலன்ஸ் மற்றும் தவணைத் தொகைகளைச் சரியாகக் கணக்கிடுதல்
+        function updateCalculations() {
             let paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
-            let originalBalance = parseFloat(document.getElementById('Paid_Amount').dataset.originalBalance) || 0;
-            
-            let newBalance = originalBalance - paidAmount;
+            let totalAmount = parseFloat(document.getElementById('Paid_Amount').dataset.totalAmount) || 0;
+            let totalPaidSoFar = parseFloat(document.getElementById('Paid_Amount').dataset.totalPaidSoFar) || 0;
+
+            let newBalance = totalAmount - totalPaidSoFar - paidAmount;
             if (newBalance < 0) newBalance = 0;
-            
+
             document.getElementById('Balance_Amount').value = newBalance.toFixed(2);
         }
 
@@ -466,7 +487,7 @@
                 const nextSeq = (paymentsList.total || paymentsList.documents.length) + 1;
                 paymentId = `PAY/${String(nextSeq).padStart(3, '0')}/2026`;
             } catch (err) {
-                console.warn("Could not fetch payment count for sequential ID, using fallback:", err);
+                console.warn("Could not fetch payment count for sequential ID:", err);
                 paymentId = "PAY/" + Math.floor(100 + Math.random() * 900) + "/2026";
             }
 
