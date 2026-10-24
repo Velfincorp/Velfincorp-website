@@ -379,8 +379,18 @@
             }
         }
 
+        // Helper function to check multiple possible key names in database document
+        function getField(obj, keys) {
+            for (let k of keys) {
+                if (obj[k]) return obj[k];
+            }
+            return null;
+        }
+
         function showProfile(b) {
             currentBorrower = b;
+            console.log("Selected Borrower Document Keys & Data:", b); // Press F12 in browser to verify exact keys if needed
+
             const modal = document.getElementById('profileModal');
             const body = document.getElementById('modalBody');
 
@@ -396,7 +406,14 @@
                                     <tr><td>IFSC Code</td><td>${b.ifsc_code || '-'}</td></tr>`;
             }
 
-            // Fixed template literal string interpolation for file viewing URLs
+            // Extract file IDs safely using alternative possible attribute names
+            const photoId = getField(b, ['customer_photo', 'photo', 'image', 'customer_image']);
+            const aadharFrontId = getField(b, ['aadhar_front', 'aadhaar_front', 'aadhar_front_file']);
+            const aadharBackId = getField(b, ['aadhar_back', 'aadhaar_back', 'aadhar_back_file']);
+            const panCardId = getField(b, ['pan_card', 'pan', 'pan_document']);
+            const rationCardId = getField(b, ['ration_card', 'ration', 'ration_document']);
+            const cibilId = getField(b, ['cibil_score', 'cibil', 'cibil_document', 'cibil_file']);
+
             body.innerHTML = `
                 <table class="profile-table">
                     <tr><td>Borrower ID</td><td>${b.borrower_id || '-'}</td></tr>
@@ -411,12 +428,12 @@
                     <tr><td>Nominee Details</td><td>${b.nominee_name || '-'} (${b.nominee_contact || '-'})</td></tr>
                     <tr><td>Loan Date</td><td>${b.loan_date || '-'}</td></tr>
                     ${paymentDetailsHTML}
-                    <tr><td>Customer Photo</td><td>${b.customer_photo ? `<a href="${getFileViewUrl(b.customer_photo)}" target="_blank" class="doc-link"><i class="fas fa-image"></i> View Photo</a>` : '-'}</td></tr>
-                    <tr><td>Aadhar Front</td><td>${b.aadhar_front ? `<a href="${getFileViewUrl(b.aadhar_front)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Aadhar Front</a>` : '-'}</td></tr>
-                    <tr><td>Aadhar Back</td><td>${b.aadhar_back ? `<a href="${getFileViewUrl(b.aadhar_back)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Aadhar Back</a>` : '-'}</td></tr>
-                    <tr><td>PAN Card</td><td>${b.pan_card ? `<a href="${getFileViewUrl(b.pan_card)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View PAN Card</a>` : '-'}</td></tr>
-                    <tr><td>Ration Card</td><td>${b.ration_card ? `<a href="${getFileViewUrl(b.ration_card)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Ration Card</a>` : '-'}</td></tr>
-                    <tr><td>CIBIL Score / Document</td><td>${b.cibil_score ? `<a href="${getFileViewUrl(b.cibil_score)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View CIBIL Document</a>` : '-'}</td></tr>
+                    <tr><td>Customer Photo</td><td>${photoId ? `<a href="${getFileViewUrl(photoId)}" target="_blank" class="doc-link"><i class="fas fa-image"></i> View Photo</a>` : '-'}</td></tr>
+                    <tr><td>Aadhar Front</td><td>${aadharFrontId ? `<a href="${getFileViewUrl(aadharFrontId)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Aadhar Front</a>` : '-'}</td></tr>
+                    <tr><td>Aadhar Back</td><td>${aadharBackId ? `<a href="${getFileViewUrl(aadharBackId)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Aadhar Back</a>` : '-'}</td></tr>
+                    <tr><td>PAN Card</td><td>${panCardId ? `<a href="${getFileViewUrl(panCardId)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View PAN Card</a>` : '-'}</td></tr>
+                    <tr><td>Ration Card</td><td>${rationCardId ? `<a href="${getFileViewUrl(rationCardId)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Ration Card</a>` : '-'}</td></tr>
+                    <tr><td>CIBIL Score / Document</td><td>${cibilId ? `<a href="${getFileViewUrl(cibilId)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View CIBIL Document</a>` : '-'}</td></tr>
                 </table>
             `;
             modal.style.display = 'flex';
