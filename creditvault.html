@@ -273,6 +273,7 @@
                             <option value="Mobile">Mobile</option>
                             <option value="Electrical">Electrical</option>
                             <option value="Furniture">Furniture</option>
+                            <option value="Jewel">Jewel</option>
                         </select>
                     </div>
                 </div>
@@ -288,7 +289,7 @@
                     </div>
                 </div>
 
-                <!-- Conditional Fields for Mobile / Electrical / Furniture -->
+                <!-- Conditional Fields for Mobile / Electrical / Furniture / Jewel -->
                 <div class="form-row hidden" id="mobileFields">
                     <div class="form-group">
                         <label>IMEI 1 *</label>
@@ -395,7 +396,7 @@
                     borrowerSelect.innerHTML = '<option value="">-Select Borrower-</option>';
                     borrowers.forEach(b => {
                         const opt = document.createElement('option');
-                        opt.value = b.borrower_id;
+                        opt.value = b.full_name;
                         opt.dataset.phone = b.phone_number || '';
                         opt.textContent = `${b.full_name} (${b.borrower_id})`;
                         borrowerSelect.appendChild(opt);
@@ -409,7 +410,7 @@
             }
         });
 
-        function handleLoanTypeChange() {
+        async function handleLoanTypeChange() {
             const loanType = document.getElementById('Loan_Type').value;
             const mobileFields = document.getElementById('mobileFields');
             const serialField = document.getElementById('serialField');
@@ -419,13 +420,28 @@
             if (loanType === "Mobile") prefix = "VML";
             else if (loanType === "Electrical") prefix = "VEL";
             else if (loanType === "Furniture") prefix = "VFL";
-            
-            document.getElementById('Loan_ID').value = prefix + "-001/" + year;
+            else if (loanType === "Jewel") prefix = "VJL";
+
+            // ஆட்டோமேட்டிக் சீரியல் நம்பர் கணக்கிடுதல்
+            try {
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID
+                );
+                const existingLoans = response.documents;
+                const filteredLoans = existingLoans.filter(l => l.loan_id && l.loan_id.startsWith(prefix));
+                const nextSeq = filteredLoans.length + 1;
+                const paddedSeq = String(nextSeq).padStart(3, '0');
+                document.getElementById('Loan_ID').value = `${prefix}-${paddedSeq}/${year}`;
+            } catch (e) {
+                console.error("Error generating sequential Loan ID:", e);
+                document.getElementById('Loan_ID').value = prefix + "-001/" + year;
+            }
 
             if (loanType === 'Mobile') {
                 mobileFields.classList.remove('hidden');
                 serialField.classList.add('hidden');
-            } else if (loanType === 'Electrical' || loanType === 'Furniture') {
+            } else if (loanType === 'Electrical' || loanType === 'Furniture' || loanType === 'Jewel') {
                 mobileFields.classList.add('hidden');
                 serialField.classList.remove('hidden');
             } else {
@@ -451,13 +467,12 @@
                     custDown = stdDown;
                     document.getElementById('Customer_Down_Payment').value = stdDown.toFixed(2);
                 } else if (custDown <= 1.0) {
-                    // If user types fraction like 0.3 or 0.25, convert to actual rupee amount automatically
                     custDown = productVal * custDown;
                 }
 
                 let setupFee = productVal * 0.04;
                 let processingFee = productVal * 0.025;
-                if (loanType === "Electrical" || loanType === "Furniture") {
+                if (loanType === "Electrical" || loanType === "Furniture" || loanType === "Jewel") {
                     setupFee = productVal * 0.03;
                 }
 
@@ -503,7 +518,7 @@
             }
 
             const borrowerSelect = document.getElementById('Borrowers_Details');
-            const borrowerName = borrowerSelect.options[borrowerSelect.selectedIndex].text.split('(')[0].trim();
+            const borrowerName = borrowerSelect.value;
             const borrowerPhone = borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone || "8778003840";
             const loanType = document.getElementById('Loan_Type').value;
             const productName = document.getElementById('Product_Name').value.trim();
@@ -513,26 +528,53 @@
             const disbursedAmount = document.getElementById('Disbursed_Amount').value;
             const loanStatus = document.getElementById('Status').value;
 
-            // Appwrite டேட்டாபேஸில் லோனை சேமித்தல்
+            if (!borrowerName || !loanType || productVal <= 0) {
+                alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
+                return false;
+            }
+
+            // ஏற்கனவே வாடிக்கையாளருக்கு ACTIVE லோன் உள்ளதா எனச் சோதித்தல்
             try {
+                const activeLoans = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    [
+                        window.appwriteQuery.equal('borrower_name', borrowerName),
+                        window.appwriteQuery.equal('status', 'ACTIVE')
+                    ]
+                );
+
+                if (activeLoans.total > 0) {
+                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. புதிய லோன் வழங்க முடியாது!");
+                    return false;
+                }
+            } catch (err) {
+                console.error("Error checking active loans:", err);
+            }
+
+            // Appwrite டேட்டாபேஸில் லோனைச் சேமித்தல் (loan_category: CreditVault மற்றும் சரியான loan_id சேர்த்து)
+            try {
+                const loanPayload = {
+                    loan_id: loanId,
+                    borrower_name: borrowerName,
+                    phone_number: borrowerPhone,
+                    loan_type: loanType,
+                    loan_amount: productVal.toString(),
+                    disbursed_amount: disbursedAmount,
+                    installment_amount: weeklyEmi,
+                    tenure: tenureWeeks + " Weeks",
+                    status: loanStatus,
+                    loan_date: new Date().toLocaleDateString(),
+                    loan_category: "CreditVault"
+                };
+
                 await window.appwriteDatabases.createDocument(
                     VFC_DB.DB_ID,
                     VFC_DB.LOANS_ID,
                     window.AppwriteID.unique(),
-                    {
-                        loan_id: loanId,
-                        borrower_name: borrowerName,
-                        phone_number: borrowerPhone,
-                        loan_type: loanType,
-                        loan_amount: productVal.toString(),
-                        disbursed_amount: disbursedAmount,
-                        installment_amount: weeklyEmi,
-                        tenure: tenureWeeks + " Weeks",
-                        status: loanStatus,
-                        loan_date: new Date().toLocaleDateString()
-                    }
+                    loanPayload
                 );
-                console.log("Loan saved to Appwrite Database!");
+                console.log("Credit Vault Loan saved to Appwrite Database!");
             } catch (err) {
                 console.error("Error saving loan to Appwrite:", err);
                 alert("Database save failed: " + err.message);
