@@ -528,7 +528,7 @@
             }
             const nextDueDateStr = dueDateObj.toLocaleDateString('en-GB');
 
-            // வாட்ஸ்அப் மொபைல் எண் மற்றும் டெம்ப்ளேட் அமைப்பு
+            // வாட்ஸ்அப் மொபைல் எண் மற்றும் டெம்ப்ளேட் அமைப்பு (10 வேரியபிள்களுக்குத் தகுந்தபடி)
             let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
             if (cleanMobile.length > 10) {
                 cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
@@ -559,9 +559,9 @@
                         paidInst: paidInst.toString(),
                         remInst: remInst.toString(),
                         balanceAmount: balanceAmount.toFixed(2),
-                        delayDetails: nextDueDateStr, // அடுத்த தவணை தேதி சரியாக அனுப்பப்படுகிறது
-                        loanId: loanId,               // லோன் ஐடி சேர்க்கப்பட்டுள்ளது
-                        paymentId: paymentId          // ரெசிப்ட் / பேமெண்ட் ஐடி சேர்க்கப்பட்டுள்ளது
+                        delayDetails: nextDueDateStr, // {{8}} - அடுத்த தவணை தேதி
+                        paymentId: paymentId,         // {{9}} - ரெசிப்ட் எண்
+                        loanId: loanId                // {{10}} - லோன் ஐடி
                     })
                 );
 
