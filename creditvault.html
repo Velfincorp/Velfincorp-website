@@ -420,7 +420,7 @@
             if (loanType === "Mobile") prefix = "VML";
             else if (loanType === "Electrical") prefix = "VEL";
             else if (loanType === "Furniture") prefix = "VFL";
-            else if (loanType === "Jewel") prefix = "VJL";
+            else if (loanType === "Jewel") prefix = "VJL"; // Jewel Loan Prefix VJL
 
             // ஆட்டோமேட்டிக் சீரியல் நம்பர் கணக்கிடுதல்
             try {
@@ -533,7 +533,6 @@
                 return false;
             }
 
-            // ஏற்கனவே வாடிக்கையாளருக்கு ACTIVE லோன் உள்ளதா எனச் சோதித்தல்
             try {
                 const activeLoans = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
@@ -552,7 +551,6 @@
                 console.error("Error checking active loans:", err);
             }
 
-            // Appwrite டேட்டாபேஸில் லோனைச் சேமித்தல் (loan_category: CreditVault மற்றும் சரியான loan_id சேர்த்து)
             try {
                 const loanPayload = {
                     loan_id: loanId,
@@ -623,14 +621,14 @@
                             "to": [finalMobile],
                             "components": {
                                 "body_1": { "type": "text", "value": borrowerName },
-                                "body_2": { "type": "text", "value": loanType },
-                                "body_3": { "type": "text", "value": productName },
-                                "body_4": { "type": "text", "value": weeklyEmi.toString() },
-                                "body_5": { "type": "text", "value": tenureWeeks.toString() },
-                                "body_6": { "type": "text", "value": loanDay },
-                                "body_7": { "type": "text", "value": loanDateStr },
-                                "body_8": { "type": "text", "value": previousDayText },
-                                "body_9": { "type": "text", "value": "12:00" }
+                                "body_2": { "type": "text", "value": loanId },         // Loan ID ({{2}})
+                                "body_3": { "type": "text", "value": loanType },       // Loan Type ({{3}})
+                                "body_4": { "type": "text", "value": productName },    // Product Name ({{4}})
+                                "body_5": { "type": "text", "value": weeklyEmi.toString() }, // EMI ({{5}})
+                                "body_6": { "type": "text", "value": tenureWeeks.toString() }, // Tenure ({{6}})
+                                "body_7": { "type": "text", "value": loanDay },      // Day ({{7}})
+                                "body_8": { "type": "text", "value": loanDateStr },    // Date ({{8}})
+                                "body_9": { "type": "text", "value": previousDayText } // Note ({{9}})
                             }
                         }
                     ]
@@ -653,7 +651,7 @@
 
                 const result = await response.json();
                 console.log("MSG91 Welcome Response:", result);
-                alert("Credit Vault loan successfully saved to Cloud Database and Welcome Message sent via WhatsApp!");
+                alert("Credit Vault loan successfully saved to Cloud Database and Welcome Message sent via WhatsApp with Loan ID!");
             } catch (error) {
                 console.error("Error sending WhatsApp welcome message:", error);
                 alert("Loan saved to database, but automated WhatsApp welcome message failed due to network.");
