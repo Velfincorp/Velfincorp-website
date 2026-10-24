@@ -331,7 +331,7 @@
                 <h2>Personal Loans Report</h2>
             </div>
 
-            <!-- Live Search Bar -->
+            <!-- Live Search Box -->
             <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name, Phone Number, or Loan ID..." onkeyup="filterTable()">
 
             <table>
@@ -381,17 +381,26 @@
         async function loadReportData() {
             const tbody = document.getElementById('reportTableBody');
             try {
-                // Personal Loan மட்டும் வடிகட்டி (Filter) எடுக்க Appwrite Query பயன்படுத்தப்படுகிறது
+                // டேட்டாபேஸில் உள்ள அனைத்து லோன்களையும் எடுத்து, கோடிலேயே ஸ்மார்ட்டாக பிரிக்கிறோம் (புதிய மற்றும் பழைய டேட்டா இரண்டிற்கும் பொருந்தும்)
                 const response = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID,
-                    [
-                        window.appwriteQuery.equal('loan_category', 'Personal')
-                    ]
+                    VFC_DB.LOANS_ID
                 );
-                const loans = response.documents;
+                const allLoans = response.documents;
 
-                if (!loans || loans.length === 0) {
+                if (!allLoans || allLoans.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No personal loans found in database.</td></tr>';
+                    return;
+                }
+
+                // ஸ்மார்ட் ஃபில்டரிங்: loan_category 'Personal' ஆக உள்ளவை அல்லது loan_id 'VPL' எனத் தொடங்குபவை மட்டும் பர்சனல் லோன்
+                const loans = allLoans.filter(loan => {
+                    const category = loan.loan_category ? loan.loan_category.trim() : '';
+                    const loanId = loan.loan_id ? loan.loan_id.toUpperCase() : '';
+                    return category === 'Personal' || loanId.startsWith('VPL');
+                });
+
+                if (loans.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No personal loans found in database.</td></tr>';
                     return;
                 }
@@ -428,7 +437,7 @@
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Personal Loan Financial Status</th></tr>
                     <tr><td>Loan ID</td><td>${loan.loan_id || '-'}</td></tr>
                     <tr><td>Loan Type & Date</td><td>${loan.loan_type || '-'} | Started on: ${loan.loan_date || '-'}</td></tr>
-                    <tr><td>Total Loan Amount</td><td>₹${loan.loan_amount || '0'}</td></tr>
+                    <tr><tdTotal Loan Amount</td><td>₹${loan.loan_amount || '0'}</td></tr>
                     <tr><td>Disbursed Amount</td><td>₹${loan.disbursed_amount || '0'}</td></tr>
                     <tr><td>Installment Amount</td><td>₹${loan.installment_amount || '-'}</td></tr>
                     <tr><td>Tenure</td><td>${loan.tenure || '-'} periods</td></tr>
