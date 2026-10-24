@@ -336,7 +336,6 @@
             const year = new Date().getFullYear();
             document.getElementById('Loan_ID').value = "VPL/022/" + year;
 
-            // Appwrite டேட்டாபேஸில் இருந்து உண்மையான பாரோவர்களைப் 불러와 டிராப்டவுனில் நிரப்புதல்
             const borrowerSelect = document.getElementById('Borrowers_Details');
             try {
                 const response = await window.appwriteDatabases.listDocuments(
@@ -407,6 +406,25 @@
                 return false;
             }
 
+            // ஏற்கனவே வாடிக்கையாளருக்கு ACTIVE லோன் உள்ளதா எனச் சோதித்தல்
+            try {
+                const activeLoans = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    [
+                        window.appwriteQuery.equal('borrower_name', customerName),
+                        window.appwriteQuery.equal('status', 'ACTIVE')
+                    ]
+                );
+
+                if (activeLoans.total > 0) {
+                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. புதிய லோன் வழங்க முடியாது!");
+                    return false;
+                }
+            } catch (err) {
+                console.error("Error checking active loans:", err);
+            }
+
             // Appwrite டேட்டாபேஸில் பர்சனல் லோனைச் சேமித்தல்
             try {
                 const loanPayload = {
@@ -419,7 +437,8 @@
                     installment_amount: emiAmount,
                     tenure: tenure.toString(),
                     status: document.getElementById('Status').value,
-                    loan_date: new Date().toLocaleDateString()
+                    loan_date: new Date().toLocaleDateString(),
+                    loan_category: "Personal"
                 };
 
                 await window.appwriteDatabases.createDocument(
