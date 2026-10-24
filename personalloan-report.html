@@ -381,9 +381,13 @@
         async function loadReportData() {
             const tbody = document.getElementById('reportTableBody');
             try {
+                // Personal Loan மட்டும் வடிகட்டி (Filter) எடுக்க Appwrite Query பயன்படுத்தப்படுகிறது
                 const response = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID
+                    VFC_DB.LOANS_ID,
+                    [
+                        window.appwriteQuery.equal('loan_category', 'Personal')
+                    ]
                 );
                 const loans = response.documents;
 
