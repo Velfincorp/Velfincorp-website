@@ -444,6 +444,10 @@ color: var(--navy);
 <label>IFSC Code *</label>
 <input type="text" id="IFSC_Code" maxlength="11" placeholder="11 character IFSC">
 </div>
+<div class="form-group">
+<label>Upload Bank Passbook / Statement *</label>
+<input type="file" id="Bank_Passbook" accept="image/*,application/pdf">
+</div>
 </div>
 </div>
 <div class="form-row">
@@ -571,7 +575,7 @@ VFC_DB.DOCUMENTS_BUCKET_ID,
 AppwriteID.unique(),
 file
 );
-return uploadedFile.\$id;
+return uploadedFile.$id;
 }
 return "";
 }
@@ -582,6 +586,7 @@ const aadharBackId = await uploadFileToStorage('Aadhar_Back');
 const panCardId = await uploadFileToStorage('Pan_Card');
 const rationCardId = await uploadFileToStorage('Ration_Card');
 const cibilId = await uploadFileToStorage('CIBIL_Score');
+const passbookId = await uploadFileToStorage('Bank_Passbook');
 
 const fullAddress = document.getElementById('Address_Line_1').value + ", " + (document.getElementById('Land_Mark').value || "");
 const prefix = document.getElementById('Name_Prefix').value;
@@ -604,7 +609,7 @@ pan_number: document.getElementById('PAN_NUMBER').value,
 phone_number: document.getElementById('Phone_Number').value,
 whatsapp_number: document.getElementById('Whatsapp_Number').value,
 email: document.getElementById('Email').value || "",
-nominee_name: document.getElementById('Nominee_Name.value') || document.getElementById('Nominee_Name').value,
+nominee_name: document.getElementById('Nominee_Name').value,
 nominee_contact: document.getElementById('Nominee_Contact_Number').value,
 address: fullAddress,
 city: document.getElementById('City_District').value,
@@ -615,6 +620,7 @@ job_nature: document.getElementById('Nature_of_the_Job').value,
 payment_method: document.getElementById('Payment_Method').value,
 upi_id: document.getElementById('UPI_ID').value || "",
 bank_name: document.getElementById('Bank_Name').value || "",
+account_holder_name: document.getElementById('Account_Holder_Name').value || "",
 bank_account_no: document.getElementById('Bank_Account_Number').value || "",
 ifsc_code: document.getElementById('IFSC_Code').value || "",
 customer_photo: photoId,
@@ -622,7 +628,8 @@ aadhar_front: aadharFrontId,
 aadhar_back: aadharBackId,
 pan_card: panCardId,
 ration_card: rationCardId,
-cibil_score: cibilId
+cibil_score: cibilId,
+bank_passbook: passbookId
 };
 
 await window.appwriteDatabases.createDocument(
