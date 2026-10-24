@@ -219,8 +219,8 @@
                 <th>Loan ID</th>
                 <th>Borrower Name</th>
                 <th>Phone Number</th>
-                <th>Product Name</th>
-                <th>Product Value</th>
+                <th>Loan Type</th>
+                <th>Loan Amount</th>
                 <th>Tenure</th>
                 <th>Weekly EMI</th>
                 <th>Status</th>
@@ -259,14 +259,26 @@
     async function loadReportData() {
         const tbody = document.getElementById('reportTableBody');
         try {
-            // Appwrite டேட்டாபேஸில் இருந்து கிரெடிட் வால்ட் லோன்களைப் பெறுதல்
+            // Appwrite டேட்டாபேஸில் இருந்து அனைத்து லோன்களையும் பெற்று கிரெடிட் வால்ட் லோன்களை மட்டும் ஸ்மார்ட்டாகப் பிரித்தல்
             const response = await window.appwriteDatabases.listDocuments(
                 VFC_DB.DB_ID,
-                VFC_DB.CREDIT_VAULT_ID
+                VFC_DB.LOANS_ID
             );
-            const loans = response.documents;
+            const allLoans = response.documents;
 
-            if (!loans || loans.length === 0) {
+            if (!allLoans || allLoans.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No credit vault loans found in database.</td></tr>';
+                return;
+            }
+
+            // ஸ்மார்ட் ஃபில்டரிங்: loan_category 'CreditVault' ஆக உள்ளவை அல்லது loan_id 'VML', 'VFL', 'VEL', 'VJL' எனத் தொடங்குபவை
+            const loans = allLoans.filter(loan => {
+                const category = loan.loan_category ? loan.loan_category.trim() : '';
+                const loanId = loan.loan_id ? loan.loan_id.toUpperCase() : '';
+                return category === 'CreditVault' || loanId.startsWith('VML') || loanId.startsWith('VFL') || loanId.startsWith('VEL') || loanId.startsWith('VJL');
+            });
+
+            if (loans.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No credit vault loans found in database.</td></tr>';
                 return;
             }
@@ -279,7 +291,7 @@
                     <td><strong>${loan.loan_id || '-'}</strong></td>
                     <td>${loan.borrower_name || '-'}</td>
                     <td>${loan.phone_number || '-'}</td>
-                    <td>${loan.product_name || '-'}</td>
+                    <td>${loan.loan_type || '-'}</td>
                     <td>₹${loan.loan_amount || '0'}</td>
                     <td>${loan.tenure || '-'}</td>
                     <td>₹${loan.installment_amount || '0'}</td>
