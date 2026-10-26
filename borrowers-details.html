@@ -275,13 +275,13 @@
                         <label>Retailer Details *</label>
                         <select id="Retailer_Details" onchange="autoFillRetailerCode()">
                             <option value="">-Select Retailer-</option>
-                            <option value="RET001">Vel Retailer One</option>
-                            <option value="RET002">Fin Partner Two</option>
+                            <option value="PKM">Pappireddipatty Kamala Mobiles (PKM)</option>
+                            <option value="RET002">Fin Partner Two (RET002)</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Retailer Code *</label>
-                        <input type="text" id="Retailer_Code" readonly placeholder="Auto-filled code">
+                        <input type="text" id="Retailer_Code" oninput="generateSequentialBorrowerID()" placeholder="e.g. PKM">
                     </div>
                 </div>
                 <div class="section-heading">2. Personal & Family Information</div>
@@ -498,7 +498,8 @@
             if(!borrowerIdField) return;
 
             const issuedBy = issuedByEl ? issuedByEl.value : '';
-            const retailerCode = retailerCodeEl ? retailerCodeEl.value : '';
+            const retailerCode = retailerCodeEl ? retailerCodeEl.value.trim() : '';
+            const currentYear = new Date().getFullYear();
 
             try {
                 const response = await window.appwriteDatabases.listDocuments(
@@ -509,13 +510,17 @@
                 const paddedSeq = String(nextSeq).padStart(3, '0');
 
                 if (issuedBy === 'Retailer' && retailerCode) {
-                    borrowerIdField.value = `VFC/${retailerCode}/${paddedSeq}/2026`;
-                } else if (issuedBy === 'Admin' || issuedBy === '') {
-                    borrowerIdField.value = `VFC/${paddedSeq}/2026`;
+                    borrowerIdField.value = `${retailerCode}/${paddedSeq}/${currentYear}`;
+                } else {
+                    borrowerIdField.value = `VFC/${paddedSeq}/${currentYear}`;
                 }
             } catch (e) {
                 console.error("Error generating ID:", e);
-                borrowerIdField.value = "VFC/001/2026";
+                if (issuedBy === 'Retailer' && retailerCode) {
+                    borrowerIdField.value = `${retailerCode}/001/${currentYear}`;
+                } else {
+                    borrowerIdField.value = `VFC/001/${currentYear}`;
+                }
             }
         }
 
