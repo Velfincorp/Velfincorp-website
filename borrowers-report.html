@@ -430,6 +430,8 @@
             }
 
             currentBorrower = borrower;
+            console.log("Borrower Data Loaded:", borrower);
+
             const modal = document.getElementById('borrowerModal');
             const modalBody = document.getElementById('modalBody');
 
@@ -457,14 +459,42 @@
                     const loanPayments = paymentsList.filter(p => p.loan_id === loan.loan_id);
                     const totalPaidAmount = loanPayments.reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
                     
+                    // ஒவ்வொரு பேமெண்ட்டின் தாமத விவரங்களை (Delayed Details / On Time) தொகுத்தல்
+                    let paymentHistoryRows = '';
+                    if (loanPayments.length > 0) {
+                        loanPayments.forEach((p, pIdx) => {
+                            paymentHistoryRows += `
+                                <tr style="font-size: 13px;">
+                                    <td>Inst #${p.paid_installment || (pIdx + 1)}</td>
+                                    <td>₹${p.amount_paid || '0'}</td>
+                                    <td>${p.payment_date || '-'}</td>
+                                    <td><span style="color: ${p.delayed_details && p.delayed_details !== 'On Time' ? 'var(--danger)' : '#2F855A'}; font-weight: bold;">${p.delayed_details || 'On Time'}</span></td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        paymentHistoryRows = '<tr><td colspan="4" style="text-align: center; color: #64748b;">No payments made yet.</td></tr>';
+                    }
+
                     loansHtml += `
-                        <div style="margin-top: 12px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; background: #f8fafc;">
+                        <div style="margin-top: 15px; border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; background: #f8fafc;">
                             <strong>Loan #${idx + 1}: ${loan.loan_id || '-'}</strong> (${loan.loan_type || 'Loan'})<br>
                             - Total Loan Amount: ₹${loan.loan_amount || '0'}<br>
                             - Installment / EMI: ₹${loan.installment_amount || '0'}<br>
                             - Tenure: ${loan.tenure || '-'}<br>
                             - Status: <span style="color: #2F855A; font-weight: bold;">${loan.status || 'ACTIVE'}</span><br>
                             - Total Paid So Far: ₹${totalPaidAmount.toFixed(2)} (${loanPayments.length} installments paid)<br>
+                            
+                            <div style="margin-top: 10px; font-weight: bold; color: var(--navy);">Payment & Delay History:</div>
+                            <table style="width: 100%; margin-top: 5px; border-collapse: collapse; background: white;">
+                                <tr style="background: #e2e8f0; font-size: 12px;">
+                                    <th style="padding: 6px;">Installment</th>
+                                    <th style="padding: 6px;">Amount</th>
+                                    <th style="padding: 6px;">Date</th>
+                                    <th style="padding: 6px;">Status / Delay Details</th>
+                                </tr>
+                                ${paymentHistoryRows}
+                            </table>
                         </div>
                     `;
                 });
@@ -472,14 +502,23 @@
                 loansHtml = '<p style="color: #64748b;">No active loans found for this borrower.</p>';
             }
 
-            // Fallback for different document attribute keys
-            const photoId = borrower.customer_photo || borrower.photo || borrower.customerPhoto;
-            const aadharFrontId = borrower.aadhar_front || borrower.aadharFront || borrower.aadhar_front_side;
-            const aadharBackId = borrower.aadhar_back || borrower.aadharBack || borrower.aadhar_back_side;
-            const panId = borrower.pan_card || borrower.panCard || borrower.pan;
-            const rationId = borrower.ration_card || borrower.rationCard || borrower.ration;
-            const cibilId = borrower.cibil_score || borrower.cibilScore || borrower.cibil;
-            const passbookId = borrower.bank_passbook || borrower.bankPassbook || borrower.passbook;
+            // Smart Key Search for Files (மறைமுகமாக எந்த ஃபீல்டு பெயரில் ஐடி சேமிக்கப்பட்டிருந்தாலும் கண்டறியும்)
+            function findFileId(obj, possibleKeys) {
+                for (let key of possibleKeys) {
+                    if (obj[key] && typeof obj[key] === 'string' && obj[key].trim() !== '') {
+                        return obj[key];
+                    }
+                }
+                return '';
+            }
+
+            const photoId = findFileId(borrower, ['customer_photo', 'photo', 'customerPhoto', 'customer_image', 'image']);
+            const aadharFrontId = findFileId(borrower, ['aadhar_front', 'aadharFront', 'aadhar_front_side', 'aadharFrontSide']);
+            const aadharBackId = findFileId(borrower, ['aadhar_back', 'aadharBack', 'aadhar_back_side', 'aadharBackSide']);
+            const panId = findFileId(borrower, ['pan_card', 'panCard', 'pan', 'pancard']);
+            const rationId = findFileId(borrower, ['ration_card', 'rationCard', 'ration', 'rationcard']);
+            const cibilId = findFileId(borrower, ['cibil_score', 'cibilScore', 'cibil', 'cibil_document']);
+            const passbookId = findFileId(borrower, ['bank_passbook', 'bankPassbook', 'passbook', 'bank_statement']);
 
             const photoUrl = getFileUrl(photoId);
             const aadharFrontUrl = getFileUrl(aadharFrontId);
