@@ -63,7 +63,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
             background: var(--white);
             padding: 30px;
@@ -94,14 +94,21 @@
             font-weight: bold;
             font-size: 13px;
         }
-        .search-box {
-            width: 100%;
-            padding: 10px 15px;
+        .filter-row {
+            display: flex;
+            gap: 15px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .search-box, .filter-select {
+            flex: 1;
+            min-width: 220px;
+            padding: 11px 15px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 14px;
             box-sizing: border-box;
+            background: var(--white);
         }
         table {
             width: 100%;
@@ -210,8 +217,25 @@
         <h2>Credit Vault Loans Report</h2>
     </div>
 
-    <!-- Search Input for Name or Phone -->
-    <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name or Phone Number..." onkeyup="filterTable()">
+    <!-- Search & Filters -->
+    <div class="filter-row">
+        <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name or Phone Number..." onkeyup="filterTable()">
+        
+        <select id="loanTypeFilter" class="filter-select" onchange="filterTable()">
+            <option value="">-All Loan Types-</option>
+            <option value="Mobile">Mobile</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Furniture">Furniture</option>
+            <option value="Jewel">Jewel</option>
+        </select>
+
+        <select id="statusFilter" class="filter-select" onchange="filterTable()">
+            <option value="">-All Status-</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="PENDING">PENDING</option>
+            <option value="CLOSED">CLOSED</option>
+        </select>
+    </div>
 
     <table>
         <thead>
@@ -251,6 +275,7 @@
 
 <script>
     let currentLoan = null;
+    let allCreditVaultLoans = [];
 
     window.addEventListener('DOMContentLoaded', async () => {
         await loadReportData();
@@ -259,7 +284,6 @@
     async function loadReportData() {
         const tbody = document.getElementById('reportTableBody');
         try {
-            // Appwrite டேட்டாபேஸில் இருந்து அனைத்து லோன்களையும் பெற்று கிரெடிட் வால்ட் லோன்களை மட்டும் ஸ்மார்ட்டாகப் பிரித்தல்
             const response = await window.appwriteDatabases.listDocuments(
                 VFC_DB.DB_ID,
                 VFC_DB.LOANS_ID
@@ -271,38 +295,65 @@
                 return;
             }
 
-            // ஸ்மார்ட் ஃபில்டரிங்: loan_category 'CreditVault' ஆக உள்ளவை அல்லது loan_id 'VML', 'VFL', 'VEL', 'VJL' எனத் தொடங்குபவை
-            const loans = allLoans.filter(loan => {
+            allCreditVaultLoans = allLoans.filter(loan => {
                 const category = loan.loan_category ? loan.loan_category.trim() : '';
                 const loanId = loan.loan_id ? loan.loan_id.toUpperCase() : '';
                 return category === 'CreditVault' || loanId.startsWith('VML') || loanId.startsWith('VFL') || loanId.startsWith('VEL') || loanId.startsWith('VJL');
             });
 
-            if (loans.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No credit vault loans found in database.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = '';
-            loans.forEach((loan) => {
-                const tr = document.createElement('tr');
-                tr.onclick = () => showLoanDetails(loan);
-                tr.innerHTML = `
-                    <td><strong>${loan.loan_id || '-'}</strong></td>
-                    <td>${loan.borrower_name || '-'}</td>
-                    <td>${loan.phone_number || '-'}</td>
-                    <td>${loan.loan_type || '-'}</td>
-                    <td>₹${loan.loan_amount || '0'}</td>
-                    <td>${loan.tenure || '-'}</td>
-                    <td>₹${loan.installment_amount || '0'}</td>
-                    <td><span style="color: #2F855A; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
+            renderTable(allCreditVaultLoans);
         } catch(error) {
             console.error("Error loading credit vault reports:", error);
             tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
         }
+    }
+
+    function renderTable(loans) {
+        const tbody = document.getElementById('reportTableBody');
+        if (loans.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No matching credit vault loans found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        loans.forEach((loan) => {
+            const tr = document.createElement('tr');
+            tr.onclick = () => showLoanDetails(loan);
+            const statusColor = loan.status === 'CLOSED' ? '#C53030' : (loan.status === 'PENDING' ? '#D69E2E' : '#2F855A');
+            tr.innerHTML = `
+                <td><strong>${loan.loan_id || '-'}</strong></td>
+                <td>${loan.borrower_name || '-'}</td>
+                <td>${loan.phone_number || '-'}</td>
+                <td>${loan.loan_type || '-'}</td>
+                <td>₹${loan.loan_amount || '0'}</td>
+                <td>${loan.tenure || '-'}</td>
+                <td>₹${loan.installment_amount || '0'}</td>
+                <td><span style="color: ${statusColor}; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function filterTable() {
+        const input = document.getElementById('searchInput').value.toLowerCase();
+        const typeFilter = document.getElementById('loanTypeFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+
+        const filtered = allCreditVaultLoans.filter(loan => {
+            const name = (loan.borrower_name || '').toLowerCase();
+            const phone = (loan.phone_number || '').toLowerCase();
+            const loanId = (loan.loan_id || '').toLowerCase();
+            const type = loan.loan_type || '';
+            const status = loan.status || 'ACTIVE';
+
+            const matchesSearch = name.includes(input) || phone.includes(input) || loanId.includes(input);
+            const matchesType = typeFilter === '' || type === typeFilter;
+            const matchesStatus = statusFilter === '' || status === statusFilter;
+
+            return matchesSearch && matchesType && matchesStatus;
+        });
+
+        renderTable(filtered);
     }
 
     function showLoanDetails(loan) {
@@ -315,7 +366,7 @@
                 <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Loan Information</th></tr>
                 <tr><td>Loan ID</td><td>${loan.loan_id || '-'}</td></tr>
                 <tr><td>Loan Type</td><td>${loan.loan_type || '-'}</td></tr>
-                <tr><td>Product Value</td><td>₹${loan.loan_amount || '-'}</td></tr>
+                <tr><td>Product Value / Loan Amount</td><td>₹${loan.loan_amount || '-'}</td></tr>
                 <tr><td>Disbursed Amount</td><td>₹${loan.disbursed_amount || '-'}</td></tr>
                 <tr><td>Tenure & Weekly EMI</td><td>${loan.tenure || '-'} | ₹${loan.installment_amount || '-'} per week</td></tr>
                 <tr><td>Loan Date</td><td>${loan.loan_date || '-'}</td></tr>
@@ -327,29 +378,6 @@
             </table>
         `;
         modal.style.display = 'flex';
-    }
-
-    function filterTable() {
-        const input = document.getElementById('searchInput').value.toLowerCase();
-        const rows = document.getElementById('reportTableBody').getElementsByTagName('tr');
-
-        for (let i = 0; i < rows.length; i++) {
-            const nameCol = rows[i].getElementsByTagName('td')[1];
-            const phoneCol = rows[i].getElementsByTagName('td')[2];
-            const loanIdCol = rows[i].getElementsByTagName('td')[0];
-
-            if (nameCol || phoneCol || loanIdCol) {
-                const nameText = nameCol.textContent.toLowerCase();
-                const phoneText = phoneCol.textContent.toLowerCase();
-                const loanIdText = loanIdCol.textContent.toLowerCase();
-
-                if (nameText.includes(input) || phoneText.includes(input) || loanIdText.includes(input)) {
-                    rows[i].style.display = "";
-                } else {
-                    rows[i].style.display = "none";
-                }
-            }
-        }
     }
 
     function downloadPDF() {
