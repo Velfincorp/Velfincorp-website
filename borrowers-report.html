@@ -571,10 +571,10 @@
                                 ${photoUrl ? `<a href="${photoUrl}" target="_blank" class="doc-link"><i class="fas fa-image"></i> Customer Photo</a>` : '<span style="color:red; font-size:12px;">[Photo Not Uploaded]</span>'}
                                 ${aadharFrontUrl ? `<a href="${aadharFrontUrl}" target="_blank" class="doc-link"><i class="fas fa-id-card"></i> Aadhar Front</a>` : '<span style="color:red; font-size:12px;">[Aadhar Front Missing]</span>'}
                                 ${aadharBackUrl ? `<a href="${aadharBackUrl}" target="_blank" class="doc-link"><i class="fas fa-id-card"></i> Aadhar Back</a>` : '<span style="color:red; font-size:12px;">[Aadhar Back Missing]</span>'}
-                                ${panUrl ? `<a href="${panUrl}" target="_blank" class="doc-link"><i class="fas fa-file-alt"></i> PAN Card</a>` : ''}
-                                ${rationUrl ? `<a href="${rationUrl}" target="_blank" class="doc-link"><i class="fas fa-file-alt"></i> Ration Card</a>` : ''}
-                                ${cibilUrl ? `<a href="${cibilUrl}" target="_blank" class="doc-link"><i class="fas fa-chart-line"></i> CIBIL Score</a>` : ''}
-                                ${passbookUrl ? `<a href="${passbookUrl}" target="_blank" class="doc-link"><i class="fas fa-book"></i> Bank Passbook</a>` : ''}
+                                ${panUrl ? `<a href="${panUrl}" target="_blank" class="doc-link"><i class="fas fa-file-alt"></i> PAN Card</a>` : '<span style="color:red; font-size:12px;">[PAN Missing]</span>'}
+                                ${rationUrl ? `<a href="${rationUrl}" target="_blank" class="doc-link"><i class="fas fa-file-alt"></i> Ration Card</a>` : '<span style="color:red; font-size:12px;">[Ration Card Missing]</span>'}
+                                ${cibilUrl ? `<a href="${cibilUrl}" target="_blank" class="doc-link"><i class="fas fa-chart-line"></i> CIBIL Score</a>` : '<span style="color:red; font-size:12px;">[CIBIL Missing]</span>'}
+                                ${passbookUrl ? `<a href="${passbookUrl}" target="_blank" class="doc-link"><i class="fas fa-book"></i> Bank Passbook</a>` : '<span style="color:red; font-size:12px;">[Passbook Missing]</span>'}
                             </div>
                         </td>
                     </tr>
@@ -598,25 +598,51 @@
             modalBody.innerHTML = `
                 <form id="editBorrowerForm" onsubmit="saveBorrowerEdits(event)">
                     <table class="profile-table">
-                        <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Edit Borrower Profile</th></tr>
+                        <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Edit Borrower Profile & Documents</th></tr>
+                        
+                        <!-- Personal Info -->
                         <tr><td>Customer Name</td><td><input type="text" id="edit_full_name" class="edit-input" value="${b.full_name || ''}" required></td></tr>
                         <tr><td>Aadhar Number</td><td><input type="text" id="edit_aadhar" class="edit-input" value="${b.aadhar_number || ''}" required></td></tr>
                         <tr><td>PAN Number</td><td><input type="text" id="edit_pan" class="edit-input" value="${b.pan_number || ''}" required></td></tr>
                         <tr><td>Phone Number</td><td><input type="text" id="edit_phone" class="edit-input" value="${b.phone_number || ''}" required></td></tr>
                         <tr><td>WhatsApp Number</td><td><input type="text" id="edit_whatsapp" class="edit-input" value="${b.whatsapp_number || ''}" required></td></tr>
                         <tr><td>Email ID</td><td><input type="email" id="edit_email" class="edit-input" value="${b.email || ''}"></td></tr>
-                        <tr><td>Nominee Details</td><td><input type="text" id="edit_nominee" class="edit-input" value="${b.nominee_name || ''}"></td></tr>
+                        <tr><td>Nominee Name</td><td><input type="text" id="edit_nominee" class="edit-input" value="${b.nominee_name || ''}"></td></tr>
+                        <tr><td>Nominee Contact</td><td><input type="text" id="edit_nominee_contact" class="edit-input" value="${b.nominee_contact || ''}"></td></tr>
+                        
+                        <!-- Address & Employment -->
                         <tr><td>Address</td><td><input type="text" id="edit_address" class="edit-input" value="${b.address || ''}"></td></tr>
                         <tr><td>City / District</td><td><input type="text" id="edit_city" class="edit-input" value="${b.city || ''}"></td></tr>
                         <tr><td>State</td><td><input type="text" id="edit_state" class="edit-input" value="${b.state || ''}"></td></tr>
                         <tr><td>Pincode</td><td><input type="text" id="edit_pincode" class="edit-input" value="${b.pincode || ''}"></td></tr>
                         <tr><td>Occupation</td><td><input type="text" id="edit_occupation" class="edit-input" value="${b.occupation || ''}"></td></tr>
-                        
-                        <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Replace Documents (Optional)</th></tr>
+                        <tr><td>Job Nature</td><td><input type="text" id="edit_job_nature" class="edit-input" value="${b.job_nature || ''}"></td></tr>
+
+                        <!-- Payment & Bank Details -->
+                        <tr>
+                            <td>Payment Method</td>
+                            <td>
+                                <select id="edit_payment_method" class="edit-input">
+                                    <option value="UPI" ${b.payment_method === 'UPI' ? 'selected' : ''}>UPI</option>
+                                    <option value="e - NACH" ${b.payment_method === 'e - NACH' ? 'selected' : ''}>e - NACH</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr><td>UPI ID</td><td><input type="text" id="edit_upi_id" class="edit-input" value="${b.upi_id || ''}"></td></tr>
+                        <tr><td>Bank Name</td><td><input type="text" id="edit_bank_name" class="edit-input" value="${b.bank_name || ''}"></td></tr>
+                        <tr><td>Account Holder Name</td><td><input type="text" id="edit_account_holder" class="edit-input" value="${b.account_holder_name || ''}"></td></tr>
+                        <tr><td>Bank Account No</td><td><input type="text" id="edit_bank_account_no" class="edit-input" value="${b.bank_account_no || ''}"></td></tr>
+                        <tr><td>IFSC Code</td><td><input type="text" id="edit_ifsc_code" class="edit-input" value="${b.ifsc_code || ''}"></td></tr>
+
+                        <!-- Replace All Documents -->
+                        <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Replace Documents (Optional - Leave blank to keep existing)</th></tr>
                         <tr><td>Customer Photo</td><td><input type="file" id="edit_photo" accept="image/*"></td></tr>
                         <tr><td>Aadhar Front</td><td><input type="file" id="edit_aadhar_front" accept="image/*,application/pdf"></td></tr>
                         <tr><td>Aadhar Back</td><td><input type="file" id="edit_aadhar_back" accept="image/*,application/pdf"></td></tr>
                         <tr><td>PAN Card</td><td><input type="file" id="edit_pan_card" accept="image/*,application/pdf"></td></tr>
+                        <tr><td>Ration Card</td><td><input type="file" id="edit_ration_card" accept="image/*,application/pdf"></td></tr>
+                        <tr><td>CIBIL Score / Doc</td><td><input type="file" id="edit_cibil_score" accept="image/*,application/pdf"></td></tr>
+                        <tr><td>Bank Passbook</td><td><input type="file" id="edit_bank_passbook" accept="image/*,application/pdf"></td></tr>
                     </table>
                     <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
                 </form>
@@ -628,7 +654,7 @@
             if (!currentBorrower) return;
 
             const saveBtn = document.querySelector('.btn-save');
-            saveBtn.innerText = "Saving Changes...";
+            saveBtn.innerText = "Saving Changes & Uploading Files...";
             saveBtn.disabled = true;
 
             try {
@@ -650,6 +676,9 @@
                 const newAadharFrontId = await uploadNewFile('edit_aadhar_front');
                 const newAadharBackId = await uploadNewFile('edit_aadhar_back');
                 const newPanId = await uploadNewFile('edit_pan_card');
+                const newRationId = await uploadNewFile('edit_ration_card');
+                const newCibilId = await uploadNewFile('edit_cibil_score');
+                const newPassbookId = await uploadNewFile('edit_bank_passbook');
 
                 const updatePayload = {
                     full_name: document.getElementById('edit_full_name').value,
@@ -659,17 +688,28 @@
                     whatsapp_number: document.getElementById('edit_whatsapp').value,
                     email: document.getElementById('edit_email').value,
                     nominee_name: document.getElementById('edit_nominee').value,
+                    nominee_contact: document.getElementById('edit_nominee_contact').value,
                     address: document.getElementById('edit_address').value,
                     city: document.getElementById('edit_city').value,
                     state: document.getElementById('edit_state').value,
                     pincode: document.getElementById('edit_pincode').value,
-                    occupation: document.getElementById('edit_occupation').value
+                    occupation: document.getElementById('edit_occupation').value,
+                    job_nature: document.getElementById('edit_job_nature').value,
+                    payment_method: document.getElementById('edit_payment_method').value,
+                    upi_id: document.getElementById('edit_upi_id').value,
+                    bank_name: document.getElementById('edit_bank_name').value,
+                    account_holder_name: document.getElementById('edit_account_holder').value,
+                    bank_account_no: document.getElementById('edit_bank_account_no').value,
+                    ifsc_code: document.getElementById('edit_ifsc_code').value
                 };
 
                 if (newPhotoId) updatePayload.customer_photo = newPhotoId;
                 if (newAadharFrontId) updatePayload.aadhar_front = newAadharFrontId;
                 if (newAadharBackId) updatePayload.aadhar_back = newAadharBackId;
                 if (newPanId) updatePayload.pan_card = newPanId;
+                if (newRationId) updatePayload.ration_card = newRationId;
+                if (newCibilId) updatePayload.cibil_score = newCibilId;
+                if (newPassbookId) updatePayload.bank_passbook = newPassbookId;
 
                 await window.appwriteDatabases.updateDocument(
                     VFC_DB.DB_ID,
@@ -678,7 +718,7 @@
                     updatePayload
                 );
 
-                alert("Borrower profile updated successfully!");
+                alert("Borrower profile and documents updated successfully!");
                 closeModal();
                 window.location.reload();
 
