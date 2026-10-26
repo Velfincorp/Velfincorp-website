@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Vel Fin Corp - Borrower Details Report</title>
+    <title>Vel Fin Corp - Borrower Report & Full Profile</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
@@ -25,9 +25,7 @@
             };
 
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) {
-                return; 
-            }
+            if (publicPages.includes(currentPage)) return;
 
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
@@ -35,7 +33,13 @@
             }
 
             if (userRole === 'borrower') {
-                window.location.replace('borrower-portal.html');
+                if (currentPage !== 'borrower-portal.html') {
+                    window.location.replace('borrower-portal.html');
+                }
+            } else {
+                if (currentPage === 'borrower-portal.html') {
+                    window.location.replace('dashboard.html');
+                }
             }
         })();
     </script>
@@ -65,6 +69,8 @@
             border-right: 3px solid var(--gold);
             position: fixed;
             height: 100vh;
+            left: 0;
+            top: 0;
             box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
             overflow-y: auto;
         }
@@ -145,36 +151,62 @@
             padding: 40px;
             box-sizing: border-box;
         }
-        .header-title {
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(15, 29, 54, 0.08);
+            border-top: 5px solid var(--navy);
+        }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        h2 {
             font-family: 'Cinzel', serif;
             color: var(--navy);
-            font-size: 26px;
-            margin-bottom: 25px;
-            border-bottom: 2px solid var(--gold);
-            padding-bottom: 12px;
+            margin: 0;
+            font-size: 24px;
         }
-        .table-container {
-            background: var(--white);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(15, 29, 54, 0.05);
-            overflow-x: auto;
+        .back-btn {
+            background: var(--gold);
+            color: var(--navy);
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .search-box {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px 15px;
             text-align: left;
             font-size: 14px;
         }
-        th, td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e2e8f0;
-        }
         th {
             background-color: var(--navy);
-            color: var(--white);
+            color: white;
             font-family: 'Cinzel', serif;
-            font-size: 13px;
         }
         tr:hover {
             background-color: #f8fafc;
@@ -184,24 +216,24 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
         .modal-content {
             background: var(--white);
-            width: 750px;
+            width: 850px;
             max-height: 90vh;
             overflow-y: auto;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
             border-top: 5px solid var(--navy);
         }
         .modal-header {
             font-family: 'Cinzel', serif;
-            font-size: 20px;
+            font-size: 18px;
             color: var(--navy);
             margin-bottom: 20px;
             border-bottom: 2px solid var(--gold);
@@ -214,36 +246,22 @@
             display: flex;
             gap: 10px;
         }
-        .btn-print {
-            background-color: var(--navy);
-            color: white;
+        .btn-print, .btn-pdf, .close-btn {
             border: none;
             padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 13px;
         }
-        .btn-pdf {
-            background-color: var(--gold);
-            color: var(--navy);
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .close-btn {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
+        .btn-print { background-color: var(--navy); color: white; }
+        .btn-pdf { background-color: var(--gold); color: var(--navy); }
+        .close-btn { background: var(--danger); color: white; }
+        
         .profile-table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 20px;
         }
         .profile-table td {
             padding: 10px 15px;
@@ -257,12 +275,19 @@
             background: #f1f5f9;
         }
         .doc-link {
-            color: #2b6cb0;
+            display: inline-block;
+            background: var(--navy);
+            color: var(--gold);
+            padding: 5px 12px;
+            border-radius: 4px;
             text-decoration: none;
+            font-size: 12px;
             font-weight: bold;
+            margin: 2px;
         }
         .doc-link:hover {
-            text-decoration: underline;
+            background: var(--gold);
+            color: var(--navy);
         }
     </style>
 </head>
@@ -294,32 +319,38 @@
     </div>
 
     <div class="main-content">
-        <div class="header-title">VEL FIN CORP - BORROWER DETAILS REPORT</div>
-        
-        <div class="table-container">
+        <div class="container">
+            <div class="header-flex">
+                <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
+                <h2>Borrower Full Profile & Report</h2>
+            </div>
+
+            <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name, Phone Number, or Borrower ID..." onkeyup="filterTable()">
+
             <table>
                 <thead>
                     <tr>
                         <th>Borrower ID</th>
                         <th>Customer Name</th>
                         <th>Phone Number</th>
-                        <th>WhatsApp</th>
-                        <th>Occupation</th>
+                        <th>Aadhar Number</th>
                         <th>City / District</th>
+                        <th>Occupation</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
-                <tbody id="borrowerTableBody">
-                    <tr><td colspan="6" style="text-align: center;">Loading borrowers from database...</td></tr>
+                <tbody id="reportTableBody">
+                    <tr><td colspan="7" style="text-align: center;">Loading borrowers from database...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Modal Popup for Full Details View -->
-    <div class="modal" id="profileModal">
+    <!-- Modal Popup for Full Profile & Loan History -->
+    <div class="modal" id="borrowerModal">
         <div class="modal-content" id="printableArea">
             <div class="modal-header">
-                <span>Borrower Full Profile & Payment Details</span>
+                <span>Borrower Full Profile & Payment History</span>
                 <div class="modal-actions">
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
                     <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
@@ -327,7 +358,7 @@
                 </div>
             </div>
             <div id="modalBody">
-                <!-- Detailed table will load here -->
+                <!-- Dynamically loaded profile and loan history -->
             </div>
         </div>
     </div>
@@ -336,90 +367,198 @@
         let currentBorrower = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
-            const tbody = document.getElementById('borrowerTableBody');
+            await loadBorrowersReport();
+        });
+
+        async function loadBorrowersReport() {
+            const tbody = document.getElementById('reportTableBody');
             try {
                 const response = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
                     VFC_DB.BORROWERS_ID
                 );
-
                 const borrowers = response.documents;
 
                 if (!borrowers || borrowers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No borrowers found in database.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No borrowers found in database.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = '';
-                borrowers.forEach((b) => {
+                borrowers.forEach((borrower) => {
                     const tr = document.createElement('tr');
-                    tr.onclick = () => showProfile(b);
+                    tr.onclick = () => showBorrowerProfile(borrower);
                     tr.innerHTML = `
-                        <td>${b.borrower_id || '-'}</td>
-                        <td>${b.full_name || '-'}</td>
-                        <td>${b.phone_number || '-'}</td>
-                        <td>${b.whatsapp_number || '-'}</td>
-                        <td>${b.occupation || '-'}</td>
-                        <td>${b.city || '-'}</td>
+                        <td><strong>${borrower.borrower_id || '-'}</strong></td>
+                        <td>${borrower.full_name || '-'}</td>
+                        <td>${borrower.phone_number || '-'}</td>
+                        <td>${borrower.aadhar_number || '-'}</td>
+                        <td>${borrower.city || '-'}</td>
+                        <td>${borrower.occupation || '-'}</td>
+                        <td><button class="doc-link" onclick="event.stopPropagation(); showBorrowerProfile('${borrower.$id}')">View Profile</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
-            } catch(error) {
-                console.error("Error fetching borrowers:", error);
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
-            }
-        });
-
-        function getFileViewUrl(fileId) {
-            if (!fileId) return '#';
-            try {
-                return window.appwriteStorage.getFileView(VFC_DB.DOCUMENTS_BUCKET_ID, fileId);
-            } catch(e) {
-                return '#';
+            } catch (error) {
+                console.error("Error loading borrowers report:", error);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
             }
         }
 
-        function showProfile(b) {
-            currentBorrower = b;
-            const modal = document.getElementById('profileModal');
-            const body = document.getElementById('modalBody');
+        function getFileUrl(fileId) {
+            if (!fileId || typeof fileId !== 'string' || fileId.trim() === '') return '';
+            const endpoint = VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1';
+            const projectId = VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e';
+            const bucketId = VFC_DB.DOCUMENTS_BUCKET_ID;
+            return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
+        }
 
-            let paymentDetailsHTML = '';
-            if (b.payment_method === 'UPI') {
-                paymentDetailsHTML = `<tr><td>Payment Method</td><td>UPI</td></tr>
-                                    <tr><td>UPI ID</td><td>${b.upi_id || '-'}</td></tr>`;
-            } else {
-                paymentDetailsHTML = `<tr><td>Payment Method</td><td>e - NACH (Bank Auto Debit)</td></tr>
-                                    <tr><td>Bank Name</td><td>${b.bank_name || '-'}</td></tr>
-                                    <tr><td>Account Holder Name</td><td>${b.account_holder_name || '-'}</td></tr>
-                                    <tr><td>Bank Account Number</td><td>${b.bank_account_no || '-'}</td></tr>
-                                    <tr><td>IFSC Code</td><td>${b.ifsc_code || '-'}</td></tr>
-                                    <tr><td>Bank Passbook</td><td>${b.bank_passbook ? `<a href="${getFileViewUrl(b.bank_passbook)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Passbook</a>` : '-'}</td></tr>`;
+        async function showBorrowerProfile(borrowerData) {
+            let borrower = borrowerData;
+            if (typeof borrowerData === 'string') {
+                try {
+                    const res = await window.appwriteDatabases.getDocument(
+                        VFC_DB.DB_ID,
+                        VFC_DB.BORROWERS_ID,
+                        borrowerData
+                    );
+                    borrower = res;
+                } catch(e) {
+                    console.error("Error fetching borrower:", e);
+                    return;
+                }
             }
 
-            body.innerHTML = `
+            currentBorrower = borrower;
+            const modal = document.getElementById('borrowerModal');
+            const modalBody = document.getElementById('modalBody');
+
+            let loansList = [];
+            let paymentsList = [];
+            try {
+                const loansRes = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID
+                );
+                loansList = loansRes.documents.filter(l => l.borrower_id === borrower.borrower_id || l.borrower_name === borrower.full_name);
+
+                const paymentsRes = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.PAYMENTS_ID
+                );
+                paymentsList = paymentsRes.documents;
+            } catch(err) {
+                console.warn("Could not fetch loans/payments for borrower:", err);
+            }
+
+            let loansHtml = '';
+            if (loansList.length > 0) {
+                loansList.forEach((loan, idx) => {
+                    const loanPayments = paymentsList.filter(p => p.loan_id === loan.loan_id);
+                    const totalPaidAmount = loanPayments.reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
+                    
+                    loansHtml += `
+                        <div style="margin-top: 12px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; background: #f8fafc;">
+                            <strong>Loan #${idx + 1}: ${loan.loan_id || '-'}</strong> (${loan.loan_type || 'Loan'})<br>
+                            - Total Loan Amount: ₹${loan.loan_amount || '0'}<br>
+                            - Installment / EMI: ₹${loan.installment_amount || '0'}<br>
+                            - Tenure: ${loan.tenure || '-'}<br>
+                            - Status: <span style="color: #2F855A; font-weight: bold;">${loan.status || 'ACTIVE'}</span><br>
+                            - Total Paid So Far: ₹${totalPaidAmount.toFixed(2)} (${loanPayments.length} installments paid)<br>
+                        </div>
+                    `;
+                });
+            } else {
+                loansHtml = '<p style="color: #64748b;">No active loans found for this borrower.</p>';
+            }
+
+            // Fallback for different document attribute keys
+            const photoId = borrower.customer_photo || borrower.photo || borrower.customerPhoto;
+            const aadharFrontId = borrower.aadhar_front || borrower.aadharFront || borrower.aadhar_front_side;
+            const aadharBackId = borrower.aadhar_back || borrower.aadharBack || borrower.aadhar_back_side;
+            const panId = borrower.pan_card || borrower.panCard || borrower.pan;
+            const rationId = borrower.ration_card || borrower.rationCard || borrower.ration;
+            const cibilId = borrower.cibil_score || borrower.cibilScore || borrower.cibil;
+            const passbookId = borrower.bank_passbook || borrower.bankPassbook || borrower.passbook;
+
+            const photoUrl = getFileUrl(photoId);
+            const aadharFrontUrl = getFileUrl(aadharFrontId);
+            const aadharBackUrl = getFileUrl(aadharBackId);
+            const panUrl = getFileUrl(panId);
+            const rationUrl = getFileUrl(rationId);
+            const cibilUrl = getFileUrl(cibilId);
+            const passbookUrl = getFileUrl(passbookId);
+
+            modalBody.innerHTML = `
                 <table class="profile-table">
-                    <tr><td>Borrower ID</td><td>${b.borrower_id || '-'}</td></tr>
-                    <tr><td>Customer Name</td><td>${b.full_name || '-'}</td></tr>
-                    <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
-                    <tr><td>PAN Number</td><td>${b.pan_number || '-'}</td></tr>
-                    <tr><td>Phone Number</td><td>${b.phone_number || '-'}</td></tr>
-                    <tr><td>WhatsApp</td><td>${b.whatsapp_number || '-'}</td></tr>
-                    <tr><td>Relationship & Relative Name</td><td>${b.relative_name || '-'}</td></tr>
-                    <tr><td>Occupation & Job</td><td>${b.occupation || '-'} (${b.job_nature || '-'})</td></tr>
-                    <tr><td>Address</td><td>${b.address || '-'}, ${b.city || '-'}, ${b.state || '-'} - ${b.pincode || '-'}</td></tr>
-                    <tr><td>Nominee Details</td><td>${b.nominee_name || '-'} (${b.nominee_contact || '-'})</td></tr>
-                    <tr><td>Loan Date</td><td>${b.loan_date || '-'}</td></tr>
-                    ${paymentDetailsHTML}
-                    <tr><td>Customer Photo</td><td>${b.customer_photo ? `<a href="${getFileViewUrl(b.customer_photo)}" target="_blank" class="doc-link"><i class="fas fa-image"></i> View Photo</a>` : '-'}</td></tr>
-                    <tr><td>Aadhar Front</td><td>${b.aadhar_front ? `<a href="${getFileViewUrl(b.aadhar_front)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Aadhar Front</a>` : '-'}</td></tr>
-                    <tr><td>Aadhar Back</td><td>${b.aadhar_back ? `<a href="${getFileViewUrl(b.aadhar_back)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Aadhar Back</a>` : '-'}</td></tr>
-                    <tr><td>PAN Card</td><td>${b.pan_card ? `<a href="${getFileViewUrl(b.pan_card)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View PAN Card</a>` : '-'}</td></tr>
-                    <tr><td>Ration Card</td><td>${b.ration_card ? `<a href="${getFileViewUrl(b.ration_card)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View Ration Card</a>` : '-'}</td></tr>
-                    <tr><td>CIBIL Score / Document</td><td>${b.cibil_score ? `<a href="${getFileViewUrl(b.cibil_score)}" target="_blank" class="doc-link"><i class="fas fa-file-pdf"></i> View CIBIL Document</a>` : '-'}</td></tr>
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Personal & Family Information</th></tr>
+                    <tr><td>Borrower ID</td><td>${borrower.borrower_id || '-'}</td></tr>
+                    <tr><td>Customer Name</td><td>${borrower.full_name || '-'}</td></tr>
+                    <tr><td>Aadhar Number</td><td><strong>${borrower.aadhar_number || '-'}</strong></td></tr>
+                    <tr><td>PAN Number</td><td>${borrower.pan_number || '-'}</td></tr>
+                    <tr><td>Date of Birth (DOB)</td><td>${borrower.dob || '-'}</td></tr>
+                    <tr><td>Relationship & Relative Name</td><td>${borrower.relative_name || '-'}</td></tr>
+                    <tr><td>Phone / WhatsApp</td><td>${borrower.phone_number || '-'} / ${borrower.whatsapp_number || '-'}</td></tr>
+                    <tr><td>Email ID</td><td>${borrower.email || '-'}</td></tr>
+                    <tr><td>Nominee Details</td><td>${borrower.nominee_name || '-'} (${borrower.nominee_contact || '-'})</td></tr>
+
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Address & Employment</th></tr>
+                    <tr><td>Address</td><td>${borrower.address || '-'}</td></tr>
+                    <tr><td>City / State / Pincode</td><td>${borrower.city || '-'}, ${borrower.state || '-'} - ${borrower.pincode || '-'}</td></tr>
+                    <tr><td>Occupation & Job Nature</td><td>${borrower.occupation || '-'} (${borrower.job_nature || '-'})</td></tr>
+
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Payment Method & Bank Details</th></tr>
+                    <tr><td>Payment Method</td><td>${borrower.payment_method || '-'}</td></tr>
+                    <tr><td>UPI ID</td><td>${borrower.upi_id || 'N/A'}</td></tr>
+                    <tr><td>Bank Name & Account</td><td>${borrower.bank_name || 'N/A'} | A/C: ${borrower.bank_account_no || 'N/A'} (IFSC: ${borrower.ifsc_code || 'N/A'})</td></tr>
+
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Uploaded Documents (Click to View / Download)</th></tr>
+                    <tr>
+                        <td colspan="2">
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                ${photoUrl ? `<a href="${photoUrl}" target="_blank" class="doc-link"><i class="fas fa-image"></i> Customer Photo</a>` : '<span style="color:red; font-size:12px;">[Photo Not Uploaded]</span>'}
+                                ${aadharFrontUrl ? `<a href="${aadharFrontUrl}" target="_blank" class="doc-link"><i class="fas fa-id-card"></i> Aadhar Front</a>` : '<span style="color:red; font-size:12px;">[Aadhar Front Missing]</span>'}
+                                ${aadharBackUrl ? `<a href="${aadharBackUrl}" target="_blank" class="doc-link"><i class="fas fa-id-card"></i> Aadhar Back</a>` : '<span style="color:red; font-size:12px;">[Aadhar Back Missing]</span>'}
+                                ${panUrl ? `<a href="${panUrl}" target="_blank" class="doc-link"><i class="fas fa-file-alt"></i> PAN Card</a>` : ''}
+                                ${rationUrl ? `<a href="${rationUrl}" target="_blank" class="doc-link"><i class="fas fa-file-alt"></i> Ration Card</a>` : ''}
+                                ${cibilUrl ? `<a href="${cibilUrl}" target="_blank" class="doc-link"><i class="fas fa-chart-line"></i> CIBIL Score</a>` : ''}
+                                ${passbookUrl ? `<a href="${passbookUrl}" target="_blank" class="doc-link"><i class="fas fa-book"></i> Bank Passbook</a>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Loans & Payment History Summary</th></tr>
+                    <tr>
+                        <td colspan="2">
+                            ${loansHtml}
+                        </td>
+                    </tr>
                 </table>
             `;
             modal.style.display = 'flex';
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.getElementById('reportTableBody').getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const nameCol = rows[i].getElementsByTagName('td')[1];
+                const phoneCol = rows[i].getElementsByTagName('td')[2];
+                const idCol = rows[i].getElementsByTagName('td')[0];
+
+                if (nameCol || phoneCol || idCol) {
+                    const nameText = nameCol.textContent.toLowerCase();
+                    const phoneText = phoneCol.textContent.toLowerCase();
+                    const idText = idCol.textContent.toLowerCase();
+
+                    if (nameText.includes(input) || phoneText.includes(input) || idText.includes(input)) {
+                        rows[i].style.display = "";
+                    } else {
+                        rows[i].style.display = "none";
+                    }
+                }
+            }
         }
 
         function downloadPDF() {
@@ -427,19 +566,19 @@
             const actions = element.querySelector('.modal-actions');
             actions.style.display = 'none';
 
-            let fileName = "Borrower_Profile.pdf";
+            let fileName = "Borrower_Full_Profile.pdf";
             if (currentBorrower) {
                 const cleanName = (currentBorrower.full_name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
-                const cleanId = (currentBorrower.borrower_id || 'ID').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanId = (currentBorrower.borrower_id || 'Borrower').replace(/[^a-zA-Z0-9]/g, '_');
                 fileName = `${cleanName}_${cleanId}.pdf`;
             }
 
             const opt = {
-                margin:       10,
-                filename:     fileName,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin: 10,
+                filename: fileName,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             html2pdf().from(element).set(opt).save().then(() => {
@@ -448,7 +587,7 @@
         }
 
         function closeModal() {
-            document.getElementById('profileModal').style.display = 'none';
+            document.getElementById('borrowerModal').style.display = 'none';
         }
 
         function handleLogout() {
