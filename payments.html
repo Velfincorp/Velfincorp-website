@@ -352,7 +352,6 @@
             window.location.replace('login.html');
         }
 
-        // தேதியை 24-Oct-2026 என்ற பார்மட்டில் மாற்றும் ஃபங்ஷன்
         function formatDateCustom(dateStrOrObj) {
             const d = new Date(dateStrOrObj);
             if (isNaN(d.getTime())) return String(dateStrOrObj);
@@ -386,6 +385,7 @@
                         opt.dataset.emi = parseFloat(loan.installment_amount || 0);
                         opt.dataset.tenure = parseInt(loan.tenure || 10);
                         opt.dataset.total = parseFloat(loan.loan_amount || 0);
+                        // டேட்டாபேஸில் உள்ள உண்மையான லோன் வகையை (Furniture, Electrical, Mobile, Jewel அல்லது Weekly/Daily) சரியாக எடுத்தல்
                         opt.dataset.loantype = loan.loan_type || 'Weekly';
 
                         selectElement.appendChild(opt);
@@ -472,7 +472,7 @@
 
             const borrowerName = selectedOption.dataset.name;
             const borrowerPhone = selectedOption.dataset.phone || "8778003840";
-            const loanType = selectedOption.dataset.loantype;
+            const loanType = selectedOption.dataset.loantype; // e.g., Furniture, Electrical, Mobile, Jewel, Daily, Weekly, Monthly
             const loanId = document.getElementById('Loan_ID').value;
             const paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
             const balanceAmount = parseFloat(document.getElementById('Balance_Amount').value) || 0;
@@ -487,7 +487,6 @@
                 return;
             }
 
-            // ஆட்டோமேட்டிக் சீரியல் ரெசிப்ட் எண் உருவாக்கம் (PAY/001/2026)
             const currentYear = new Date().getFullYear();
             let paymentId = `PAY/001/${currentYear}`;
             try {
@@ -502,7 +501,6 @@
                 paymentId = `PAY/${Math.floor(100 + Math.random() * 900)}/${currentYear}`;
             }
 
-            // Appwrite டேட்டாபேஸில் பேமெண்ட்டைச் சேமித்தல்
             try {
                 await window.appwriteDatabases.createDocument(
                     VFC_DB.DB_ID,
@@ -529,37 +527,34 @@
                 return;
             }
 
-            // அடுத்த தவணை தேதியைக் கணக்கிடுதல் (Next Due Date Calculation)
             let dueDateObj = new Date(paymentDateRaw);
             if (loanType.toLowerCase().includes('daily') || loanType.toLowerCase().includes('டெய்லி')) {
                 dueDateObj.setDate(dueDateObj.getDate() + 1);
             } else if (loanType.toLowerCase().includes('monthly') || loanType.toLowerCase().includes('மாதம்')) {
                 dueDateObj.setMonth(dueDateObj.getMonth() + 1);
             } else {
-                // Weekly - சரியாக 7 நாட்கள் கூட்டப்படுகிறது (24-Oct -> 31-Oct)
                 dueDateObj.setDate(dueDateObj.getDate() + 7);
             }
             
             const formattedPayDate = formatDateCustom(paymentDateRaw);
             const nextDueDateStr = formatDateCustom(dueDateObj);
 
-            // வாட்ஸ்அப் மொபைல் எண் சுத்தம் செய்தல்
             let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
             if (cleanMobile.length > 10) {
                 cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
             }
             const finalMobile = "91" + cleanMobile;
 
-            let loanTypeDisp = "பர்சனல் லோன்";
-            if (loanId.includes("VML") || loanId.includes("VEL") || loanId.includes("VFL") || loanId.includes("VJL")) {
-                loanTypeDisp = "பொருள் கடன் (Credit Vault)";
+            // லோன் வகையைத் துல்லியமாக அமைத்தல் (Furniture, Electrical, Mobile, Jewel அல்லது Personal Loan வகைகள்)
+            let loanTypeDisp = loanType; 
+            if (loanType.toLowerCase() === 'weekly' || loanType.toLowerCase() === 'daily' || loanType.toLowerCase() === 'monthly') {
+                loanTypeDisp = "Personal Loan (" + loanType + ")";
             }
 
             let templateName = "";
             let customComponents = {};
 
             if (remInst <= 0 || balanceAmount <= 0) {
-                // Loan Closed Template (8 Named Variables)
                 templateName = "vel_fin_loan_closed";
                 customComponents = {
                     "customer_name": { "type": "text", "value": String(borrowerName) },
@@ -572,18 +567,17 @@
                     "balance_amount": { "type": "text", "value": "0.00" }
                 };
             } else {
-                // Payment Receipt Template (vel_fin_payment_receipt - Exact 1 to 10 Mapping)
                 templateName = "vel_fin_payment_receipt";
                 customComponents = {
                     "body_1": { "type": "text", "value": String(borrowerName) },          // {{1}} பெயர்
-                    "body_2": { "type": "text", "value": String(loanTypeDisp) },          // {{2}} லோன் வகை
+                    "body_2": { "type": "text", "value": String(loanTypeDisp) },          // {{2}} லோன் வகை (Furniture, Electrical, etc.)
                     "body_3": { "type": "text", "value": String(paidAmount.toFixed(2)) }, // {{3}} செலுத்திய தொகை
-                    "body_4": { "type": "text", "value": String(formattedPayDate) },      // {{4}} தேதி (24-Oct-2026)
+                    "body_4": { "type": "text", "value": String(formattedPayDate) },      // {{4}} தேதி
                     "body_5": { "type": "text", "value": String(paidInst) },              // {{5}} செலுத்திய தவணை
                     "body_6": { "type": "text", "value": String(remInst) },               // {{6}} மீதமுள்ள தவணைகள்
                     "body_7": { "type": "text", "value": String(balanceAmount.toFixed(2)) }, // {{7}} மீதமுள்ள நிலுவை
-                    "body_8": { "type": "text", "value": String(nextDueDateStr) },        // {{8}} அடுத்த தவணை தேதி (31-Oct-2026)
-                    "body_9": { "type": "text", "value": String(paymentId) },             // {{9}} ரெசிப்ட் எண் (PAY/001/2026)
+                    "body_8": { "type": "text", "value": String(nextDueDateStr) },        // {{8}} அடுத்த தவணை தேதி
+                    "body_9": { "type": "text", "value": String(paymentId) },             // {{9}} ரெசிப்ட் எண்
                     "body_10": { "type": "text", "value": String(loanId) }                // {{10}} லோன் ஐடி
                 };
             }
