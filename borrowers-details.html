@@ -212,7 +212,6 @@
             background-color: #f8fafc;
             cursor: pointer;
         }
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -279,11 +278,12 @@
             display: inline-block;
             background: var(--navy);
             color: var(--gold);
-            padding: 4px 10px;
+            padding: 5px 12px;
             border-radius: 4px;
             text-decoration: none;
             font-size: 12px;
             font-weight: bold;
+            margin: 2px;
         }
         .doc-link:hover {
             background: var(--gold);
@@ -405,13 +405,13 @@
             }
         }
 
+        // Direct Appwrite Storage File View/Download URL Generator
         function getFileUrl(fileId) {
-            if (!fileId) return '';
-            try {
-                return `${VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1'}/storage/buckets/${VFC_DB.DOCUMENTS_BUCKET_ID}/files/${fileId}/view?project=${VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e'}`;
-            } catch(e) {
-                return '#';
-            }
+            if (!fileId || typeof fileId !== 'string' || fileId.trim() === '') return '';
+            const endpoint = VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1';
+            const projectId = VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e';
+            const bucketId = VFC_DB.DOCUMENTS_BUCKET_ID;
+            return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
         }
 
         async function showBorrowerProfile(borrowerData) {
@@ -431,10 +431,13 @@
             }
 
             currentBorrower = borrower;
+            // Console-ல் டேட்டாவைச் சரிபார்க்க (Debug Log)
+            console.log("Loaded Borrower Document from Appwrite:", borrower);
+
             const modal = document.getElementById('borrowerModal');
             const modalBody = document.getElementById('modalBody');
 
-            // Fetch loans associated with this borrower (by borrower_id or borrower name)
+            // Fetch loans and payments associated with this borrower
             let loansList = [];
             let paymentsList = [];
             try {
@@ -460,7 +463,7 @@
                     const totalPaidAmount = loanPayments.reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
                     
                     loansHtml += `
-                        <div style="margin-top: 15px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; background: #f8fafc;">
+                        <div style="margin-top: 12px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; background: #f8fafc;">
                             <strong>Loan #${idx + 1}: ${loan.loan_id || '-'}</strong> (${loan.loan_type || 'Loan'})<br>
                             - Total Loan Amount: ₹${loan.loan_amount || '0'}<br>
                             - Installment / EMI: ₹${loan.installment_amount || '0'}<br>
@@ -474,7 +477,7 @@
                 loansHtml = '<p style="color: #64748b;">No active loans found for this borrower.</p>';
             }
 
-            // Document Links
+            // Document Links generation
             const photoUrl = getFileUrl(borrower.customer_photo);
             const aadharFrontUrl = getFileUrl(borrower.aadhar_front);
             const aadharBackUrl = getFileUrl(borrower.aadhar_back);
@@ -510,9 +513,9 @@
                     <tr>
                         <td colspan="2">
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                ${photoUrl ? `<a href="${photoUrl}" target="_blank" class="doc-link"><i class="fas fa-image"></i> Customer Photo</a>` : ''}
-                                ${aadharFrontUrl ? `<a href="${aadharFrontUrl}" target="_blank" class="doc-link"><i class="fas id-card"></i> Aadhar Front</a>` : ''}
-                                ${aadharBackUrl ? `<a href="${aadharBackUrl}" target="_blank" class="doc-link"><i class="fas id-card"></i> Aadhar Back</a>` : ''}
+                                ${photoUrl ? `<a href="${photoUrl}" target="_blank" class="doc-link"><i class="fas fa-image"></i> Customer Photo</a>` : '<span style="color:red; font-size:12px;">[Photo Not Uploaded]</span>'}
+                                ${aadharFrontUrl ? `<a href="${aadharFrontUrl}" target="_blank" class="doc-link"><i class="fas fa-id-card"></i> Aadhar Front</a>` : '<span style="color:red; font-size:12px;">[Aadhar Front Missing]</span>'}
+                                ${aadharBackUrl ? `<a href="${aadharBackUrl}" target="_blank" class="doc-link"><i class="fas fa-id-card"></i> Aadhar Back</a>` : '<span style="color:red; font-size:12px;">[Aadhar Back Missing]</span>'}
                                 ${panUrl ? `<a href="${panUrl}" target="_blank" class="doc-link"><i class="fas fa-file-alt"></i> PAN Card</a>` : ''}
                                 ${rationUrl ? `<a href="${rationUrl}" target="_blank" class="doc-link"><i class="fas fa-file-alt"></i> Ration Card</a>` : ''}
                                 ${cibilUrl ? `<a href="${cibilUrl}" target="_blank" class="doc-link"><i class="fas fa-chart-line"></i> CIBIL Score</a>` : ''}
