@@ -378,8 +378,21 @@
 
     <script>
         let currentBorrower = null;
+        let appwriteStorageInstance = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                if (window.appwriteClient) {
+                    appwriteStorageInstance = new window.Appwrite.Storage(window.appwriteClient);
+                } else if (window.Appwrite && typeof VFC_DB !== 'undefined') {
+                    const client = new window.Appwrite.Client()
+                        .setEndpoint(VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1')
+                        .setProject(VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e');
+                    appwriteStorageInstance = new window.Appwrite.Storage(client);
+                }
+            } catch (err) {
+                console.error("Error initializing Appwrite Storage:", err);
+            }
             await loadBorrowersReport();
         });
 
@@ -420,6 +433,14 @@
 
         function getFileUrl(fileId) {
             if (!fileId || typeof fileId !== 'string' || fileId.trim() === '') return '';
+            try {
+                if (appwriteStorageInstance && typeof appwriteStorageInstance.getFileView === 'function') {
+                    const result = appwriteStorageInstance.getFileView(VFC_DB.DOCUMENTS_BUCKET_ID, fileId);
+                    if (result && result.href) return result.href;
+                }
+            } catch(e) {
+                console.warn("SDK getFileView failed, using fallback URL", e);
+            }
             const endpoint = VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1';
             const projectId = VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e';
             const bucketId = VFC_DB.DOCUMENTS_BUCKET_ID;
@@ -600,7 +621,6 @@
                     <table class="profile-table">
                         <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Edit Borrower Profile & Documents</th></tr>
                         
-                        <!-- Personal Info -->
                         <tr><td>Customer Name</td><td><input type="text" id="edit_full_name" class="edit-input" value="${b.full_name || ''}" required></td></tr>
                         <tr><td>Aadhar Number</td><td><input type="text" id="edit_aadhar" class="edit-input" value="${b.aadhar_number || ''}" required></td></tr>
                         <tr><td>PAN Number</td><td><input type="text" id="edit_pan" class="edit-input" value="${b.pan_number || ''}" required></td></tr>
@@ -610,7 +630,6 @@
                         <tr><td>Nominee Name</td><td><input type="text" id="edit_nominee" class="edit-input" value="${b.nominee_name || ''}"></td></tr>
                         <tr><td>Nominee Contact</td><td><input type="text" id="edit_nominee_contact" class="edit-input" value="${b.nominee_contact || ''}"></td></tr>
                         
-                        <!-- Address & Employment -->
                         <tr><td>Address</td><td><input type="text" id="edit_address" class="edit-input" value="${b.address || ''}"></td></tr>
                         <tr><td>City / District</td><td><input type="text" id="edit_city" class="edit-input" value="${b.city || ''}"></td></tr>
                         <tr><td>State</td><td><input type="text" id="edit_state" class="edit-input" value="${b.state || ''}"></td></tr>
@@ -618,7 +637,6 @@
                         <tr><td>Occupation</td><td><input type="text" id="edit_occupation" class="edit-input" value="${b.occupation || ''}"></td></tr>
                         <tr><td>Job Nature</td><td><input type="text" id="edit_job_nature" class="edit-input" value="${b.job_nature || ''}"></td></tr>
 
-                        <!-- Payment & Bank Details -->
                         <tr>
                             <td>Payment Method</td>
                             <td>
@@ -634,7 +652,6 @@
                         <tr><td>Bank Account No</td><td><input type="text" id="edit_bank_account_no" class="edit-input" value="${b.bank_account_no || ''}"></td></tr>
                         <tr><td>IFSC Code</td><td><input type="text" id="edit_ifsc_code" class="edit-input" value="${b.ifsc_code || ''}"></td></tr>
 
-                        <!-- Replace All Documents -->
                         <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Replace Documents (Optional - Leave blank to keep existing)</th></tr>
                         <tr><td>Customer Photo</td><td><input type="file" id="edit_photo" accept="image/*"></td></tr>
                         <tr><td>Aadhar Front</td><td><input type="file" id="edit_aadhar_front" accept="image/*,application/pdf"></td></tr>
