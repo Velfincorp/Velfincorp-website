@@ -352,6 +352,17 @@
             window.location.replace('login.html');
         }
 
+        // தேதியை 24-Oct-2026 என்ற பார்மட்டில் மாற்றும் ஃபங்ஷன்
+        function formatDateCustom(dateStrOrObj) {
+            const d = new Date(dateStrOrObj);
+            if (isNaN(d.getTime())) return String(dateStrOrObj);
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = months[d.getMonth()];
+            const year = d.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
         async function loadActiveLoansFromAppwrite() {
             const selectElement = document.getElementById('Borrowers_Name');
             try {
@@ -369,6 +380,7 @@
                         opt.value = loan.loan_id;
                         opt.textContent = `${loan.borrower_name} (${loan.loan_id})`;
                         
+                        opt.dataset.docid = loan.\$id;
                         opt.dataset.name = loan.borrower_name;
                         opt.dataset.phone = loan.phone_number || "8778003840";
                         opt.dataset.emi = parseFloat(loan.installment_amount || 0);
@@ -406,176 +418,3 @@
             const totalAmount = parseFloat(selectedOption.dataset.total);
 
             document.getElementById('Loan_ID').value = loanId;
-            document.getElementById('Paid_Amount').value = emiAmount.toFixed(2);
-
-            let paidCount = 0;
-            try {
-                const paymentsResp = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.PAYMENTS_ID
-                );
-                const loanPayments = paymentsResp.documents.filter(p => p.loan_id === loanId);
-                paidCount = loanPayments.length;
-            } catch (err) {
-                console.warn("Could not fetch existing payments count:", err);
-            }
-
-            const currentPaidInst = paidCount + 1;
-            let remainingInst = totalTenure - currentPaidInst;
-            if (remainingInst < 0) remainingInst = 0;
-
-            document.getElementById('Paid_Installment').value = currentPaidInst;
-            document.getElementById('Remaining_Installment').value = remainingInst;
-
-            let totalPaidSoFar = emiAmount * paidCount;
-            let currentBalance = totalAmount - totalPaidSoFar - emiAmount;
-            if (currentBalance < 0) currentBalance = 0;
-
-            document.getElementById('Balance_Amount').value = currentBalance.toFixed(2);
-            document.getElementById('Paid_Amount').dataset.totalAmount = totalAmount;
-            document.getElementById('Paid_Amount').dataset.totalPaidSoFar = totalPaidSoFar;
-        }
-
-        function updateCalculations() {
-            let paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
-            let totalAmount = parseFloat(document.getElementById('Paid_Amount').dataset.totalAmount) || 0;
-            let totalPaidSoFar = parseFloat(document.getElementById('Paid_Amount').dataset.totalPaidSoFar) || 0;
-
-            let newBalance = totalAmount - totalPaidSoFar - paidAmount;
-            if (newBalance < 0) newBalance = 0;
-
-            document.getElementById('Balance_Amount').value = newBalance.toFixed(2);
-        }
-
-        async function validatePayment(event) {
-            event.preventDefault();
-
-            const selectElement = document.getElementById('Borrowers_Name');
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-
-            if (!selectedOption.value) {
-                alert("தயவுசெய்து கஸ்டமர் பெயரை தேர்ந்தெடுக்கவும்!");
-                return;
-            }
-
-            const borrowerName = selectedOption.dataset.name;
-            const borrowerPhone = selectedOption.dataset.phone || "8778003840";
-            const loanType = selectedOption.dataset.loantype;
-            const loanId = document.getElementById('Loan_ID').value;
-            const paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
-            const balanceAmount = parseFloat(document.getElementById('Balance_Amount').value) || 0;
-            const paymentDate = document.getElementById('Date_field').value;
-            const paymentMode = document.getElementById('Payment_Mode').value;
-            const delayDetails = document.getElementById('Delayed_Details').value;
-            const paidInst = document.getElementById('Paid_Installment').value;
-            const remInst = parseInt(document.getElementById('Remaining_Installment').value) || 0;
-
-            if (paidAmount <= 0) {
-                alert("சரியான தொகையை உள்ளிடவும்!");
-                return;
-            }
-
-            // Payment ID உருவாக்கம்
-            let paymentId = "PAY/001/2026";
-            try {
-                const paymentsList = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.PAYMENTS_ID
-                );
-                const nextSeq = (paymentsList.total || paymentsList.documents.length) + 1;
-                paymentId = `PAY/${String(nextSeq).padStart(3, '0')}/2026`;
-            } catch (err) {
-                console.warn("Could not fetch payment count:", err);
-                paymentId = "PAY/" + Math.floor(100 + Math.random() * 900) + "/2026";
-            }
-
-            // Appwrite டேட்டாபேஸில் பேமெண்ட்டைச் சேமித்தல்
-            try {
-                await window.appwriteDatabases.createDocument(
-                    VFC_DB.DB_ID,
-                    VFC_DB.PAYMENTS_ID,
-                    window.AppwriteID.unique(),
-                    {
-                        payment_id: paymentId,
-                        loan_id: loanId,
-                        borrower_name: borrowerName,
-                        phone_number: borrowerPhone,
-                        amount_paid: paidAmount.toFixed(2),
-                        balance_amount: balanceAmount.toFixed(2),
-                        paid_installment: paidInst.toString(),
-                        remaining_installment: remInst.toString(),
-                        payment_date: paymentDate,
-                        payment_mode: paymentMode,
-                        delayed_details: delayDetails
-                    }
-                );
-                console.log("Payment saved to Appwrite Cloud Database!");
-            } catch (err) {
-                console.error("Error saving payment to Appwrite:", err);
-                alert("Database save failed: " + err.message);
-                return;
-            }
-
-            // அடுத்த தவணை தேதியைக் கணக்கிடுதல் (Next Due Date Calculation)
-            let dueDateObj = new Date(paymentDate);
-            if (loanType.toLowerCase().includes('daily') || loanType.toLowerCase().includes('டெய்லி')) {
-                dueDateObj.setDate(dueDateObj.getDate() + 1);
-            } else if (loanType.toLowerCase().includes('monthly') || loanType.toLowerCase().includes('மாதம்')) {
-                dueDateObj.setMonth(dueDateObj.getMonth() + 1);
-            } else {
-                // Default Weekly
-                dueDateObj.setDate(dueDateObj.getDate() + 7);
-            }
-            const nextDueDateStr = dueDateObj.toLocaleDateString('en-GB');
-
-            // வாட்ஸ்அப் மொபைல் எண் மற்றும் டெம்ப்ளேட் அமைப்பு (10 வேரியபிள்களுக்குத் தகுந்தபடி)
-            let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
-            if (cleanMobile.length > 10) {
-                cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
-            }
-            const finalMobile = "91" + cleanMobile;
-
-            let loanTypeDisp = "பர்சனல் லோன்";
-            if (loanId.includes("VML") || loanId.includes("VEL") || loanId.includes("VFL") || loanId.includes("VJL")) {
-                loanTypeDisp = "பொருள் கடன் (Credit Vault)";
-            }
-
-            let templateName = (remInst <= 0 || balanceAmount <= 0) ? "vel_fin_loan_closed" : "vel_fin_payment_receipt";
-
-            try {
-                if (!appwriteFunctionsInstance) {
-                    throw new Error("Appwrite Functions instance is not initialized.");
-                }
-
-                const execution = await appwriteFunctionsInstance.createExecution(
-                    '6adb02310009b131da2d',
-                    JSON.stringify({
-                        mobile: finalMobile,
-                        templateName: templateName,
-                        borrowerName: borrowerName,
-                        loanType: loanTypeDisp,
-                        paidAmount: paidAmount.toFixed(2),
-                        paymentDate: paymentDate,
-                        paidInst: paidInst.toString(),
-                        remInst: remInst.toString(),
-                        balanceAmount: balanceAmount.toFixed(2),
-                        delayDetails: nextDueDateStr, // {{8}} - அடுத்த தவணை தேதி
-                        paymentId: paymentId,         // {{9}} - ரெசிப்ட் எண்
-                        loanId: loanId                // {{10}} - லோன் ஐடி
-                    })
-                );
-
-                console.log("Appwrite Function Execution:", execution);
-                alert("Payment successfully saved to Cloud Database and WhatsApp receipt sent automatically!");
-            } catch (error) {
-                console.error("Error triggering WhatsApp function:", error);
-                alert("Payment saved to database, but automated WhatsApp dispatch failed: " + error.message);
-            }
-
-            document.getElementById('paymentForm').reset();
-            document.getElementById('Date_field').valueAsDate = new Date();
-            await loadActiveLoansFromAppwrite();
-        }
-    </script>
-</body>
-</html>
