@@ -241,12 +241,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .modal-actions {
             display: flex;
             gap: 10px;
         }
-        .btn-print, .btn-pdf, .close-btn {
+        .btn-print, .btn-pdf, .btn-edit, .close-btn, .btn-save {
             border: none;
             padding: 6px 12px;
             border-radius: 4px;
@@ -256,6 +258,8 @@
         }
         .btn-print { background-color: var(--navy); color: white; }
         .btn-pdf { background-color: var(--gold); color: var(--navy); }
+        .btn-edit { background-color: #2b6cb0; color: white; }
+        .btn-save { background-color: #2f855a; color: white; width: 100%; margin-top: 20px; padding: 12px; font-size: 15px; }
         .close-btn { background: var(--danger); color: white; }
         
         .profile-table {
@@ -288,6 +292,14 @@
         .doc-link:hover {
             background: var(--gold);
             color: var(--navy);
+        }
+        .edit-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
         }
     </style>
 </head>
@@ -350,8 +362,9 @@
     <div class="modal" id="borrowerModal">
         <div class="modal-content" id="printableArea">
             <div class="modal-header">
-                <span>Borrower Full Profile & Payment History</span>
+                <span id="modalTitleText">Borrower Full Profile & Payment History</span>
                 <div class="modal-actions">
+                    <button class="btn-edit" onclick="enableEditMode()"><i class="fas fa-edit"></i> Edit Profile</button>
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
                     <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
                     <button class="close-btn" onclick="closeModal()">X</button>
@@ -430,8 +443,10 @@
             }
 
             currentBorrower = borrower;
-            console.log("Borrower Data Loaded:", borrower);
+            renderProfileView(borrower);
+        }
 
+        async function renderProfileView(borrower) {
             const modal = document.getElementById('borrowerModal');
             const modalBody = document.getElementById('modalBody');
 
@@ -459,16 +474,15 @@
                     const loanPayments = paymentsList.filter(p => p.loan_id === loan.loan_id);
                     const totalPaidAmount = loanPayments.reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
                     
-                    // ஒவ்வொரு பேமெண்ட்டின் தாமத விவரங்களை (Delayed Details / On Time) தொகுத்தல்
                     let paymentHistoryRows = '';
                     if (loanPayments.length > 0) {
                         loanPayments.forEach((p, pIdx) => {
                             paymentHistoryRows += `
                                 <tr style="font-size: 13px;">
-                                    <td>Inst #${p.paid_installment || (pIdx + 1)}</td>
-                                    <td>₹${p.amount_paid || '0'}</td>
-                                    <td>${p.payment_date || '-'}</td>
-                                    <td><span style="color: ${p.delayed_details && p.delayed_details !== 'On Time' ? 'var(--danger)' : '#2F855A'}; font-weight: bold;">${p.delayed_details || 'On Time'}</span></td>
+                                    <td style="padding: 6px;">Inst #${p.paid_installment || (pIdx + 1)}</td>
+                                    <td style="padding: 6px;">₹${p.amount_paid || '0'}</td>
+                                    <td style="padding: 6px;">${p.payment_date || '-'}</td>
+                                    <td style="padding: 6px;"><span style="color: ${p.delayed_details && p.delayed_details !== 'On Time' ? 'var(--danger)' : '#2F855A'}; font-weight: bold;">${p.delayed_details || 'On Time'}</span></td>
                                 </tr>
                             `;
                         });
@@ -502,7 +516,6 @@
                 loansHtml = '<p style="color: #64748b;">No active loans found for this borrower.</p>';
             }
 
-            // Smart Key Search for Files (மறைமுகமாக எந்த ஃபீல்டு பெயரில் ஐடி சேமிக்கப்பட்டிருந்தாலும் கண்டறியும்)
             function findFileId(obj, possibleKeys) {
                 for (let key of possibleKeys) {
                     if (obj[key] && typeof obj[key] === 'string' && obj[key].trim() !== '') {
@@ -575,6 +588,106 @@
                 </table>
             `;
             modal.style.display = 'flex';
+        }
+
+        function enableEditMode() {
+            if (!currentBorrower) return;
+            const modalBody = document.getElementById('modalBody');
+            const b = currentBorrower;
+
+            modalBody.innerHTML = `
+                <form id="editBorrowerForm" onsubmit="saveBorrowerEdits(event)">
+                    <table class="profile-table">
+                        <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Edit Borrower Profile</th></tr>
+                        <tr><td>Customer Name</td><td><input type="text" id="edit_full_name" class="edit-input" value="${b.full_name || ''}" required></td></tr>
+                        <tr><td>Aadhar Number</td><td><input type="text" id="edit_aadhar" class="edit-input" value="${b.aadhar_number || ''}" required></td></tr>
+                        <tr><td>PAN Number</td><td><input type="text" id="edit_pan" class="edit-input" value="${b.pan_number || ''}" required></td></tr>
+                        <tr><td>Phone Number</td><td><input type="text" id="edit_phone" class="edit-input" value="${b.phone_number || ''}" required></td></tr>
+                        <tr><td>WhatsApp Number</td><td><input type="text" id="edit_whatsapp" class="edit-input" value="${b.whatsapp_number || ''}" required></td></tr>
+                        <tr><td>Email ID</td><td><input type="email" id="edit_email" class="edit-input" value="${b.email || ''}"></td></tr>
+                        <tr><td>Nominee Details</td><td><input type="text" id="edit_nominee" class="edit-input" value="${b.nominee_name || ''}"></td></tr>
+                        <tr><td>Address</td><td><input type="text" id="edit_address" class="edit-input" value="${b.address || ''}"></td></tr>
+                        <tr><td>City / District</td><td><input type="text" id="edit_city" class="edit-input" value="${b.city || ''}"></td></tr>
+                        <tr><td>State</td><td><input type="text" id="edit_state" class="edit-input" value="${b.state || ''}"></td></tr>
+                        <tr><td>Pincode</td><td><input type="text" id="edit_pincode" class="edit-input" value="${b.pincode || ''}"></td></tr>
+                        <tr><td>Occupation</td><td><input type="text" id="edit_occupation" class="edit-input" value="${b.occupation || ''}"></td></tr>
+                        
+                        <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Replace Documents (Optional)</th></tr>
+                        <tr><td>Customer Photo</td><td><input type="file" id="edit_photo" accept="image/*"></td></tr>
+                        <tr><td>Aadhar Front</td><td><input type="file" id="edit_aadhar_front" accept="image/*,application/pdf"></td></tr>
+                        <tr><td>Aadhar Back</td><td><input type="file" id="edit_aadhar_back" accept="image/*,application/pdf"></td></tr>
+                        <tr><td>PAN Card</td><td><input type="file" id="edit_pan_card" accept="image/*,application/pdf"></td></tr>
+                    </table>
+                    <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
+                </form>
+            `;
+        }
+
+        async function saveBorrowerEdits(event) {
+            event.preventDefault();
+            if (!currentBorrower) return;
+
+            const saveBtn = document.querySelector('.btn-save');
+            saveBtn.innerText = "Saving Changes...";
+            saveBtn.disabled = true;
+
+            try {
+                async function uploadNewFile(fileElementId) {
+                    const fileInput = document.getElementById(fileElementId);
+                    if (fileInput && fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+                        const uploadedFile = await window.appwriteStorage.createFile(
+                            VFC_DB.DOCUMENTS_BUCKET_ID,
+                            AppwriteID.unique(),
+                            file
+                        );
+                        return uploadedFile.$id;
+                    }
+                    return null;
+                }
+
+                const newPhotoId = await uploadNewFile('edit_photo');
+                const newAadharFrontId = await uploadNewFile('edit_aadhar_front');
+                const newAadharBackId = await uploadNewFile('edit_aadhar_back');
+                const newPanId = await uploadNewFile('edit_pan_card');
+
+                const updatePayload = {
+                    full_name: document.getElementById('edit_full_name').value,
+                    aadhar_number: document.getElementById('edit_aadhar').value,
+                    pan_number: document.getElementById('edit_pan').value,
+                    phone_number: document.getElementById('edit_phone').value,
+                    whatsapp_number: document.getElementById('edit_whatsapp').value,
+                    email: document.getElementById('edit_email').value,
+                    nominee_name: document.getElementById('edit_nominee').value,
+                    address: document.getElementById('edit_address').value,
+                    city: document.getElementById('edit_city').value,
+                    state: document.getElementById('edit_state').value,
+                    pincode: document.getElementById('edit_pincode').value,
+                    occupation: document.getElementById('edit_occupation').value
+                };
+
+                if (newPhotoId) updatePayload.customer_photo = newPhotoId;
+                if (newAadharFrontId) updatePayload.aadhar_front = newAadharFrontId;
+                if (newAadharBackId) updatePayload.aadhar_back = newAadharBackId;
+                if (newPanId) updatePayload.pan_card = newPanId;
+
+                await window.appwriteDatabases.updateDocument(
+                    VFC_DB.DB_ID,
+                    VFC_DB.BORROWERS_ID,
+                    currentBorrower.$id,
+                    updatePayload
+                );
+
+                alert("Borrower profile updated successfully!");
+                closeModal();
+                window.location.reload();
+
+            } catch (error) {
+                console.error("Error updating borrower:", error);
+                alert("Error updating profile: " + error.message);
+                saveBtn.innerText = "Save Changes";
+                saveBtn.disabled = false;
+            }
         }
 
         function filterTable() {
