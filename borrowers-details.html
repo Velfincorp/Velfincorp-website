@@ -501,10 +501,25 @@
             const retailerCode = retailerCodeEl ? retailerCodeEl.value.trim() : '';
             const currentYear = new Date().getFullYear();
 
+            // Safe fallback ID generation
+            const setDefaultId = () => {
+                if (issuedBy === 'Retailer' && retailerCode) {
+                    borrowerIdField.value = `${retailerCode}/001/${currentYear}`;
+                } else {
+                    borrowerIdField.value = `VFC/001/${currentYear}`;
+                }
+            };
+
+            if (!window.appwriteDatabases || !window.VFC_DB) {
+                setDefaultId();
+                return;
+            }
+
             try {
                 const response = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
-                    VFC_DB.BORROWERS_ID
+                    VFC_DB.BORROWERS_ID,
+                    [window.AppwriteQuery.limit(1)] // Optimize query load
                 );
                 const nextSeq = (response.total || response.documents.length) + 1;
                 const paddedSeq = String(nextSeq).padStart(3, '0');
@@ -515,12 +530,8 @@
                     borrowerIdField.value = `VFC/${paddedSeq}/${currentYear}`;
                 }
             } catch (e) {
-                console.error("Error generating ID:", e);
-                if (issuedBy === 'Retailer' && retailerCode) {
-                    borrowerIdField.value = `${retailerCode}/001/${currentYear}`;
-                } else {
-                    borrowerIdField.value = `VFC/001/${currentYear}`;
-                }
+                console.warn("Could not fetch remote count, using fallback ID:", e);
+                setDefaultId();
             }
         }
 
