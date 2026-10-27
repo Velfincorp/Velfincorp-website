@@ -7,11 +7,11 @@ const { Client, Databases, Storage, ID, Query } = Appwrite;
 const hostname = window.location.hostname;
 const isLive = hostname === 'velfincorp.com' || hostname === 'www.velfincorp.com';
 
-// லைவ் மற்றும் டெஸ்ட் டேட்டாபேஸ் ஐடிகள் (தேவைப்பட்டால் டெஸ்டிற்கு தனி டேட்டாபேஸ் ஐடியை இங்கு மாற்றிக்கொள்ளலாம்)
-const activeDbId = isLive ? '6ad71cc60012c0f125b9' : '6ad71cc60012c0f125b9'; 
+// லைவ் மற்றும் டெஸ்ட் டேட்டாபேஸ் ஐடிகள்
+const activeDbId = '6ad71cc60012c0f125b9'; 
 
 const client = new Client()
-    .setEndpoint('https://cloud.appwrite.io/v1')  
+    .setEndpoint('https://sfo.cloud.appwrite.io/v1')  
     .setProject('6ad71a29000d4bde5d4e');  
 
 const databases = new Databases(client);
