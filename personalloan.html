@@ -5,34 +5,19 @@
         window.location.replace('login.html');
     }
 
-    // Appwrite Functions இன்ஸ்டன்ஸை உருவாக்குதல்
-    let appwriteFunctionsInstance = null;
-    try {
-        if (window.appwriteClient) {
-            appwriteFunctionsInstance = new window.Appwrite.Functions(window.appwriteClient);
-        } else if (window.Appwrite && typeof VFC_DB !== 'undefined') {
-            const client = new window.Appwrite.Client()
-                .setEndpoint(VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1')
-                .setProject(VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e');
-            appwriteFunctionsInstance = new window.Appwrite.Functions(client);
-        }
-    } catch (err) {
-        console.error("Error initializing Appwrite Functions:", err);
-    }
-
     window.addEventListener('DOMContentLoaded', async () => {
-        const year = new Date().getFullYear();
-        const loanIdEl = document.getElementById('Loan_ID');
-        if (loanIdEl) {
-            loanIdEl.value = "VPL/022/" + year;
-        }
-
-        const borrowerSelect = document.getElementById('Borrowers_Details');
-        if (!borrowerSelect) return;
-
         try {
+            const year = new Date().getFullYear();
+            const loanIdEl = document.getElementById('Loan_ID');
+            if (loanIdEl) {
+                loanIdEl.value = "VPL/022/" + year;
+            }
+
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            if (!borrowerSelect) return;
+
             if (typeof VFC_DB === 'undefined' || !window.appwriteDatabases) {
-                console.error("Database configuration missing.");
+                console.warn("Appwrite or VFC_DB configuration missing.");
                 borrowerSelect.innerHTML = '<option value="">-Config Missing-</option>';
                 return;
             }
@@ -56,193 +41,204 @@
             }
         } catch (e) {
             console.error("Error loading borrowers:", e);
-            borrowerSelect.innerHTML = '<option value="">-Error Loading Borrowers-</option>';
         }
     });
 
     function calculatePersonalLoan() {
-        const loanAmountEl = document.getElementById('Loan_Amount');
-        const loanTypeEl = document.getElementById('Loan_Type');
-        if (!loanAmountEl || !loanTypeEl) return;
+        try {
+            const loanAmountEl = document.getElementById('Loan_Amount');
+            const loanTypeEl = document.getElementById('Loan_Type');
+            if (!loanAmountEl || !loanTypeEl) return;
 
-        const loanAmount = parseFloat(loanAmountEl.value) || 0;
-        const loanType = loanTypeEl.value;
+            const loanAmount = parseFloat(loanAmountEl.value) || 0;
+            const loanType = loanTypeEl.value;
 
-        if (loanAmount > 0) {
-            const deduction = loanAmount * 0.15;
-            const disbursed = loanAmount - deduction;
-            
-            if (document.getElementById('Disbursed_Amount')) document.getElementById('Disbursed_Amount').value = disbursed.toFixed(2);
-            if (document.getElementById('Document_Charge')) document.getElementById('Document_Charge').value = 50;
+            if (loanAmount > 0) {
+                const deduction = loanAmount * 0.15;
+                const disbursed = loanAmount - deduction;
+                
+                if (document.getElementById('Disbursed_Amount')) document.getElementById('Disbursed_Amount').value = disbursed.toFixed(2);
+                if (document.getElementById('Document_Charge')) document.getElementById('Document_Charge').value = 50;
 
-            let tenure = 10;
-            let installment = 0;
+                let tenure = 10;
+                let installment = 0;
 
-            if (loanType === "Weekly") {
-                tenure = 10;
-                installment = loanAmount * 0.10;
-            } else if (loanType === "Daily") {
-                tenure = 100;
-                installment = loanAmount / 100;
-            } else if (loanType === "Monthly") {
-                tenure = 5;
-                installment = loanAmount / 5;
+                if (loanType === "Weekly") {
+                    tenure = 10;
+                    installment = loanAmount * 0.10;
+                } else if (loanType === "Daily") {
+                    tenure = 100;
+                    installment = loanAmount / 100;
+                } else if (loanType === "Monthly") {
+                    tenure = 5;
+                    installment = loanAmount / 5;
+                }
+
+                if (document.getElementById('Tenure')) document.getElementById('Tenure').value = tenure;
+                if (document.getElementById('Installment_Amount')) document.getElementById('Installment_Amount').value = installment.toFixed(2);
             }
-
-            if (document.getElementById('Tenure')) document.getElementById('Tenure').value = tenure;
-            if (document.getElementById('Installment_Amount')) document.getElementById('Installment_Amount').value = installment.toFixed(2);
+        } catch (err) {
+            console.error("Calculation error:", err);
         }
     }
 
     async function validatePersonalLoan(event) {
         if (event) event.preventDefault();
-        
-        const loanAmount = parseFloat(document.getElementById('Loan_Amount')?.value) || 0;
-        const loanType = document.getElementById('Loan_Type')?.value;
-        const borrowerSelect = document.getElementById('Borrowers_Details');
-        const customerName = borrowerSelect?.value;
-        const customerPhone = borrowerSelect?.options[borrowerSelect.selectedIndex]?.dataset.phone || "8778003840";
-        const loanId = document.getElementById('Loan_ID')?.value;
-        const emiAmount = document.getElementById('Installment_Amount')?.value;
-        const tenure = document.getElementById('Tenure')?.value;
-
-        if (loanAmount <= 0 || !customerName || !loanType) {
-            alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
-            return false;
-        }
-
         try {
-            const activeLoans = await window.appwriteDatabases.listDocuments(
-                VFC_DB.DB_ID,
-                VFC_DB.LOANS_ID,
-                [
-                    window.appwriteQuery.equal('borrower_name', customerName),
-                    window.appwriteQuery.equal('status', 'ACTIVE')
-                ]
-            );
+            const loanAmount = parseFloat(document.getElementById('Loan_Amount')?.value) || 0;
+            const loanType = document.getElementById('Loan_Type')?.value;
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            const customerName = borrowerSelect?.value;
+            const customerPhone = borrowerSelect?.options[borrowerSelect.selectedIndex]?.dataset.phone || "8778003840";
+            const loanId = document.getElementById('Loan_ID')?.value;
+            const emiAmount = document.getElementById('Installment_Amount')?.value;
+            const tenure = document.getElementById('Tenure')?.value;
 
-            if (activeLoans.total > 0) {
-                alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. புதிய லோன் வழங்க முடியாது!");
+            if (loanAmount <= 0 || !customerName || !loanType) {
+                alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
                 return false;
             }
-        } catch (err) {
-            console.error("Error checking active loans:", err);
-        }
 
-        try {
-            const loanPayload = {
-                loan_id: loanId,
-                borrower_name: customerName,
-                phone_number: customerPhone,
-                loan_type: loanType,
-                loan_amount: loanAmount.toString(),
-                disbursed_amount: document.getElementById('Disbursed_Amount')?.value || '0',
-                installment_amount: emiAmount,
-                tenure: tenure?.toString() || '0',
-                status: document.getElementById('Status')?.value || 'ACTIVE',
-                loan_date: new Date().toLocaleDateString(),
-                loan_category: "Personal"
-            };
-
-            await window.appwriteDatabases.createDocument(
-                VFC_DB.DB_ID,
-                VFC_DB.LOANS_ID,
-                window.AppwriteID.unique(),
-                loanPayload
-            );
-            console.log("Personal Loan saved to Appwrite Database!");
-        } catch (err) {
-            console.error("Error saving loan to database:", err);
-            alert("Database save failed: " + err.message);
-            return false;
-        }
-
-        let cleanMobile = customerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
-        if (cleanMobile.length > 10) {
-            cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
-        }
-        const finalMobile = "91" + cleanMobile;
-
-        const today = new Date();
-        const daysMap = { 0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday" };
-        const loanDay = daysMap[today.getDay()];
-        const loanDateStr = today.toLocaleDateString('en-GB');
-
-        let previousDayText = "முந்தைய நாள் இரவு 12:00 மணிக்கு முன்பு";
-        const prevDayMap = {
-            "Monday": "ஞாயிற்றுக்கிழமை இரவு 12:00 மணி (அதாவது திங்கட்கிழமை தொடங்குவதற்கு முன்பு)",
-            "Tuesday": "திங்கட்கிழமை இரவு 12:00 மணி (அதாவது செவ்வாய்க்கிழமை தொடங்குவதற்கு முன்பு)",
-            "Wednesday": "செவ்வாய்க்கிழமை இரவு 12:00 மணி (அதாவது புதன்கிழமை தொடங்குவதற்கு முன்பு)",
-            "Thursday": "புதன்கிழமை இரவு 12:00 மணி (அதாவது வியாழக்கிழமை தொடங்குவதற்கு முன்பு)",
-            "Friday": "வியாழக்கிழமை இரவு 12:00 மணி (அதாவது வெள்ளிக்கிழமை தொடங்குவதற்கு முன்பு)",
-            "Saturday": "வெள்ளிக்கிழமை இரவு 12:00 மணி (அதாவது சனிக்கிழமை தொடங்குவதற்கு முன்பு)",
-            "Sunday": "சனிக்கிழமை இரவு 12:00 மணி (அதாவது ஞாயிற்றுக்கிழமை தொடங்குவதற்கு முன்பு)"
-        };
-        if (prevDayMap[loanDay]) {
-            previousDayText = prevDayMap[loanDay];
-        }
-
-        let templateName = "";
-        let customComponents = {};
-
-        if (loanType === "Daily") {
-            templateName = "vel_fin_daily_welcome";
-            customComponents = {
-                "body_1": { "type": "text", "value": customerName },
-                "body_2": { "type": "text", "value": loanId },
-                "body_3": { "type": "text", "value": loanAmount.toString() },
-                "body_4": { "type": "text", "value": emiAmount.toString() },
-                "body_5": { "type": "text", "value": tenure.toString() },
-                "body_6": { "type": "text", "value": loanDay },
-                "body_7": { "type": "text", "value": loanDateStr }
-            };
-        } else if (loanType === "Weekly") {
-            templateName = "vel_fin_weekly_welcome";
-            customComponents = {
-                "body_1": { "type": "text", "value": customerName },
-                "body_2": { "type": "text", "value": loanId },
-                "body_3": { "type": "text", "value": loanAmount.toString() },
-                "body_4": { "type": "text", "value": emiAmount.toString() },
-                "body_5": { "type": "text", "value": tenure.toString() },
-                "body_6": { "type": "text", "value": loanDay },
-                "body_7": { "type": "text", "value": loanDateStr },
-                "body_8": { "type": "text", "value": previousDayText }
-            };
-        } else if (loanType === "Monthly") {
-            templateName = "vel_fin_monthly_welcome";
-            const loanDayNum = String(today.getDate()).padStart(2, '0');
-            customComponents = {
-                "body_1": { "type": "text", "value": customerName },
-                "body_2": { "type": "text", "value": loanId },
-                "body_3": { "type": "text", "value": loanAmount.toString() },
-                "body_4": { "type": "text", "value": emiAmount.toString() },
-                "body_5": { "type": "text", "value": tenure.toString() },
-                "body_6": { "type": "text", "value": loanDateStr },
-                "body_7": { "type": "text", "value": loanDayNum }
-            };
-        }
-
-        try {
-            if (!appwriteFunctionsInstance) {
-                throw new Error("Appwrite Functions instance not initialized.");
+            let appwriteFunctionsInstance = null;
+            try {
+                if (window.appwriteClient) {
+                    appwriteFunctionsInstance = new window.Appwrite.Functions(window.appwriteClient);
+                } else if (window.Appwrite && typeof VFC_DB !== 'undefined') {
+                    const client = new window.Appwrite.Client()
+                        .setEndpoint(VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1')
+                        .setProject(VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e');
+                    appwriteFunctionsInstance = new window.Appwrite.Functions(client);
+                }
+            } catch (err) {
+                console.error("Appwrite functions init error:", err);
             }
 
-            await appwriteFunctionsInstance.createExecution(
-                '6adb02310009b131da2d',
-                JSON.stringify({
-                    mobile: finalMobile,
-                    templateName: templateName,
-                    customComponents: customComponents
-                })
-            );
+            try {
+                const activeLoans = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    [
+                        window.appwriteQuery.equal('borrower_name', customerName),
+                        window.appwriteQuery.equal('status', 'ACTIVE')
+                    ]
+                );
 
-            alert("Personal loan successfully saved to Cloud Database and Welcome Message sent automatically via WhatsApp!");
+                if (activeLoans.total > 0) {
+                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. புதிய லோன் வழங்க முடியாது!");
+                    return false;
+                }
+            } catch (err) {
+                console.error("Error checking active loans:", err);
+            }
+
+            try {
+                const loanPayload = {
+                    loan_id: loanId,
+                    borrower_name: customerName,
+                    phone_number: customerPhone,
+                    loan_type: loanType,
+                    loan_amount: loanAmount.toString(),
+                    disbursed_amount: document.getElementById('Disbursed_Amount')?.value || '0',
+                    installment_amount: emiAmount,
+                    tenure: tenure?.toString() || '0',
+                    status: document.getElementById('Status')?.value || 'ACTIVE',
+                    loan_date: new Date().toLocaleDateString(),
+                    loan_category: "Personal"
+                };
+
+                await window.appwriteDatabases.createDocument(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    window.AppwriteID.unique(),
+                    loanPayload
+                );
+            } catch (err) {
+                console.error("Error saving loan to database:", err);
+                alert("Database save failed: " + err.message);
+                return false;
+            }
+
+            let cleanMobile = customerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
+            if (cleanMobile.length > 10) {
+                cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
+            }
+            const finalMobile = "91" + cleanMobile;
+
+            const today = new Date();
+            const daysMap = { 0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday" };
+            const loanDay = daysMap[today.getDay()];
+            const loanDateStr = today.toLocaleDateString('en-GB');
+
+            let previousDayText = "முந்தைய நாள் இரவு 12:00 மணிக்கு முன்பு";
+            const prevDayMap = {
+                "Monday": "ஞாயிற்றுக்கிழமை இரவு 12:00 மணி (அதாவது திங்கட்கிழமை தொடங்குவதற்கு முன்பு)",
+                "Tuesday": "திங்கட்கிழமை இரவு 12:00 மணி (அதாவது செவ்வாய்க்கிழமை தொடங்குவதற்கு முன்பு)",
+                "Wednesday": "செவ்வாய்க்கிழமை இரவு 12:00 மணி (அதாவது புதன்கிழமை தொடங்குவதற்கு முன்பு)",
+                "Thursday": "புதன்கிழமை இரவு 12:00 மணி (அதாவது வியாழக்கிழமை தொடங்குவதற்கு முன்பு)",
+                "Friday": "வியாழக்கிழமை இரவு 12:00 மணி (அதாவது வெள்ளிக்கிழமை தொடங்குவதற்கு முன்பு)",
+                "Saturday": "வெள்ளிக்கிழமை இரவு 12:00 மணி (அதாவது சனிக்கிழமை தொடங்குவதற்கு முன்பு)",
+                "Sunday": "சனிக்கிழமை இரவு 12:00 மணி (அதாவது ஞாயிற்றுக்கிழமை தொடங்குவதற்கு முன்பு)"
+            };
+            if (prevDayMap[loanDay]) {
+                previousDayText = prevDayMap[loanDay];
+            }
+
+            let templateName = "";
+            let customComponents = {};
+
+            if (loanType === "Daily") {
+                templateName = "vel_fin_daily_welcome";
+                customComponents = {
+                    "body_1": { "type": "text", "value": customerName },
+                    "body_2": { "type": "text", "value": loanId },
+                    "body_3": { "type": "text", "value": loanAmount.toString() },
+                    "body_4": { "type": "text", "value": emiAmount.toString() },
+                    "body_5": { "type": "text", "value": tenure.toString() },
+                    "body_6": { "type": "text", "value": loanDay },
+                    "body_7": { "type": "text", "value": loanDateStr }
+                };
+            } else if (loanType === "Weekly") {
+                templateName = "vel_fin_weekly_welcome";
+                customComponents = {
+                    "body_1": { "type": "text", "value": customerName },
+                    "body_2": { "type": "text", "value": loanId },
+                    "body_3": { "type": "text", "value": loanAmount.toString() },
+                    "body_4": { "type": "text", "value": emiAmount.toString() },
+                    "body_5": { "type": "text", "value": tenure.toString() },
+                    "body_6": { "type": "text", "value": loanDay },
+                    "body_7": { "type": "text", "value": loanDateStr },
+                    "body_8": { "type": "text", "value": previousDayText }
+                };
+            } else if (loanType === "Monthly") {
+                templateName = "vel_fin_monthly_welcome";
+                const loanDayNum = String(today.getDate()).padStart(2, '0');
+                customComponents = {
+                    "body_1": { "type": "text", "value": customerName },
+                    "body_2": { "type": "text", "value": loanId },
+                    "body_3": { "type": "text", "value": loanAmount.toString() },
+                    "body_4": { "type": "text", "value": emiAmount.toString() },
+                    "body_5": { "type": "text", "value": tenure.toString() },
+                    "body_6": { "type": "text", "value": loanDateStr },
+                    "body_7": { "key": "val", "type": "text", "value": loanDayNum }
+                };
+            }
+
+            if (appwriteFunctionsInstance) {
+                await appwriteFunctionsInstance.createExecution(
+                    '6adb02310009b131da2d',
+                    JSON.stringify({
+                        mobile: finalMobile,
+                        templateName: templateName,
+                        customComponents: customComponents
+                    })
+                );
+                alert("Personal loan successfully saved and WhatsApp message sent!");
+            }
         } catch (error) {
-            console.error("Error triggering WhatsApp message via Appwrite Function:", error);
-            alert("Personal loan saved to database, but automated WhatsApp welcome message failed: " + error.message);
+            console.error("Submission error:", error);
+            alert("Error: " + error.message);
         }
-
         document.getElementById('personalLoanForm')?.reset();
-        return true;
+        return false;
     }
 </script>
