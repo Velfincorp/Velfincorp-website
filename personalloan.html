@@ -1,67 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Loan - Vel Fin Corp</title>
-    <!-- Tailwind CSS for clean fintech UI design -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Appwrite SDK -->
+    <!-- Appwrite SDK CDN -->
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
-    <script>
-        // VFC Database Configuration
-        const VFC_DB = {
-            ENDPOINT: 'https://cloud.appwrite.io/v1',
-            PROJECT_ID: '6ad71a290004bde5d4e',
-            DB_ID: 'YOUR_DATABASE_ID',
-            BORROWERS_ID: 'YOUR_BORROWERS_COLLECTION_ID',
-            LOANS_ID: 'YOUR_LOANS_COLLECTION_ID'
-        };
-
-        const client = new window.Appwrite.Client()
-            .setEndpoint(VFC_DB.ENDPOINT)
-            .setProject(VFC_DB.PROJECT_ID);
-        
-        window.appwriteClient = client;
-        window.appwriteDatabases = new window.Appwrite.Databases(client);
-        window.appwriteQuery = window.Appwrite.Query;
-        window.AppwriteID = window.Appwrite.ID;
-    </script>
+    <!-- Your actual database configuration file -->
+    <script src="db.js"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Navigation Header with Proper Links -->
-    <nav class="bg-blue-900 text-white shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="font-bold text-xl">VEL FIN CORP</div>
-            <div class="space-x-4 flex items-center">
-                <a href="dashboard.html" class="hover:underline">Dashboard</a>
-                <a href="borrowers.html" class="hover:underline">Borrowers</a>
-                <a href="personalloan.html" class="underline font-semibold">Personal Loan</a>
-                <button onclick="handleLogout()" class="bg-red-600 px-3 py-1 rounded text-sm hover:bg-red-700">Logout</button>
-            </div>
+<body style="font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
+            <h2 style="color: #333; margin: 0;">Personal Loan Entry</h2>
+            <button onclick="handleLogout()" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Logout</button>
         </div>
-    </nav>
-
-    <!-- Main Content Container -->
-    <div class="max-w-3xl mx-auto mt-8 bg-white p-8 rounded-lg shadow-md">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Personal Loan Entry</h2>
         
-        <form id="personalLoanForm" onsubmit="return validatePersonalLoan(event)" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Loan ID:</label>
-                <input type="text" id="Loan_ID" readonly class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md p-2 text-gray-600">
+        <form id="personalLoanForm" onsubmit="return validatePersonalLoan(event)">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Loan ID:</label>
+                <input type="text" id="Loan_ID" readonly style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; background: #e9ecef;">
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Borrower Details:</label>
-                <select id="Borrowers_Details" class="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Borrower Details:</label>
+                <select id="Borrowers_Details" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
                     <option value="">Loading Borrowers...</option>
                 </select>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Loan Type:</label>
-                <select id="Loan_Type" onchange="calculatePersonalLoan()" class="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Loan Type:</label>
+                <select id="Loan_Type" onchange="calculatePersonalLoan()" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
                     <option value="">-Select Type-</option>
                     <option value="Daily">Daily</option>
                     <option value="Weekly">Weekly</option>
@@ -69,42 +39,37 @@
                 </select>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Loan Amount:</label>
-                <input type="number" id="Loan_Amount" oninput="calculatePersonalLoan()" placeholder="Enter loan amount" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Loan Amount:</label>
+                <input type="number" id="Loan_Amount" oninput="calculatePersonalLoan()" placeholder="Enter loan amount" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Disbursed Amount:</label>
-                    <input type="text" id="Disbursed_Amount" readonly class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md p-2">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Document Charge:</label>
-                    <input type="text" id="Document_Charge" readonly class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md p-2">
-                </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Disbursed Amount:</label>
+                <input type="text" id="Disbursed_Amount" readonly style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; background: #e9ecef;">
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Tenure:</label>
-                    <input type="text" id="Tenure" readonly class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md p-2">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Installment Amount (EMI):</label>
-                    <input type="text" id="Installment_Amount" readonly class="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md p-2">
-                </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Document Charge:</label>
+                <input type="text" id="Document_Charge" readonly style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; background: #e9ecef;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Tenure:</label>
+                <input type="text" id="Tenure" readonly style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; background: #e9ecef;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Installment Amount (EMI):</label>
+                <input type="text" id="Installment_Amount" readonly style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; background: #e9ecef;">
             </div>
 
             <input type="hidden" id="Status" value="ACTIVE">
 
-            <div class="pt-4">
-                <button type="submit" class="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-700 transition duration-200">Save Loan & Send WhatsApp</button>
-            </div>
+            <button type="submit" style="width: 100%; background: #28a745; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold;">Save Loan & Send WhatsApp</button>
         </form>
     </div>
 
-    <!-- Script Logic with WhatsApp & Appwrite Integration -->
     <script>
         function handleLogout() {
             sessionStorage.clear();
@@ -112,7 +77,6 @@
             window.location.replace('login.html');
         }
 
-        // Appwrite Functions instance initialization
         let appwriteFunctionsInstance = null;
         try {
             if (window.appwriteClient) {
@@ -163,6 +127,7 @@
                 }
             } catch (e) {
                 console.error("Error loading borrowers:", e);
+                borrowerSelect.innerHTML = '<option value="">-Error Loading Borrowers-</option>';
             }
         });
 
