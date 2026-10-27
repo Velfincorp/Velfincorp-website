@@ -4,7 +4,7 @@
 const { Client, Databases, Storage, ID, Query } = Appwrite;
 
 const client = new Client()
-    .setEndpoint('https://sfo.cloud.appwrite.io/v1') 
+    .setEndpoint('https://cloud.appwrite.io/v1') 
     .setProject('6ad71a29000d4bde5d4e'); 
 
 const databases = new Databases(client);
