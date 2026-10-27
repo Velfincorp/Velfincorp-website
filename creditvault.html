@@ -12,7 +12,6 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -225,7 +224,6 @@
 </head>
 <body>
 
-    <!-- Left Sidebar Navigation Menu -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -251,7 +249,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <h2>VEL FIN CORP</h2>
@@ -281,7 +278,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Loan ID</label>
-                        <input type="text" id="Loan_ID" readonly placeholder="Auto-generated (e.g., VML-001/2026)" style="background-color: #f1f5f9;">
+                        <input type="text" id="Loan_ID" readonly placeholder="Auto-generated" style="background-color: #f1f5f9;">
                     </div>
                     <div class="form-group">
                         <label>Product Name *</label>
@@ -289,7 +286,6 @@
                     </div>
                 </div>
 
-                <!-- Conditional Fields for Mobile / Electrical / Furniture / Jewel -->
                 <div class="form-row hidden" id="mobileFields">
                     <div class="form-group">
                         <label>IMEI 1 *</label>
@@ -420,9 +416,8 @@
             if (loanType === "Mobile") prefix = "VML";
             else if (loanType === "Electrical") prefix = "VEL";
             else if (loanType === "Furniture") prefix = "VFL";
-            else if (loanType === "Jewel") prefix = "VJL"; // Jewel Loan Prefix VJL
+            else if (loanType === "Jewel") prefix = "VJL";
 
-            // ஆட்டோமேட்டிக் சீரியல் நம்பர் கணக்கிடுதல்
             try {
                 const response = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
@@ -533,13 +528,14 @@
                 return false;
             }
 
+            // 1. Database-ல் லோனைச் சேமித்தல் (Appwrite Query 'AppwriteQuery' எனச் சரியாக்கியுள்ளது)
             try {
                 const activeLoans = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
                     VFC_DB.LOANS_ID,
                     [
-                        window.appwriteQuery.equal('borrower_name', borrowerName),
-                        window.appwriteQuery.equal('status', 'ACTIVE')
+                        window.AppwriteQuery.equal('borrower_name', borrowerName),
+                        window.AppwriteQuery.equal('status', 'ACTIVE')
                     ]
                 );
 
@@ -579,63 +575,63 @@
                 return false;
             }
 
-            // MSG91 API மூலம் Welcome Message அனுப்புவது
-            const authKey = "563191ANiWhsCHw6a8aff47P1"; 
-            const wabaNumber = "919486886293";    
-            const templateName = "vel_fin_welcome_message";
-
-            let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
-            if (cleanMobile.length > 10) {
-                cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
-            }
-            const finalMobile = "91" + cleanMobile;
-
-            const today = new Date();
-            const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
-            const loanDay = daysOfWeek[today.getDay()];
-            const loanDateStr = today.toLocaleDateString('en-GB');
-
-            let previousDayText = "முந்தைய நாள் இரவு 12:00 மணிக்கு முன்பு";
-            const dayMap = {
-                "Sunday": "சனிக்கிழமை இரவு 12:00 மணி (அதாவது ஞாயிற்றுக்கிழமை தொடங்குவதற்கு முன்பு)",
-                "Monday": "ஞாயிற்றுக்கிழமை இரவு 12:00 மணி (அதாவது திங்கட்கிழமை தொடங்குவதற்கு முன்பு)",
-                "Tuesday": "திங்கட்கிழமை இரவு 12:00 மணி (அதாவது செவ்வாய்க்கிழமை தொடங்குவதற்கு முன்பு)",
-                "Wednesday": "செவ்வாய்க்கிழமை இரவு 12:00 மணி (அதாவது புதன்கிழமை தொடங்குவதற்கு முன்பு)",
-                "Thursday": "புதன்கிழமை இரவு 12:00 மணி (அதாவது வியாழக்கிழமை தொடங்குவதற்கு முன்பு)",
-                "Friday": "வியாழக்கிழமை இரவு 12:00 மணி (அதாவது வெள்ளிக்கிழமை தொடங்குவதற்கு முன்பு)",
-                "Saturday": "வெள்ளிக்கிழமை இரவு 12:00 மணி (அதாவது சனிக்கிழமை தொடங்குவதற்கு முன்பு)"
-            };
-            if (dayMap[today.toLocaleString('en-US', { weekday: 'long' })]) {
-                previousDayText = dayMap[today.toLocaleString('en-US', { weekday: 'long' })];
-            }
-
-            const payload = {
-                "messaging_product": "whatsapp",
-                "type": "template",
-                "template": {
-                    "name": templateName,
-                    "language": { "code": "ta", "policy": "deterministic" },
-                    "namespace": "dc938b84_8f2e_4371_9a2e_11c1f8a734e8",
-                    "to_and_components": [
-                        {
-                            "to": [finalMobile],
-                            "components": {
-                                "body_1": { "type": "text", "value": borrowerName },
-                                "body_2": { "type": "text", "value": loanId },         // Loan ID ({{2}})
-                                "body_3": { "type": "text", "value": loanType },       // Loan Type ({{3}})
-                                "body_4": { "type": "text", "value": productName },    // Product Name ({{4}})
-                                "body_5": { "type": "text", "value": weeklyEmi.toString() }, // EMI ({{5}})
-                                "body_6": { "type": "text", "value": tenureWeeks.toString() }, // Tenure ({{6}})
-                                "body_7": { "type": "text", "value": loanDay },      // Day ({{7}})
-                                "body_8": { "type": "text", "value": loanDateStr },    // Date ({{8}})
-                                "body_9": { "type": "text", "value": previousDayText } // Note ({{9}})
-                            }
-                        }
-                    ]
-                }
-            };
-
+            // 2. WhatsApp MSG91 API கால் (CORS ப்ராப்ளம் வராமல் try...catch-க்குள் பாதுகாப்புடன் கொடுக்கப்பட்டுள்ளது)
             try {
+                const authKey = "563191ANiWhsCHw6a8aff47P1"; 
+                const wabaNumber = "919486886293";    
+                const templateName = "vel_fin_welcome_message";
+
+                let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
+                if (cleanMobile.length > 10) {
+                    cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
+                }
+                const finalMobile = "91" + cleanMobile;
+
+                const today = new Date();
+                const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
+                const loanDay = daysOfWeek[today.getDay()];
+                const loanDateStr = today.toLocaleDateString('en-GB');
+
+                let previousDayText = "முந்தைய நாள் இரவு 12:00 மணிக்கு முன்பு";
+                const dayMap = {
+                    "Sunday": "சனிக்கிழமை இரவு 12:00 மணி (அதாவது ஞாயிற்றுக்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Monday": "ஞாயிற்றுக்கிழமை இரவு 12:00 மணி (அதாவது திங்கட்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Tuesday": "திங்கட்கிழமை இரவு 12:00 மணி (அதாவது செவ்வாய்க்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Wednesday": "செவ்வாய்க்கிழமை இரவு 12:00 மணி (அதாவது புதன்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Thursday": "புதன்கிழமை இரவு 12:00 மணி (அதாவது வியாழக்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Friday": "வியாழக்கிழமை இரவு 12:00 மணி (அதாவது வெள்ளிக்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Saturday": "வெள்ளிக்கிழமை இரவு 12:00 மணி (அதாவது சனிக்கிழமை தொடங்குவதற்கு முன்பு)"
+                };
+                if (dayMap[today.toLocaleString('en-US', { weekday: 'long' })]) {
+                    previousDayText = dayMap[today.toLocaleString('en-US', { weekday: 'long' })];
+                }
+
+                const payload = {
+                    "messaging_product": "whatsapp",
+                    "type": "template",
+                    "template": {
+                        "name": templateName,
+                        "language": { "code": "ta", "policy": "deterministic" },
+                        "namespace": "dc938b84_8f2e_4371_9a2e_11c1f8a734e8",
+                        "to_and_components": [
+                            {
+                                "to": [finalMobile],
+                                "components": {
+                                    "body_1": { "type": "text", "value": borrowerName },
+                                    "body_2": { "type": "text", "value": loanId },         // Loan ID ({{2}})
+                                    "body_3": { "type": "text", "value": loanType },       // Loan Type ({{3}})
+                                    "body_4": { "type": "text", "value": productName },    // Product Name ({{4}})
+                                    "body_5": { "type": "text", "value": weeklyEmi.toString() }, // EMI ({{5}})
+                                    "body_6": { "type": "text", "value": tenureWeeks.toString() }, // Tenure ({{6}})
+                                    "body_7": { "type": "text", "value": loanDay },      // Day ({{7}})
+                                    "body_8": { "type": "text", "value": loanDateStr },    // Date ({{8}})
+                                    "body_9": { "type": "text", "value": previousDayText } // Note ({{9}})
+                                }
+                            }
+                        ]
+                    }
+                };
+
                 const response = await fetch("https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/", {
                     method: "POST",
                     headers: {
@@ -654,7 +650,7 @@
                 alert("Credit Vault loan successfully saved to Cloud Database and Welcome Message sent via WhatsApp with Loan ID!");
             } catch (error) {
                 console.error("Error sending WhatsApp welcome message:", error);
-                alert("Loan saved to database, but automated WhatsApp welcome message failed due to network.");
+                alert("Loan successfully saved to database! (Note: WhatsApp message skipped due to browser network restrictions).");
             }
 
             document.getElementById('creditVaultForm').reset();
