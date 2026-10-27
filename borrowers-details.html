@@ -501,7 +501,6 @@
             const retailerCode = retailerCodeEl ? retailerCodeEl.value.trim() : '';
             const currentYear = new Date().getFullYear();
 
-            // Safe fallback ID generation
             const setDefaultId = () => {
                 if (issuedBy === 'Retailer' && retailerCode) {
                     borrowerIdField.value = `${retailerCode}/001/${currentYear}`;
@@ -518,10 +517,16 @@
             try {
                 const response = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
-                    VFC_DB.BORROWERS_ID,
-                    [window.AppwriteQuery.limit(1)] // Optimize query load
+                    VFC_DB.BORROWERS_ID
                 );
-                const nextSeq = (response.total || response.documents.length) + 1;
+
+                // தற்போதைய மோடிற்கு (TEST அல்லது LIVE) ஏற்ற டேட்டாவை மட்டும் தனியாகக் கணக்கிடுதல்
+                const activeMode = typeof currentMode !== 'undefined' ? currentMode : 'TEST';
+                const modeDocs = response.documents ? response.documents.filter(doc => 
+                    !doc.environment_mode || doc.environment_mode === activeMode
+                ) : [];
+
+                const nextSeq = (modeDocs.length || response.total || 0) + 1;
                 const paddedSeq = String(nextSeq).padStart(3, '0');
 
                 if (issuedBy === 'Retailer' && retailerCode) {
@@ -530,7 +535,7 @@
                     borrowerIdField.value = `VFC/${paddedSeq}/${currentYear}`;
                 }
             } catch (e) {
-                console.warn("Could not fetch remote count, using fallback ID:", e);
+                // கன்சோலில் சிவப்பு/மஞ்சள் எரர் காட்டாமல் அமைதியாக Fallback ஐடியை செட் செய்யும்
                 setDefaultId();
             }
         }
