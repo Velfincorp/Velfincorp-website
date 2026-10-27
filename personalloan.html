@@ -141,7 +141,7 @@
                 appwriteFunctionsInstance = new window.Appwrite.Functions(window.appwriteClient);
             } else if (window.Appwrite && typeof VFC_DB !== 'undefined') {
                 const client = new window.Appwrite.Client()
-                    .setEndpoint(VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1')
+                    .setEndpoint(VFC_DB.ENDPOINT || VFC_DB.API_ENDPOINT || 'https://cloud.appwrite.io/v1')
                     .setProject(VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e');
                 appwriteFunctionsInstance = new window.Appwrite.Functions(client);
             }
@@ -166,9 +166,12 @@
                     return;
                 }
 
+                const dbId = VFC_DB.DB_ID || VFC_DB.DATABASE_ID;
+                const borrowerColId = VFC_DB.BORROWERS_ID || VFC_DB.BORROWERS_COLLECTION_ID || VFC_DB.BORROWERS;
+
                 const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.BORROWERS_ID
+                    dbId,
+                    borrowerColId
                 );
                 const borrowers = response.documents;
                 if (borrowers && borrowers.length > 0) {
@@ -176,8 +179,8 @@
                     borrowers.forEach(b => {
                         const opt = document.createElement('option');
                         opt.value = b.full_name;
-                        opt.dataset.phone = b.phone_number || '';
-                        opt.textContent = `${b.full_name} (${b.borrower_id || ''})`;
+                        opt.dataset.phone = b.phone_number || b.phone || '';
+                        opt.textContent = `${b.full_name} (${b.borrower_id || b.$id || ''})`;
                         borrowerSelect.appendChild(opt);
                     });
                 } else {
@@ -246,14 +249,17 @@
                 const tenure = document.getElementById('Tenure')?.value;
 
                 if (loanAmount <= 0 || !customerName || !loanType) {
-                    alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
+                    alert("Dayavuseythu anaithu vivarangalaiyum sariyaaga nirappavum!");
                     return false;
                 }
 
+                const dbId = VFC_DB.DB_ID || VFC_DB.DATABASE_ID;
+                const loansColId = VFC_DB.LOANS_ID || VFC_DB.LOANS_COLLECTION_ID || VFC_DB.LOANS;
+
                 try {
                     const activeLoans = await window.appwriteDatabases.listDocuments(
-                        VFC_DB.DB_ID,
-                        VFC_DB.LOANS_ID,
+                        dbId,
+                        loansColId,
                         [
                             window.appwriteQuery.equal('borrower_name', customerName),
                             window.appwriteQuery.equal('status', 'ACTIVE')
@@ -261,7 +267,7 @@
                     );
 
                     if (activeLoans.total > 0) {
-                        alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. புதிய லோன் வழங்க முடியாது!");
+                        alert("Etcharikkai: Intha vadikkaiyalarkku etharkenum nadamuraiyil (ACTIVE) loan ullathu. Puthiya loan vazhanga mudiathu!");
                         return false;
                     }
                 } catch (err) {
@@ -284,8 +290,8 @@
                     };
 
                     await window.appwriteDatabases.createDocument(
-                        VFC_DB.DB_ID,
-                        VFC_DB.LOANS_ID,
+                        dbId,
+                        loansColId,
                         window.AppwriteID.unique(),
                         loanPayload
                     );
@@ -306,7 +312,7 @@
                 const loanDay = daysMap[today.getDay()];
                 const loanDateStr = today.toLocaleDateString('en-GB');
 
-                let previousDayText = "முந்தைய நாள் இரவு 12:00 மணிக்கு முன்பு";
+                let previousDayText = "Munthai naal iravu 12:00 manikku munpu";
                 const prevDayMap = {
                     "Monday": "ஞாயிற்றுக்கிழமை இரவு 12:00 மணி (அதாவது திங்கட்கிழமை தொடங்குவதற்கு முன்பு)",
                     "Tuesday": "திங்கட்கிழமை இரவு 12:00 மணி (அதாவது செவ்வாய்க்கிழமை தொடங்குவதற்கு முன்பு)",
