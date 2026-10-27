@@ -230,7 +230,7 @@
 </head>
 <body>
 
-    <!-- Left Sidebar Menu -->
+    <!-- Left Sidebar Menu (Fixed borrowers-details.html link) -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -385,7 +385,6 @@
                         opt.dataset.emi = parseFloat(loan.installment_amount || 0);
                         opt.dataset.tenure = parseInt(loan.tenure || 10);
                         opt.dataset.total = parseFloat(loan.loan_amount || 0);
-                        // டேட்டாபேஸில் உள்ள உண்மையான லோன் வகையை (Furniture, Electrical, Mobile, Jewel அல்லது Weekly/Daily) சரியாக எடுத்தல்
                         opt.dataset.loantype = loan.loan_type || 'Weekly';
 
                         selectElement.appendChild(opt);
@@ -472,7 +471,7 @@
 
             const borrowerName = selectedOption.dataset.name;
             const borrowerPhone = selectedOption.dataset.phone || "8778003840";
-            const loanType = selectedOption.dataset.loantype; // e.g., Furniture, Electrical, Mobile, Jewel, Daily, Weekly, Monthly
+            const loanType = selectedOption.dataset.loantype; 
             const loanId = document.getElementById('Loan_ID').value;
             const paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
             const balanceAmount = parseFloat(document.getElementById('Balance_Amount').value) || 0;
@@ -545,7 +544,6 @@
             }
             const finalMobile = "91" + cleanMobile;
 
-            // லோன் வகையைத் துல்லியமாக அமைத்தல் (Furniture, Electrical, Mobile, Jewel அல்லது Personal Loan வகைகள்)
             let loanTypeDisp = loanType; 
             if (loanType.toLowerCase() === 'weekly' || loanType.toLowerCase() === 'daily' || loanType.toLowerCase() === 'monthly') {
                 loanTypeDisp = "Personal Loan (" + loanType + ")";
@@ -569,16 +567,16 @@
             } else {
                 templateName = "vel_fin_payment_receipt";
                 customComponents = {
-                    "body_1": { "type": "text", "value": String(borrowerName) },          // {{1}} பெயர்
-                    "body_2": { "type": "text", "value": String(loanTypeDisp) },          // {{2}} லோன் வகை (Furniture, Electrical, etc.)
-                    "body_3": { "type": "text", "value": String(paidAmount.toFixed(2)) }, // {{3}} செலுத்திய தொகை
-                    "body_4": { "type": "text", "value": String(formattedPayDate) },      // {{4}} தேதி
-                    "body_5": { "type": "text", "value": String(paidInst) },              // {{5}} செலுத்திய தவணை
-                    "body_6": { "type": "text", "value": String(remInst) },               // {{6}} மீதமுள்ள தவணைகள்
-                    "body_7": { "type": "text", "value": String(balanceAmount.toFixed(2)) }, // {{7}} மீதமுள்ள நிலுவை
-                    "body_8": { "type": "text", "value": String(nextDueDateStr) },        // {{8}} அடுத்த தவணை தேதி
-                    "body_9": { "type": "text", "value": String(paymentId) },             // {{9}} ரெசிப்ட் எண்
-                    "body_10": { "type": "text", "value": String(loanId) }                // {{10}} லோன் ஐடி
+                    "body_1": { "type": "text", "value": String(borrowerName) },          
+                    "body_2": { "type": "text", "value": String(loanTypeDisp) },          
+                    "body_3": { "type": "text", "value": String(paidAmount.toFixed(2)) }, 
+                    "body_4": { "type": "text", "value": String(formattedPayDate) },      
+                    "body_5": { "type": "text", "value": String(paidInst) },              
+                    "body_6": { "type": "text", "value": String(remInst) },               
+                    "body_7": { "type": "text", "value": String(balanceAmount.toFixed(2)) }, 
+                    "body_8": { "type": "text", "value": String(nextDueDateStr) },        
+                    "body_9": { "type": "text", "value": String(paymentId) },             
+                    "body_10": { "type": "text", "value": String(loanId) }                
                 };
             }
 
