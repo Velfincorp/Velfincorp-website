@@ -3,12 +3,13 @@
 // Appwrite Web SDK Initialization
 const { Client, Databases, Storage, ID, Query } = Appwrite;
 
-// டொமைன் அடிப்படையில் லைவ் மற்றும் டெஸ்ட் மோடைத் தீர்மானித்தல்
-const hostname = window.location.hostname;
-const isLive = hostname === 'velfincorp.com' || hostname === 'www.velfincorp.com';
-
-// லைவ் மற்றும் டெஸ்ட் டேட்டாபேஸ் ஐடிகள்
-const activeDbId = '6ad71cc60012c0f125b9'; 
+// -----------------------------------------------------------------
+// மோடு மாற்றுவதற்கான பகுதி (Mode Switcher)
+// இப்போது டெஸ்ட் செய்வதால் 'TEST' என இருக்க வேண்டும்.
+// முழுமையாகச் சோதித்து முடித்த பிறகு 'LIVE' என மாற்றிக்கொள்ளலாம்.
+// -----------------------------------------------------------------
+const currentMode = 'TEST'; 
+const isLive = currentMode === 'LIVE';
 
 const client = new Client()
     .setEndpoint('https://sfo.cloud.appwrite.io/v1')  
@@ -19,7 +20,7 @@ const storage = new Storage(client); // ஃபைல் அப்லோடுக
 
 // Vel Fin Corp Database, Collection & Bucket IDs
 const VFC_DB = {
-    DB_ID: activeDbId,
+    DB_ID: '6ad71cc60012c0f125b9',
     BORROWERS_ID: '6ad71e920004bbc106eb',
     LOANS_ID: '6ad71f29001d4ff46c50',
     PAYMENTS_ID: '6ad71ee900312b70ce69',
@@ -36,4 +37,4 @@ window.VFC_DB = VFC_DB;
 window.AppwriteID = ID;
 window.AppwriteQuery = Query;
 
-console.log("Vel Fin Corp Appwrite Initialized (Mode: " + (isLive ? "LIVE (velfincorp.com)" : "TEST (GitHub Pages)") + ")");
+console.log("Vel Fin Corp Appwrite Initialized (Mode: " + (isLive ? "LIVE" : "TEST") + ")");
