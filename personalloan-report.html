@@ -353,6 +353,9 @@
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="PENDING">PENDING</option>
                     <option value="CLOSED">CLOSED</option>
+                    <option value="PAID">PAID</option>
+                    <option value="DELAYED">DELAYED</option>
+                    <option value="OVERDUE">OVERDUE</option>
                 </select>
             </div>
 
@@ -366,7 +369,7 @@
                         <th>Loan Amount</th>
                         <th>Disbursed Amount</th>
                         <th>Installment</th>
-                        <th>Status</th>
+                        <th>Payment Status</th>
                     </tr>
                 </thead>
                 <tbody id="reportTableBody">
@@ -406,7 +409,6 @@
         async function loadReportData() {
             const tbody = document.getElementById('reportTableBody');
             try {
-                // Fetch Loans, Payments and Borrowers simultaneously
                 const [loansRes, paymentsRes, borrowersRes] = await Promise.all([
                     window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID),
                     window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID).catch(() => ({ documents: [] })),
@@ -428,11 +430,52 @@
                     return category === 'Personal' || loanId.startsWith('VPL');
                 });
 
+                // Sort loans by date descending (Newest first)
+                allPersonalLoans.sort((a, b) => {
+                    const dateA = new Date(a.loan_date || a.$createdAt || 0);
+                    const dateB = new Date(b.loan_date || b.$createdAt || 0);
+                    return dateB - dateA;
+                });
+
                 renderTable(allPersonalLoans);
             } catch(error) {
                 console.error("Error loading personal loan reports:", error);
                 tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
             }
+        }
+
+        // Determine Payment Status (Paid, Delayed, Overdue)
+        function getPaymentStatusInfo(loan) {
+            const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id || p.borrower_name === loan.borrower_name);
+            const today = new Date();
+            const loanDate = new Date(loan.loan_date || loan.$createdAt);
+            const diffTime = Math.abs(today - loanDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let intervalDays = 7; // Weekly default
+            if (loan.loan_type === 'Daily') intervalDays = 1;
+            else if (loan.loan_type === 'Monthly') intervalDays = 30;
+
+            const expectedPeriods = Math.floor(diffDays / intervalDays) + 1;
+
+            let totalPaidAmt = 0;
+            loanPayments.forEach(p => {
+                totalPaidAmt += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0);
+            });
+
+            let totalTenure = 10;
+            if (loan.tenure) {
+                const numMatch = loan.tenure.match(/\d+/);
+                if (numMatch) totalTenure = parseInt(numMatch[0]);
+            }
+
+            const installmentAmt = parseFloat(loan.installment_amount || 0);
+            const expectedPaidAmt = installmentAmt * Math.min(expectedPeriods, totalTenure);
+
+            if (loan.status === 'CLOSED') return { label: 'CLOSED', color: '#C53030' };
+            if (totalPaidAmt >= expectedPaidAmt) return { label: 'PAID', color: '#2F855A' };
+            if (diffDays > (loanPayments.length + 1) * intervalDays + intervalDays) return { label: 'OVERDUE', color: '#C53030' };
+            return { label: 'DELAYED', color: '#D69E2E' };
         }
 
         function renderTable(loans) {
@@ -446,7 +489,8 @@
             loans.forEach((loan) => {
                 const tr = document.createElement('tr');
                 tr.onclick = () => showLoanDetails(loan);
-                const statusColor = loan.status === 'CLOSED' ? '#C53030' : (loan.status === 'PENDING' ? '#D69E2E' : '#2F855A');
+                const payStatus = getPaymentStatusInfo(loan);
+
                 tr.innerHTML = `
                     <td><strong>${loan.loan_id || '-'}</strong></td>
                     <td>${loan.borrower_name || '-'}</td>
@@ -455,7 +499,7 @@
                     <td>₹${loan.loan_amount || '0'}</td>
                     <td>₹${loan.disbursed_amount || '0'}</td>
                     <td>₹${loan.installment_amount || '0'}</td>
-                    <td><span style="color: ${statusColor}; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
+                    <td><span style="color: ${payStatus.color}; font-weight: bold;">${payStatus.label}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -472,10 +516,11 @@
                 const loanId = (loan.loan_id || '').toLowerCase();
                 const type = loan.loan_type || 'Weekly';
                 const status = loan.status || 'ACTIVE';
+                const payStatus = getPaymentStatusInfo(loan).label;
 
                 const matchesSearch = name.includes(input) || phone.includes(input) || loanId.includes(input);
                 const matchesType = typeFilter === '' || type === typeFilter;
-                const matchesStatus = statusFilter === '' || status === statusFilter;
+                const matchesStatus = statusFilter === '' || status === statusFilter || payStatus === statusFilter;
 
                 return matchesSearch && matchesType && matchesStatus;
             });
@@ -486,17 +531,18 @@
         // Format Date to Indian format DD/MM/YYYY
         function formatIndianDate(dateStr) {
             if (!dateStr) return '-';
-            // If already in DD/MM/YYYY format or similar
             if (dateStr.includes('/')) {
                 const parts = dateStr.split('/');
-                if (parts.length === 3) {
-                    // Check if format is MM/DD/YYYY
-                    if (parts[0].length <= 2 && parts[2].length === 4) {
-                        // If standard US format mm/dd/yyyy convert to dd/mm/yyyy
-                        return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
-                    }
+                if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
+                    return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
                 }
                 return dateStr;
+            }
+            if (dateStr.includes('-')) {
+                const parts = dateStr.split('-');
+                if (parts.length === 3 && parts[0].length === 4) {
+                    return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+                }
             }
             try {
                 const d = new Date(dateStr);
@@ -517,15 +563,12 @@
             const modal = document.getElementById('loanModal');
             const modalBody = document.getElementById('modalBody');
 
-            // Find borrower ID if available
             const matchedBorrower = allBorrowers.find(b => b.full_name === loan.borrower_name || b.phone_number === loan.phone_number);
             const borrowerIdStr = matchedBorrower && matchedBorrower.borrower_id ? ` (${matchedBorrower.borrower_id})` : '';
             const customerDisplayName = (loan.borrower_name || '-') + borrowerIdStr;
 
-            // Format date to Indian style DD/MM/YYYY
             const formattedDate = formatIndianDate(loan.loan_date);
 
-            // Calculate paid installments and amounts from payment collection records
             const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id || p.borrower_name === loan.borrower_name);
             let paidAmount = 0;
             loanPayments.forEach(p => {
@@ -535,7 +578,6 @@
             const installmentAmt = parseFloat(loan.installment_amount || 0);
             const paidInstallments = installmentAmt > 0 ? Math.floor(paidAmount / installmentAmt) : loanPayments.length;
             
-            // Extract total tenure number (e.g. "10 Weeks" -> 10)
             let totalTenure = 10;
             if (loan.tenure) {
                 const numMatch = loan.tenure.match(/\d+/);
@@ -545,6 +587,7 @@
             const remainingInstallments = Math.max(0, totalTenure - paidInstallments);
             const totalLoanAmtNum = parseFloat(loan.loan_amount || 0);
             const remainingAmount = Math.max(0, totalLoanAmtNum - paidAmount);
+            const payStatus = getPaymentStatusInfo(loan);
 
             modalBody.innerHTML = `
                 <table class="profile-table">
@@ -559,6 +602,7 @@
                     <tr><td>Remaining Installments</td><td>${remainingInstallments}</td></tr>
                     <tr><td>Total Paid Amount</td><td>₹${paidAmount.toFixed(2)}</td></tr>
                     <tr><td>Remaining Balance Amount</td><td>₹${remainingAmount.toFixed(2)}</td></tr>
+                    <tr><td>Payment Status</td><td><span style="font-weight: bold; color: ${payStatus.color};">${payStatus.label}</span></td></tr>
                     <tr><td>Loan Status</td><td><span style="font-weight: bold; color: ${loan.status === 'CLOSED' ? '#C53030' : '#2F855A'}">${loan.status || 'ACTIVE'}</span></td></tr>
 
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Details</th></tr>
