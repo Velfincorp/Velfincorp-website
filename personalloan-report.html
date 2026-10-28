@@ -394,8 +394,10 @@
     </div>
 
     <script>
-        let currentLoan = null;
         let allPersonalLoans = [];
+        let allPayments = [];
+        let allBorrowers = [];
+        let currentLoan = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
             await loadReportData();
@@ -404,11 +406,16 @@
         async function loadReportData() {
             const tbody = document.getElementById('reportTableBody');
             try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID
-                );
-                const allLoans = response.documents;
+                // Fetch Loans, Payments and Borrowers simultaneously
+                const [loansRes, paymentsRes, borrowersRes] = await Promise.all([
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID),
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID).catch(() => ({ documents: [] })),
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID).catch(() => ({ documents: [] }))
+                ]);
+
+                allPayments = paymentsRes.documents || [];
+                allBorrowers = borrowersRes.documents || [];
+                const allLoans = loansRes.documents || [];
 
                 if (!allLoans || allLoans.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No personal loans found in database.</td></tr>';
@@ -476,24 +483,86 @@
             renderTable(filtered);
         }
 
+        // Format Date to Indian format DD/MM/YYYY
+        function formatIndianDate(dateStr) {
+            if (!dateStr) return '-';
+            // If already in DD/MM/YYYY format or similar
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    // Check if format is MM/DD/YYYY
+                    if (parts[0].length <= 2 && parts[2].length === 4) {
+                        // If standard US format mm/dd/yyyy convert to dd/mm/yyyy
+                        return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
+                    }
+                }
+                return dateStr;
+            }
+            try {
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) {
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    return `${day}/${month}/${year}`;
+                }
+            } catch (e) {
+                console.error("Date format error:", e);
+            }
+            return dateStr;
+        }
+
         function showLoanDetails(loan) {
             currentLoan = loan;
             const modal = document.getElementById('loanModal');
             const modalBody = document.getElementById('modalBody');
 
+            // Find borrower ID if available
+            const matchedBorrower = allBorrowers.find(b => b.full_name === loan.borrower_name || b.phone_number === loan.phone_number);
+            const borrowerIdStr = matchedBorrower && matchedBorrower.borrower_id ? ` (${matchedBorrower.borrower_id})` : '';
+            const customerDisplayName = (loan.borrower_name || '-') + borrowerIdStr;
+
+            // Format date to Indian style DD/MM/YYYY
+            const formattedDate = formatIndianDate(loan.loan_date);
+
+            // Calculate paid installments and amounts from payment collection records
+            const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id || p.borrower_name === loan.borrower_name);
+            let paidAmount = 0;
+            loanPayments.forEach(p => {
+                paidAmount += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0);
+            });
+
+            const installmentAmt = parseFloat(loan.installment_amount || 0);
+            const paidInstallments = installmentAmt > 0 ? Math.floor(paidAmount / installmentAmt) : loanPayments.length;
+            
+            // Extract total tenure number (e.g. "10 Weeks" -> 10)
+            let totalTenure = 10;
+            if (loan.tenure) {
+                const numMatch = loan.tenure.match(/\d+/);
+                if (numMatch) totalTenure = parseInt(numMatch[0]);
+            }
+
+            const remainingInstallments = Math.max(0, totalTenure - paidInstallments);
+            const totalLoanAmtNum = parseFloat(loan.loan_amount || 0);
+            const remainingAmount = Math.max(0, totalLoanAmtNum - paidAmount);
+
             modalBody.innerHTML = `
                 <table class="profile-table">
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Personal Loan Financial Status</th></tr>
                     <tr><td>Loan ID</td><td>${loan.loan_id || '-'}</td></tr>
-                    <tr><td>Loan Type & Date</td><td>${loan.loan_type || '-'} | Started on: ${loan.loan_date || '-'}</td></tr>
-                    <tr><td>Total Loan Amount</td><td>₹${loan.loan_amount || '0'}</td></tr>
-                    <tr><td>Disbursed Amount</td><td>₹${loan.disbursed_amount || '0'}</td></tr>
-                    <tr><td>Installment Amount</td><td>₹${loan.installment_amount || '-'}</td></tr>
-                    <tr><td>Tenure</td><td>${loan.tenure || '-'} periods</td></tr>
-                    <tr><td>Loan Status</td><td>${loan.status || 'ACTIVE'}</td></tr>
+                    <tr><td>Loan Type & Date</td><td>${loan.loan_type || 'Weekly'} | Started on: ${formattedDate}</td></tr>
+                    <tr><td>Total Loan Amount</td><td>₹${totalLoanAmtNum.toFixed(2)}</td></tr>
+                    <tr><td>Disbursed Amount</td><td>₹${parseFloat(loan.disbursed_amount || 0).toFixed(2)}</td></tr>
+                    <tr><td>Installment Amount</td><td>₹${installmentAmt.toFixed(2)}</td></tr>
+                    <tr><td>Tenure</td><td>${loan.tenure || totalTenure + ' Weeks'}</td></tr>
+                    <tr><td>Paid Installments</td><td>${paidInstallments} / ${totalTenure}</td></tr>
+                    <tr><td>Remaining Installments</td><td>${remainingInstallments}</td></tr>
+                    <tr><td>Total Paid Amount</td><td>₹${paidAmount.toFixed(2)}</td></tr>
+                    <tr><td>Remaining Balance Amount</td><td>₹${remainingAmount.toFixed(2)}</td></tr>
+                    <tr><td>Loan Status</td><td><span style="font-weight: bold; color: ${loan.status === 'CLOSED' ? '#C53030' : '#2F855A'}">${loan.status || 'ACTIVE'}</span></td></tr>
 
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Details</th></tr>
-                    <tr><td>Customer Name</td><td>${loan.borrower_name || '-'}</td></tr>
+                    <tr><td>Customer Name</td><td>${customerDisplayName}</td></tr>
                     <tr><td>Phone Number</td><td>${loan.phone_number || '-'}</td></tr>
                 </table>
             `;
