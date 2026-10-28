@@ -344,10 +344,46 @@
 
     <script>
         let currentPayment = null;
+        let allPaymentsData = [];
 
         window.addEventListener('DOMContentLoaded', async () => {
             await loadPaymentsData();
         });
+
+        // Format Date to Indian format DD/MM/YYYY
+        function formatIndianDate(dateStr) {
+            if (!dateStr) return '-';
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    if (parts[0].length <= 2 && parts[2].length === 4) {
+                        return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
+                    }
+                }
+                return dateStr;
+            }
+            if (dateStr.includes('-')) {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    // Check if YYYY-MM-DD
+                    if (parts[0].length === 4) {
+                        return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+                    }
+                }
+            }
+            try {
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) {
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    return `${day}/${month}/${year}`;
+                }
+            } catch (e) {
+                console.error("Date format error:", e);
+            }
+            return dateStr;
+        }
 
         async function loadPaymentsData() {
             const tbody = document.getElementById('allPaymentsTableBody');
@@ -356,38 +392,53 @@
                     VFC_DB.DB_ID,
                     VFC_DB.PAYMENTS_ID
                 );
-                const payments = response.documents;
+                allPaymentsData = response.documents || [];
 
-                if (!payments || payments.length === 0) {
+                if (!allPaymentsData || allPaymentsData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No payment records found in database.</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = '';
-                payments.forEach((p, index) => {
-                    const tr = document.createElement('tr');
-                    tr.onclick = () => showPaymentDetails(p);
-                    tr.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td><strong>${p.payment_id || '-'}</strong></td>
-                        <td>${p.borrower_name || '-'}</td>
-                        <td>${p.phone_number || '-'}</td>
-                        <td>₹${p.amount_paid || '0.00'}</td>
-                        <td>${p.payment_date || '-'}</td>
-                        <td>${p.payment_mode || '-'}</td>
-                    `;
-                    tbody.appendChild(tr);
+                // Sort payments by date descending (Newest dates first)
+                allPaymentsData.sort((a, b) => {
+                    const dateA = new Date(a.payment_date || a.$createdAt || 0);
+                    const dateB = new Date(b.payment_date || b.$createdAt || 0);
+                    return dateB - dateA;
                 });
+
+                renderTable(allPaymentsData);
             } catch(error) {
                 console.error("Error loading payments report:", error);
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
             }
         }
 
+        function renderTable(payments) {
+            const tbody = document.getElementById('allPaymentsTableBody');
+            tbody.innerHTML = '';
+            
+            payments.forEach((p, index) => {
+                const tr = document.createElement('tr');
+                tr.onclick = () => showPaymentDetails(p);
+                const formattedDate = formatIndianDate(p.payment_date);
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${p.payment_id || '-'}</strong></td>
+                    <td>${p.borrower_name || '-'}</td>
+                    <td>${p.phone_number || '-'}</td>
+                    <td>₹${p.amount_paid || '0.00'}</td>
+                    <td>${formattedDate}</td>
+                    <td>${p.payment_mode || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
         function showPaymentDetails(p) {
             currentPayment = p;
             const modal = document.getElementById('paymentModal');
             const modalBody = document.getElementById('modalBody');
+            const formattedDate = formatIndianDate(p.payment_date);
 
             modalBody.innerHTML = `
                 <table class="profile-table">
@@ -398,7 +449,7 @@
                     <tr><td>Expected Balance Amount</td><td>₹${p.balance_amount || '0.00'}</td></tr>
                     <tr><td>Paid Installment</td><td>${p.paid_installment || '-'}</td></tr>
                     <tr><td>Remaining Installment</td><td>${p.remaining_installment || '-'}</td></tr>
-                    <tr><td>Payment Date</td><td>${p.payment_date || '-'}</td></tr>
+                    <tr><td>Payment Date</td><td>${formattedDate}</td></tr>
                     <tr><td>Payment Mode</td><td>${p.payment_mode || '-'}</td></tr>
                     <tr><td>Delayed Details</td><td>${p.delayed_details || 'On Time'}</td></tr>
 
@@ -412,25 +463,13 @@
 
         function filterTable() {
             const input = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.getElementById('allPaymentsTableBody').getElementsByTagName('tr');
-
-            for (let i = 0; i < rows.length; i++) {
-                const borrowerCol = rows[i].getElementsByTagName('td')[2];
-                const phoneCol = rows[i].getElementsByTagName('td')[3];
-                const payIdCol = rows[i].getElementsByTagName('td')[1];
-
-                if (borrowerCol || phoneCol || payIdCol) {
-                    const borrowerText = borrowerCol.textContent.toLowerCase();
-                    const phoneText = phoneCol.textContent.toLowerCase();
-                    const payIdText = payIdCol.textContent.toLowerCase();
-
-                    if (borrowerText.includes(input) || phoneText.includes(input) || payIdText.includes(input)) {
-                        rows[i].style.display = "";
-                    } else {
-                        rows[i].style.display = "none";
-                    }
-                }
-            }
+            const filtered = allPaymentsData.filter(p => {
+                const name = (p.borrower_name || '').toLowerCase();
+                const phone = (p.phone_number || '').toLowerCase();
+                const payId = (p.payment_id || '').toLowerCase();
+                return name.includes(input) || phone.includes(input) || payId.includes(input);
+            });
+            renderTable(filtered);
         }
 
         function downloadPDF() {
