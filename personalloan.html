@@ -421,7 +421,7 @@
                 return false;
             }
 
-            // 1. Active Loan Check (AppwriteQuery எனச் சரியாக்கியுள்ளது)
+            // 1. Active Loan Check
             try {
                 const activeLoans = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
@@ -440,7 +440,7 @@
                 console.error("Error checking active loans:", err);
             }
 
-            // 2. Save Loan to Appwrite Database
+            // 2. Save Loan to Appwrite Database & Trigger Server Function
             try {
                 const loanPayload = {
                     loan_id: loanId,
@@ -462,19 +462,8 @@
                     window.AppwriteID.unique(),
                     loanPayload
                 );
-                console.log("Personal Loan saved to Appwrite Database!");
-            } catch (err) {
-                console.error("Error saving loan to database:", err);
-                alert("Database save failed: " + err.message);
-                return false;
-            }
 
-            // 3. MSG91 WhatsApp API Call (Safe try-catch wrapper)
-            try {
-                const authKey = "563191ANiWhsCHw6a8aff47P1"; 
-                const wabaNumber = "919486886293";    
-                const templateName = "vel_fin_welcome_message";
-
+                // Appwrite Server Function Execution for WhatsApp Welcome Message
                 let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
@@ -500,55 +489,36 @@
                     previousDayText = dayMap[today.toLocaleString('en-US', { weekday: 'long' })];
                 }
 
-                const payload = {
-                    "messaging_product": "whatsapp",
-                    "type": "template",
-                    "template": {
-                        "name": templateName,
-                        "language": { "code": "ta", "policy": "deterministic" },
-                        "namespace": "dc938b84_8f2e_4371_9a2e_11c1f8a734e8",
-                        "to_and_components": [
-                            {
-                                "to": [finalMobile],
-                                "components": {
-                                    "body_1": { "type": "text", "value": borrowerName },
-                                    "body_2": { "type": "text", "value": loanId },       
-                                    "body_3": { "type": "text", "value": loanType },     
-                                    "body_4": { "type": "text", "value": "Personal Loan" }, 
-                                    "body_5": { "type": "text", "value": emiAmount.toString() }, 
-                                    "body_6": { "type": "text", "value": tenure.toString() },    
-                                    "body_7": { "type": "text", "value": loanDay },      
-                                    "body_8": { "type": "text", "value": loanDateStr },    
-                                    "body_9": { "type": "text", "value": previousDayText } 
-                                }
-                            }
-                        ]
+                const functionPayload = {
+                    mobile: finalMobile,
+                    template_name: "vel_fin_welcome_message",
+                    components: {
+                        body_1: borrowerName,
+                        body_2: loanId,
+                        body_3: loanType,
+                        body_4: "Personal Loan",
+                        body_5: emiAmount.toString(),
+                        body_6: tenure.toString(),
+                        body_7: loanDay,
+                        body_8: loanDateStr,
+                        body_9: previousDayText
                     }
                 };
 
-                const response = await fetch("https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/", {
-                    method: "POST",
-                    headers: {
-                        "authkey": authKey,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        "integrated_number": wabaNumber,
-                        "content_type": "template",
-                        "payload": payload
-                    })
-                });
+                await window.appwriteClient.functions.createExecution(
+                    '6adb02310009b131da2d',
+                    JSON.stringify(functionPayload)
+                );
 
-                const result = await response.json();
-                console.log("MSG91 Welcome Response:", result);
-                alert("Personal loan successfully saved to Cloud Database and Welcome Message sent via WhatsApp!");
-            } catch (error) {
-                console.error("Error sending WhatsApp welcome message:", error);
-                alert("Loan successfully saved to database! (Note: WhatsApp message skipped due to browser network restrictions).");
+                alert("Personal loan successfully saved to Cloud Database and Welcome Message sent via Appwrite Server Function!");
+                document.getElementById('personalLoanForm').reset();
+                window.location.reload();
+
+            } catch (err) {
+                console.error("Error in Personal Loan submission:", err);
+                alert("Error saving data: " + err.message);
+                return false;
             }
-
-            document.getElementById('personalLoanForm').reset();
-            return true;
         }
 
         function handleLogout() {
