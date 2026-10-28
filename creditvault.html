@@ -471,7 +471,6 @@
             document.getElementById('Retailer_Code').value = ret;
         }
 
-        // Product Price போட்டவுடன் 30% Standard Down Payment ஆட்டோமேட்டிக்காக வரும்
         function handlePriceInput() {
             const price = parseFloat(document.getElementById('Product_Price').value) || 0;
             const downPaymentInput = document.getElementById('Down_Payment');
@@ -485,7 +484,6 @@
             calculateCreditVault();
         }
 
-        // Tenure மற்றும் Down Payment-ஐப் பொறுத்து EMI கணக்கீடு
         function calculateCreditVault() {
             const price = parseFloat(document.getElementById('Product_Price').value) || 0;
             const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
@@ -493,7 +491,6 @@
             const summaryBox = document.getElementById('calcSummaryBox');
 
             if (price > 0 && price >= downPayment) {
-                // Minimum Down Payment 25% செக்கிங்
                 const minAllowedDownPayment = price * 0.25;
                 if (downPayment < minAllowedDownPayment) {
                     summaryBox.style.display = 'none';
@@ -502,30 +499,25 @@
                     return;
                 }
 
-                // Balance Amount (Payment to Retailer / Principal)
                 const balanceAmount = price - downPayment;
-
-                // Charges based on Product Price
-                const setupFee = price * 0.04;      // 4%
-                const procFee = price * 0.025;      // 2.5%
-                const docCharge = 100;              // ₹100
+                const setupFee = price * 0.04;      
+                const procFee = price * 0.025;      
+                const docCharge = 100;              
                 const totalFees = setupFee + procFee + docCharge;
 
-                // Show Breakdown Summary
                 summaryBox.style.display = 'block';
                 document.getElementById('disp_balance').innerText = '₹' + balanceAmount.toFixed(0);
                 document.getElementById('disp_setup').innerText = '₹' + setupFee.toFixed(0);
                 document.getElementById('disp_proc').innerText = '₹' + procFee.toFixed(0);
                 document.getElementById('disp_doc').innerText = '₹' + docCharge;
 
-                // Tenure செலக்ட் செய்திருந்தால் மட்டுமே Loan Amount மற்றும் EMI கணக்கிடப்படும்
                 if (tenureWeeks > 0) {
                     let interestRate = 0;
-                    if (tenureWeeks === 10) interestRate = 0.075;      // 7.5%
-                    else if (tenureWeeks === 15) interestRate = 0.125; // 12.5%
-                    else if (tenureWeeks === 20) interestRate = 0.24;  // 24%
-                    else if (tenureWeeks === 25) interestRate = 0.30;  // 30%
-                    else if (tenureWeeks === 30) interestRate = 0.36;  // 36%
+                    if (tenureWeeks === 10) interestRate = 0.075;      
+                    else if (tenureWeeks === 15) interestRate = 0.125; 
+                    else if (tenureWeeks === 20) interestRate = 0.24;  
+                    else if (tenureWeeks === 25) interestRate = 0.30;  
+                    else if (tenureWeeks === 30) interestRate = 0.36;  
 
                     const interestAmount = balanceAmount * interestRate;
                     const totalPayable = balanceAmount + totalFees + interestAmount;
@@ -562,7 +554,6 @@
             const tenure = document.getElementById('Tenure').value;
             const loanStatus = document.getElementById('Status').value;
 
-            // Down Payment 25% வாலிடேஷன் செக்
             const minAllowedDownPayment = price * 0.25;
             if (downPayment < minAllowedDownPayment) {
                 alert("எச்சரிக்கை: டவுன் பேமெண்ட் குறைந்தபட்சம் 25% (₹" + minAllowedDownPayment.toFixed(0) + ") இருக்க வேண்டும். அதற்கு குறைவாக அனுமதிக்கப்படாது!");
@@ -574,7 +565,6 @@
                 return false;
             }
 
-            // Active Loan Check to prevent multiple active loans
             try {
                 const activeLoansResponse = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
@@ -610,6 +600,7 @@
                     loan_amount: loanAmount.toString(),
                     installment_amount: weeklyEmi,
                     tenure: tenure + " Weeks",
+                    loan_type: "Weekly", // <-- Added missing required loan_type attribute
                     status: loanStatus,
                     loan_category: "Credit Vault"
                 };
