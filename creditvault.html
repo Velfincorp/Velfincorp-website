@@ -172,6 +172,15 @@
             margin-bottom: 30px;
             font-size: 15px;
         }
+        .section-heading {
+            font-family: 'Cinzel', serif;
+            color: var(--navy);
+            font-size: 16px;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 8px;
+            margin: 30px 0 20px 0;
+            font-weight: bold;
+        }
         .form-row {
             display: flex;
             gap: 20px;
@@ -257,23 +266,99 @@
 
             <form id="creditVaultForm" onsubmit="validateCreditVaultLoan(event)">
                 
+                <div class="section-heading">1. General & Borrower Details</div>
                 <div class="form-row">
+                    <div class="form-group">
+                        <label>Issued by *</label>
+                        <select id="Issued_by" onchange="toggleRetailerFields()" required>
+                            <option value="">-Select-</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Retailer">Retailer</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label>Borrowers Details *</label>
                         <select id="Borrowers_Details" required>
                             <option value="">-Loading Borrowers-</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="form-row hidden" id="retailerFieldsGroup">
+                    <div class="form-group">
+                        <label>Retailer Details *</label>
+                        <select id="Retailer_Details" onchange="autoFillRetailerCode()">
+                            <option value="">-Select Retailer-</option>
+                            <option value="PKM">Pappireddipatty Kamala Mobiles (PKM)</option>
+                            <option value="RET002">Fin Partner Two (RET002)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Retailer Code *</label>
+                        <input type="text" id="Retailer_Code" placeholder="e.g. PKM">
+                    </div>
+                </div>
+
+                <div class="section-heading">2. Loan & Product Information</div>
+                <div class="form-row">
                     <div class="form-group">
                         <label>Loan ID *</label>
                         <input type="text" id="Loan_ID" readonly style="background-color: #f1f5f9;">
+                    </div>
+                    <div class="form-group">
+                        <label>Loan Date *</label>
+                        <input type="date" id="Loan_Date" required>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Loan Amount (₹) *</label>
-                        <input type="number" id="Loan_Amount" placeholder="0.00" required>
+                        <label>Product Category *</label>
+                        <select id="Product_Category" required>
+                            <option value="">-Select Category-</option>
+                            <option value="Mobile Phone">Mobile Phone</option>
+                            <option value="Home Appliance">Home Appliance</option>
+                            <option value="Furniture">Furniture</option>
+                            <option value="Electronics">Electronics</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Product Name & Model *</label>
+                        <input type="text" id="Product_Name" placeholder="Enter product details" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Product Price (₹) *</label>
+                        <input type="number" id="Product_Price" oninput="calculateCreditVault()" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Down Payment (₹) *</label>
+                        <input type="number" id="Down_Payment" oninput="calculateCreditVault()" placeholder="0.00" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Loan Amount (₹)</label>
+                        <input type="number" id="Loan_Amount" readonly style="background-color: #f1f5f9;">
+                    </div>
+                    <div class="form-group">
+                        <label>Weekly EMI Amount (₹)</label>
+                        <input type="number" id="Weekly_EMI" readonly style="background-color: #f1f5f9; font-weight: bold; color: #2F855A;">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tenure (Weeks) *</label>
+                        <select id="Tenure" onchange="calculateCreditVault()" required>
+                            <option value="">-Select Tenure-</option>
+                            <option value="10">10 Weeks</option>
+                            <option value="20">20 Weeks</option>
+                            <option value="30">30 Weeks</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Status *</label>
@@ -292,8 +377,10 @@
 
     <script>
         window.addEventListener('DOMContentLoaded', async () => {
-            const year = new Date().getFullYear();
+            const loanDateEl = document.getElementById('Loan_Date');
+            if(loanDateEl) loanDateEl.valueAsDate = new Date();
             
+            const year = new Date().getFullYear();
             try {
                 const response = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
@@ -334,6 +421,39 @@
             }
         });
 
+        function toggleRetailerFields() {
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerGroup = document.getElementById('retailerFieldsGroup');
+            if (issuedBy === 'Retailer') {
+                retailerGroup.classList.remove('hidden');
+            } else {
+                retailerGroup.classList.add('hidden');
+                document.getElementById('Retailer_Details').value = '';
+                document.getElementById('Retailer_Code').value = '';
+            }
+        }
+
+        function autoFillRetailerCode() {
+            const ret = document.getElementById('Retailer_Details').value;
+            document.getElementById('Retailer_Code').value = ret;
+        }
+
+        function calculateCreditVault() {
+            const price = parseFloat(document.getElementById('Product_Price').value) || 0;
+            const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
+            const tenureWeeks = parseInt(document.getElementById('Tenure').value) || 10;
+
+            if (price > 0 && price >= downPayment) {
+                const loanAmt = price - downPayment;
+                document.getElementById('Loan_Amount').value = loanAmt.toFixed(2);
+                const weeklyEmi = loanAmt / tenureWeeks;
+                document.getElementById('Weekly_EMI').value = weeklyEmi.toFixed(2);
+            } else {
+                document.getElementById('Loan_Amount').value = '';
+                document.getElementById('Weekly_EMI').value = '';
+            }
+        }
+
         async function validateCreditVaultLoan(event) {
             event.preventDefault();
             const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
@@ -341,14 +461,23 @@
             const borrowerName = borrowerSelect.value;
             const borrowerPhone = borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone || "8778003840";
             const loanId = document.getElementById('Loan_ID').value;
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerCode = document.getElementById('Retailer_Code').value || "";
+            const loanDate = document.getElementById('Loan_Date').value;
+            const productCategory = document.getElementById('Product_Category').value;
+            const productName = document.getElementById('Product_Name').value;
+            const productPrice = document.getElementById('Product_Price').value;
+            const downPayment = document.getElementById('Down_Payment').value;
+            const weeklyEmi = document.getElementById('Weekly_EMI').value;
+            const tenure = document.getElementById('Tenure').value;
             const loanStatus = document.getElementById('Status').value;
 
-            if (loanAmount <= 0 || !borrowerName) {
+            if (loanAmount <= 0 || !borrowerName || !productCategory) {
                 alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
                 return false;
             }
 
-            // Active Loan Check across all categories to prevent multiple active loans
+            // Active Loan Check to prevent multiple active loans
             try {
                 const activeLoansResponse = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
@@ -370,11 +499,19 @@
             try {
                 const loanPayload = {
                     loan_id: loanId,
+                    issued_by: issuedBy,
+                    retailer_code: retailerCode,
+                    loan_date: loanDate,
                     borrower_name: borrowerName,
                     phone_number: borrowerPhone,
+                    product_category: productCategory,
+                    product_name: productName,
+                    product_price: productPrice,
+                    down_payment: downPayment,
                     loan_amount: loanAmount.toString(),
+                    installment_amount: weeklyEmi,
+                    tenure: tenure + " Weeks",
                     status: loanStatus,
-                    loan_date: new Date().toLocaleDateString(),
                     loan_category: "Credit Vault"
                 };
 
