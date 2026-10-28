@@ -439,7 +439,6 @@
             }
         });
 
-        // பாரோவர் டிராப் டவுன் மாற்றப்பட்டவுடன் உடனடி ஆக்டிவ் லோன் செக்கிங்
         async function checkActiveBorrowerLoan() {
             const borrowerSelect = document.getElementById('Borrowers_Details');
             const borrowerName = borrowerSelect.value;
@@ -457,13 +456,14 @@
 
                 if (activeLoansResponse.total > 0) {
                     alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
-                    borrowerSelect.value = ""; // Selection-ஐ ரீசெட் செய்துவிடும்
+                    borrowerSelect.value = ""; 
                 }
             } catch (err) {
                 console.error("Error checking active loans:", err);
             }
         }
 
+        // Loan ID format: VJL/001/2026 (Slash instead of hyphen)
         async function generateLoanID() {
             const category = document.getElementById('Product_Category').value;
             const year = new Date().getFullYear();
@@ -480,13 +480,14 @@
                     VFC_DB.LOANS_ID
                 );
                 const existingLoans = response.documents;
-                const filteredLoans = existingLoans.filter(l => l.loan_id && l.loan_id.startsWith(prefix));
+                // Match prefix with either hyphen or slash to count correctly
+                const filteredLoans = existingLoans.filter(l => l.loan_id && (l.loan_id.startsWith(prefix + "-") || l.loan_id.startsWith(prefix + "/")));
                 const nextSeq = filteredLoans.length + 1;
                 const paddedSeq = String(nextSeq).padStart(3, '0');
-                document.getElementById('Loan_ID').value = `${prefix}-${paddedSeq}/${year}`;
+                document.getElementById('Loan_ID').value = `${prefix}/${paddedSeq}/${year}`;
             } catch (e) {
                 console.error("Error generating sequential Loan ID:", e);
-                document.getElementById('Loan_ID').value = `${prefix}-001/${year}`;
+                document.getElementById('Loan_ID').value = `${prefix}/001/${year}`;
             }
         }
 
@@ -601,7 +602,6 @@
                 return false;
             }
 
-            // Final safety check on submit
             try {
                 const activeLoansResponse = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
