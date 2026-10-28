@@ -594,13 +594,16 @@
                     return "";
                 }
 
-                const photoId = await uploadFileToStorage('Customer_Photo');
-                const aadharFrontId = await uploadFileToStorage('Aadhar_Front');
-                const aadharBackId = await uploadFileToStorage('Aadhar_Back');
-                const panCardId = await uploadFileToStorage('Pan_Card');
-                const rationCardId = await uploadFileToStorage('Ration_Card');
-                const cibilId = await uploadFileToStorage('CIBIL_Score');
-                const passbookId = await uploadFileToStorage('Bank_Passbook');
+                // Parallel Uploads using Promise.all for maximum speed
+                const [photoId, aadharFrontId, aadharBackId, panCardId, rationCardId, cibilId, passbookId] = await Promise.all([
+                    uploadFileToStorage('Customer_Photo'),
+                    uploadFileToStorage('Aadhar_Front'),
+                    uploadFileToStorage('Aadhar_Back'),
+                    uploadFileToStorage('Pan_Card'),
+                    uploadFileToStorage('Ration_Card'),
+                    uploadFileToStorage('CIBIL_Score'),
+                    uploadFileToStorage('Bank_Passbook')
+                ]);
 
                 const fullAddress = document.getElementById('Address_Line_1').value + ", " + (document.getElementById('Land_Mark').value || "");
                 const prefix = document.getElementById('Name_Prefix').value;
