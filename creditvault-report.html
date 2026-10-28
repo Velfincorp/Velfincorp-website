@@ -223,10 +223,10 @@
         
         <select id="loanTypeFilter" class="filter-select" onchange="filterTable()">
             <option value="">-All Loan Types-</option>
-            <option value="Mobile">Mobile</option>
-            <option value="Electrical">Electrical</option>
+            <option value="Mobile Phone">Mobile Phone</option>
+            <option value="Home Appliance">Home Appliance</option>
             <option value="Furniture">Furniture</option>
-            <option value="Jewel">Jewel</option>
+            <option value="Jewel Loan">Jewel Loan</option>
         </select>
 
         <select id="statusFilter" class="filter-select" onchange="filterTable()">
@@ -234,6 +234,9 @@
             <option value="ACTIVE">ACTIVE</option>
             <option value="PENDING">PENDING</option>
             <option value="CLOSED">CLOSED</option>
+            <option value="PAID">PAID</option>
+            <option value="DELAYED">DELAYED</option>
+            <option value="OVERDUE">OVERDUE</option>
         </select>
     </div>
 
@@ -247,7 +250,7 @@
                 <th>Loan Amount</th>
                 <th>Tenure</th>
                 <th>Weekly EMI</th>
-                <th>Status</th>
+                <th>Payment Status</th>
             </tr>
         </thead>
         <tbody id="reportTableBody">
@@ -276,19 +279,54 @@
 <script>
     let currentLoan = null;
     let allCreditVaultLoans = [];
+    let allPayments = [];
+    let allBorrowers = [];
 
     window.addEventListener('DOMContentLoaded', async () => {
         await loadReportData();
     });
 
+    function formatIndianDate(dateStr) {
+        if (!dateStr) return '-';
+        if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
+                return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
+            }
+            return dateStr;
+        }
+        if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            if (parts.length === 3 && parts[0].length === 4) {
+                return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+            }
+        }
+        try {
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) {
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+        } catch (e) {
+            console.error("Date format error:", e);
+        }
+        return dateStr;
+    }
+
     async function loadReportData() {
         const tbody = document.getElementById('reportTableBody');
         try {
-            const response = await window.appwriteDatabases.listDocuments(
-                VFC_DB.DB_ID,
-                VFC_DB.LOANS_ID
-            );
-            const allLoans = response.documents;
+            const [loansRes, paymentsRes, borrowersRes] = await Promise.all([
+                window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID),
+                window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID).catch(() => ({ documents: [] })),
+                window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID).catch(() => ({ documents: [] }))
+            ]);
+
+            allPayments = paymentsRes.documents || [];
+            allBorrowers = borrowersRes.documents || [];
+            const allLoans = loansRes.documents || [];
 
             if (!allLoans || allLoans.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No credit vault loans found in database.</td></tr>';
@@ -298,7 +336,14 @@
             allCreditVaultLoans = allLoans.filter(loan => {
                 const category = loan.loan_category ? loan.loan_category.trim() : '';
                 const loanId = loan.loan_id ? loan.loan_id.toUpperCase() : '';
-                return category === 'CreditVault' || loanId.startsWith('VML') || loanId.startsWith('VFL') || loanId.startsWith('VEL') || loanId.startsWith('VJL');
+                return category === 'Credit Vault' || loanId.startsWith('VML') || loanId.startsWith('VFL') || loanId.startsWith('VHL') || loanId.startsWith('VJL');
+            });
+
+            // Sort loans by date descending (Newest first)
+            allCreditVaultLoans.sort((a, b) => {
+                const dateA = new Date(a.loan_date || a.$createdAt || 0);
+                const dateB = new Date(b.loan_date || b.$createdAt || 0);
+                return dateB - dateA;
             });
 
             renderTable(allCreditVaultLoans);
@@ -306,6 +351,29 @@
             console.error("Error loading credit vault reports:", error);
             tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
         }
+    }
+
+    // Determine Payment Status (Paid, Delayed, Overdue) based on payment history and dates
+    function getPaymentStatusInfo(loan) {
+        const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id || p.borrower_name === loan.borrower_name);
+        const today = new Date();
+        const loanDate = new Date(loan.loan_date || loan.$createdAt);
+        const diffTime = Math.abs(today - loanDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const expectedWeeks = Math.floor(diffDays / 7) + 1;
+
+        let totalPaidAmt = 0;
+        loanPayments.forEach(p => {
+            totalPaidAmt += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0);
+        });
+
+        const weeklyEmi = parseFloat(loan.installment_amount || 0);
+        const expectedPaidAmt = weeklyEmi * Math.min(expectedWeeks, 30);
+
+        if (loan.status === 'CLOSED') return { label: 'CLOSED', color: '#C53030' };
+        if (totalPaidAmt >= expectedPaidAmt) return { label: 'PAID', color: '#2F855A' };
+        if (diffDays > (loanPayments.length + 1) * 7 + 7) return { label: 'OVERDUE', color: '#C53030' };
+        return { label: 'DELAYED', color: '#D69E2E' };
     }
 
     function renderTable(loans) {
@@ -319,16 +387,17 @@
         loans.forEach((loan) => {
             const tr = document.createElement('tr');
             tr.onclick = () => showLoanDetails(loan);
-            const statusColor = loan.status === 'CLOSED' ? '#C53030' : (loan.status === 'PENDING' ? '#D69E2E' : '#2F855A');
+            
+            const payStatus = getPaymentStatusInfo(loan);
             tr.innerHTML = `
                 <td><strong>${loan.loan_id || '-'}</strong></td>
                 <td>${loan.borrower_name || '-'}</td>
                 <td>${loan.phone_number || '-'}</td>
-                <td>${loan.loan_type || '-'}</td>
+                <td>${loan.product_category || loan.loan_type || '-'}</td>
                 <td>₹${loan.loan_amount || '0'}</td>
                 <td>${loan.tenure || '-'}</td>
                 <td>₹${loan.installment_amount || '0'}</td>
-                <td><span style="color: ${statusColor}; font-weight: bold;">${loan.status || 'ACTIVE'}</span></td>
+                <td><span style="color: ${payStatus.color}; font-weight: bold;">${payStatus.label}</span></td>
             `;
             tbody.appendChild(tr);
         });
@@ -343,12 +412,13 @@
             const name = (loan.borrower_name || '').toLowerCase();
             const phone = (loan.phone_number || '').toLowerCase();
             const loanId = (loan.loan_id || '').toLowerCase();
-            const type = loan.loan_type || '';
+            const type = loan.product_category || loan.loan_type || '';
             const status = loan.status || 'ACTIVE';
+            const payStatus = getPaymentStatusInfo(loan).label;
 
             const matchesSearch = name.includes(input) || phone.includes(input) || loanId.includes(input);
             const matchesType = typeFilter === '' || type === typeFilter;
-            const matchesStatus = statusFilter === '' || status === statusFilter;
+            const matchesStatus = statusFilter === '' || status === statusFilter || payStatus === statusFilter;
 
             return matchesSearch && matchesType && matchesStatus;
         });
@@ -360,20 +430,51 @@
         currentLoan = loan;
         const modal = document.getElementById('loanModal');
         const modalBody = document.getElementById('modalBody');
+        const formattedDate = formatIndianDate(loan.loan_date);
+
+        const matchedBorrower = allBorrowers.find(b => b.full_name === loan.borrower_name || b.phone_number === loan.phone_number);
+        const borrowerIdStr = matchedBorrower && matchedBorrower.borrower_id ? ` (${matchedBorrower.borrower_id})` : '';
+        const customerDisplayName = (loan.borrower_name || '-') + borrowerIdStr;
+
+        const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id || p.borrower_name === loan.borrower_name);
+        let paidAmount = 0;
+        loanPayments.forEach(p => {
+            paidAmount += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0);
+        });
+
+        const installmentAmt = parseFloat(loan.installment_amount || 0);
+        const paidInstallments = installmentAmt > 0 ? Math.floor(paidAmount / installmentAmt) : loanPayments.length;
+        
+        let totalTenure = 10;
+        if (loan.tenure) {
+            const numMatch = loan.tenure.match(/\d+/);
+            if (numMatch) totalTenure = parseInt(numMatch[0]);
+        }
+
+        const remainingInstallments = Math.max(0, totalTenure - paidInstallments);
+        const totalLoanAmtNum = parseFloat(loan.loan_amount || 0);
+        const remainingAmount = Math.max(0, totalLoanAmtNum - paidAmount);
+        const payStatus = getPaymentStatusInfo(loan);
 
         modalBody.innerHTML = `
             <table class="profile-table">
                 <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Loan Information</th></tr>
                 <tr><td>Loan ID</td><td>${loan.loan_id || '-'}</td></tr>
-                <tr><td>Loan Type</td><td>${loan.loan_type || '-'}</td></tr>
-                <tr><td>Product Value / Loan Amount</td><td>₹${loan.loan_amount || '-'}</td></tr>
-                <tr><td>Disbursed Amount</td><td>₹${loan.disbursed_amount || '-'}</td></tr>
-                <tr><td>Tenure & Weekly EMI</td><td>${loan.tenure || '-'} | ₹${loan.installment_amount || '-'} per week</td></tr>
-                <tr><td>Loan Date</td><td>${loan.loan_date || '-'}</td></tr>
+                <tr><td>Product Category & Name</td><td>${loan.product_category || '-'} | ${loan.product_name || '-'}</td></tr>
+                <tr><td>Total Loan Amount</td><td>₹${totalLoanAmtNum.toFixed(2)}</td></tr>
+                <tr><td>Down Payment</td><td>₹${loan.down_payment || '0'}</td></tr>
+                <tr><td>Weekly EMI Amount</td><td>₹${installmentAmt.toFixed(2)}</td></tr>
+                <tr><td>Tenure</td><td>${loan.tenure || totalTenure + ' Weeks'}</td></tr>
+                <tr><td>Paid Installments</td><td>${paidInstallments} / ${totalTenure}</td></tr>
+                <tr><td>Remaining Installments</td><td>${remainingInstallments}</td></tr>
+                <tr><td>Total Paid Amount</td><td>₹${paidAmount.toFixed(2)}</td></tr>
+                <tr><td>Remaining Balance Amount</td><td>₹${remainingAmount.toFixed(2)}</td></tr>
+                <tr><td>Loan Date</td><td>${formattedDate}</td></tr>
+                <tr><td>Payment Status</td><td><span style="font-weight: bold; color: ${payStatus.color};">${payStatus.label}</span></td></tr>
                 <tr><td>Loan Status</td><td>${loan.status || 'ACTIVE'}</td></tr>
                 
                 <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Details</th></tr>
-                <tr><td>Borrower Name</td><td>${loan.borrower_name || '-'}</td></tr>
+                <tr><td>Customer Name</td><td>${customerDisplayName}</td></tr>
                 <tr><td>Phone Number</td><td>${loan.phone_number || '-'}</td></tr>
             </table>
         `;
