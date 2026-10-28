@@ -334,7 +334,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Product Category *</label>
-                        <select id="Product_Category" onchange="generateLoanID()" required>
+                        <select id="Product_Category" onchange="handleCategoryChange()" required>
                             <option value="">-Select Category-</option>
                             <option value="Jewel Loan">Jewel Loan</option>
                             <option value="Mobile Phone">Mobile Phone</option>
@@ -345,6 +345,18 @@
                     <div class="form-group">
                         <label>Product Name & Model *</label>
                         <input type="text" id="Product_Name" placeholder="Enter product details" required>
+                    </div>
+                </div>
+
+                <!-- IMEI Fields (Visible only for Mobile Phone) -->
+                <div class="form-row hidden" id="imeiFieldsGroup">
+                    <div class="form-group">
+                        <label>IMEI Number 1 *</label>
+                        <input type="text" id="IMEI_1" placeholder="Enter 15-digit IMEI 1">
+                    </div>
+                    <div class="form-group">
+                        <label>IMEI Number 2</label>
+                        <input type="text" id="IMEI_2" placeholder="Enter 15-digit IMEI 2 (Optional)">
                     </div>
                 </div>
 
@@ -463,7 +475,6 @@
             }
         }
 
-        // Loan ID format: VJL/001/2026 (Slash instead of hyphen)
         async function generateLoanID() {
             const category = document.getElementById('Product_Category').value;
             const year = new Date().getFullYear();
@@ -480,7 +491,6 @@
                     VFC_DB.LOANS_ID
                 );
                 const existingLoans = response.documents;
-                // Match prefix with either hyphen or slash to count correctly
                 const filteredLoans = existingLoans.filter(l => l.loan_id && (l.loan_id.startsWith(prefix + "-") || l.loan_id.startsWith(prefix + "/")));
                 const nextSeq = filteredLoans.length + 1;
                 const paddedSeq = String(nextSeq).padStart(3, '0');
@@ -488,6 +498,23 @@
             } catch (e) {
                 console.error("Error generating sequential Loan ID:", e);
                 document.getElementById('Loan_ID').value = `${prefix}/001/${year}`;
+            }
+        }
+
+        function handleCategoryChange() {
+            generateLoanID();
+            const category = document.getElementById('Product_Category').value;
+            const imeiGroup = document.getElementById('imeiFieldsGroup');
+            const imei1Input = document.getElementById('IMEI_1');
+
+            if (category === "Mobile Phone") {
+                imeiGroup.classList.remove('hidden');
+                imei1Input.setAttribute('required', 'true');
+            } else {
+                imeiGroup.classList.add('hidden');
+                imei1Input.removeAttribute('required');
+                imei1Input.value = '';
+                document.getElementById('IMEI_2').value = '';
             }
         }
 
@@ -587,6 +614,8 @@
             const loanDate = document.getElementById('Loan_Date').value;
             const productCategory = document.getElementById('Product_Category').value;
             const productName = document.getElementById('Product_Name').value;
+            const imei1 = document.getElementById('IMEI_1').value || "";
+            const imei2 = document.getElementById('IMEI_2').value || "";
             const weeklyEmi = document.getElementById('Weekly_EMI').value;
             const tenure = document.getElementById('Tenure').value;
             const loanStatus = document.getElementById('Status').value;
@@ -632,6 +661,8 @@
                     phone_number: borrowerPhone,
                     product_category: productCategory,
                     product_name: productName,
+                    imei_number_1: imei1,
+                    imei_number_2: imei2,
                     product_price: price.toString(),
                     down_payment: downPayment.toString(),
                     loan_amount: loanAmount.toString(),
