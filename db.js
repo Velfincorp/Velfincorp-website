@@ -1,6 +1,6 @@
 // db.js - Live Master Configuration File for Vel Fin Corp
 
-const { Client, Databases, Storage, ID, Query } = Appwrite;
+const { Client, Databases, Storage, Functions, ID, Query } = Appwrite;
 
 // எப்போதும் லைவ் மோடில் மட்டுமே இயங்கும்
 const currentMode = 'LIVE';
@@ -12,6 +12,7 @@ const client = new Client()
 
 const databases = new Databases(client);
 const storage = new Storage(client);
+const functions = new Functions(client);
 
 // உண்மையான லைவ் டேட்டாபேஸ் மற்றும் கலெக்ஷன் ஐடிகள் (Live IDs)
 const LIVE_DB = {
@@ -28,6 +29,7 @@ const LIVE_DB = {
 window.appwriteClient = client;
 window.appwriteDatabases = databases;
 window.appwriteStorage = storage;
+window.appwriteFunctions = functions;
 window.VFC_DB = LIVE_DB;
 window.AppwriteID = ID;
 window.AppwriteQuery = Query;
