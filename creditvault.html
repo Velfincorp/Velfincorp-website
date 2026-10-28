@@ -298,7 +298,7 @@
                     </div>
                     <div class="form-group">
                         <label>Borrowers Details *</label>
-                        <select id="Borrowers_Details" required>
+                        <select id="Borrowers_Details" onchange="checkActiveBorrowerLoan()" required>
                             <option value="">-Loading Borrowers-</option>
                         </select>
                     </div>
@@ -439,7 +439,31 @@
             }
         });
 
-        // ProductCategory-ஐப் பொறுத்து சரியான Loan ID Prefix (VJL, VML, VHL, VFL) உருவாக்குதல்
+        // பாரோவர் டிராப் டவுன் மாற்றப்பட்டவுடன் உடனடி ஆக்டிவ் லோன் செக்கிங்
+        async function checkActiveBorrowerLoan() {
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            const borrowerName = borrowerSelect.value;
+            if (!borrowerName) return;
+
+            try {
+                const activeLoansResponse = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    [
+                        window.AppwriteQuery.equal('borrower_name', borrowerName),
+                        window.AppwriteQuery.equal('status', 'ACTIVE')
+                    ]
+                );
+
+                if (activeLoansResponse.total > 0) {
+                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
+                    borrowerSelect.value = ""; // Selection-ஐ ரீசெட் செய்துவிடும்
+                }
+            } catch (err) {
+                console.error("Error checking active loans:", err);
+            }
+        }
+
         async function generateLoanID() {
             const category = document.getElementById('Product_Category').value;
             const year = new Date().getFullYear();
@@ -496,7 +520,6 @@
             calculateCreditVault();
         }
 
-        // கணக்கீடு: Down Payment, Fees, Interest மற்றும் Tenure-ஐப் பொறுத்து Total Payable Loan Amount & Weekly EMI
         function calculateCreditVault() {
             const price = parseFloat(document.getElementById('Product_Price').value) || 0;
             const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
@@ -533,7 +556,7 @@
                     else if (tenureWeeks === 30) interestRate = 0.36;  
 
                     const interestAmount = balanceAmount * interestRate;
-                    const totalPayable = balanceAmount + totalFees + interestAmount; // Total Loan Amount for Dashboard mapping
+                    const totalPayable = balanceAmount + totalFees + interestAmount;
                     const weeklyEmi = Math.ceil(totalPayable / tenureWeeks);
 
                     document.getElementById('Loan_Amount').value = totalPayable.toFixed(2);
@@ -578,7 +601,7 @@
                 return false;
             }
 
-            // Active Loan Check across Personal Loan & Credit Vault
+            // Final safety check on submit
             try {
                 const activeLoansResponse = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
