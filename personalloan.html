@@ -273,7 +273,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Loan Type (Frequency) *</label>
-                        <select id="Loan_Type" onchange="calculatePersonalLoan()" required>
+                        <select id="Loan_Type" onchange="updateTenureOptions()" required>
                             <option value="">-Select Type-</option>
                             <option value="Daily">Daily</option>
                             <option value="Weekly">Weekly</option>
@@ -282,7 +282,10 @@
                     </div>
                     <div class="form-group">
                         <label>Tenure *</label>
-                        <input type="text" id="Tenure" readonly style="background-color: #f1f5f9;">
+                        <select id="Tenure_Select" onchange="calculatePersonalLoan()" required>
+                            <option value="">-Select Type First-</option>
+                        </select>
+                        <input type="hidden" id="Tenure">
                     </div>
                 </div>
 
@@ -368,31 +371,66 @@
             }
         });
 
+        function updateTenureOptions() {
+            const loanType = document.getElementById('Loan_Type').value;
+            const tenureSelect = document.getElementById('Tenure_Select');
+            
+            tenureSelect.innerHTML = '<option value="">-Select Tenure-</option>';
+
+            if (loanType === "Daily") {
+                const opt = document.createElement('option');
+                opt.value = "100";
+                opt.textContent = "100 Days";
+                tenureSelect.appendChild(opt);
+                tenureSelect.value = "100";
+            } else if (loanType === "Weekly") {
+                [10, 15, 20].forEach(weeks => {
+                    const opt = document.createElement('option');
+                    opt.value = weeks;
+                    opt.textContent = weeks + " Weeks";
+                    tenureSelect.appendChild(opt);
+                });
+            } else if (loanType === "Monthly") {
+                [3, 5, 6].forEach(months => {
+                    const opt = document.createElement('option');
+                    opt.value = months;
+                    opt.textContent = months + " Months";
+                    tenureSelect.appendChild(opt);
+                });
+            }
+            calculatePersonalLoan();
+        }
+
         function calculatePersonalLoan() {
             const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
             const loanType = document.getElementById('Loan_Type').value;
+            const tenureVal = parseInt(document.getElementById('Tenure_Select').value) || 0;
 
-            if (loanAmount > 0) {
+            if (loanAmount > 0 && tenureVal > 0) {
+                // Interest & Repayment calculation based on Tenure / Type
+                let interestMultiplier = 1.0;
+                if (loanType === "Weekly") {
+                    if (tenureVal === 10) interestMultiplier = 1.075;   // 7.5% interest
+                    else if (tenureVal === 15) interestMultiplier = 1.125; // 12.5% interest
+                    else if (tenureVal === 20) interestMultiplier = 1.24;  // 24% interest
+                } else if (loanType === "Monthly") {
+                    interestMultiplier = 1.15;
+                }
+
+                const totalPayable = loanAmount * interestMultiplier;
                 const deduction = loanAmount * 0.15;
                 const disbursed = loanAmount - deduction;
+                
                 document.getElementById('Disbursed_Amount').value = disbursed.toFixed(2);
                 document.getElementById('Document_Charge').value = 50;
 
-                let tenure = 10;
-                let installment = 0;
+                const installment = totalPayable / tenureVal;
+                
+                let tenureUnit = " Days";
+                if (loanType === "Weekly") tenureUnit = " Weeks";
+                else if (loanType === "Monthly") tenureUnit = " Months";
 
-                if (loanType === "Daily") {
-                    tenure = 100;
-                    installment = loanAmount / 100;
-                } else if (loanType === "Weekly") {
-                    tenure = 10;
-                    installment = loanAmount / 10;
-                } else if (loanType === "Monthly") {
-                    tenure = 5;
-                    installment = loanAmount / 5;
-                }
-
-                document.getElementById('Tenure').value = tenure + (loanType === "Daily" ? " Days" : (loanType === "Weekly" ? " Weeks" : " Months"));
+                document.getElementById('Tenure').value = tenureVal + tenureUnit;
                 document.getElementById('Installment_Amount').value = installment.toFixed(2);
             } else {
                 document.getElementById('Disbursed_Amount').value = '';
@@ -414,12 +452,11 @@
             const disbursedAmount = document.getElementById('Disbursed_Amount').value;
             const loanStatus = document.getElementById('Status').value;
 
-            if (loanAmount <= 0 || !borrowerName || !loanType) {
+            if (loanAmount <= 0 || !borrowerName || !loanType || !tenure) {
                 alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
                 return false;
             }
 
-            // Active Loan Check across all categories to prevent multiple active loans
             try {
                 const activeLoansResponse = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
