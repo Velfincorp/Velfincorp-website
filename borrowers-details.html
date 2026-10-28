@@ -332,12 +332,12 @@
                 <div class="section-heading">3. Identity Proofs & Contact Details</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Aadhar Number *</label>
+                        <label>Aadhaar Number *</label>
                         <input type="text" id="Aadhar_Number" placeholder="12 digit Aadhar" maxlength="14" required>
                     </div>
                     <div class="form-group">
                         <label>PAN Number *</label>
-                        <input type="text" id="PAN_NUMBER" placeholder="ABCDE1234F" maxlength="10" required>
+                        <input type="text" id="pan_number" placeholder="ABCDE1234F" maxlength="10" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -520,13 +520,7 @@
                     VFC_DB.BORROWERS_ID
                 );
 
-                // தற்போதைய மோடிற்கு (TEST அல்லது LIVE) ஏற்ற டேட்டாவை மட்டும் தனியாகக் கணக்கிடுதல்
-                const activeMode = typeof currentMode !== 'undefined' ? currentMode : 'TEST';
-                const modeDocs = response.documents ? response.documents.filter(doc => 
-                    !doc.environment_mode || doc.environment_mode === activeMode
-                ) : [];
-
-                const nextSeq = (modeDocs.length || response.total || 0) + 1;
+                const nextSeq = (response.documents ? response.documents.length : response.total || 0) + 1;
                 const paddedSeq = String(nextSeq).padStart(3, '0');
 
                 if (issuedBy === 'Retailer' && retailerCode) {
@@ -535,7 +529,6 @@
                     borrowerIdField.value = `VFC/${paddedSeq}/${currentYear}`;
                 }
             } catch (e) {
-                // கன்சோலில் சிவப்பு/மஞ்சள் எரர் காட்டாமல் அமைதியாக Fallback ஐடியை செட் செய்யும்
                 setDefaultId();
             }
         }
@@ -626,7 +619,7 @@
                     dob: document.getElementById('Date_Of_Birth').value,
                     relative_name: document.getElementById('Relationship').value + " " + document.getElementById('Relative_Name').value,
                     aadhar_number: document.getElementById('Aadhar_Number').value,
-                    pan_number: document.getElementById('PAN_NUMBER').value,
+                    pan_number: document.getElementById('pan_number').value,
                     phone_number: document.getElementById('Phone_Number').value,
                     whatsapp_number: document.getElementById('Whatsapp_Number').value,
                     email: document.getElementById('Email').value || "",
