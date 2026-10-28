@@ -659,7 +659,7 @@
                     loan_date: loanDate,
                     borrower_name: borrowerName,
                     phone_number: borrowerPhone,
-                    product_category: productCategory,
+                    loan_category: productCategory, // Maps to existing database column
                     product_name: productName,
                     imei_number_1: imei1,
                     imei_number_2: imei2,
@@ -669,8 +669,7 @@
                     installment_amount: weeklyEmi,
                     tenure: tenure + " Weeks",
                     loan_type: "Weekly",
-                    status: loanStatus,
-                    loan_category: "Credit Vault"
+                    status: loanStatus
                 };
 
                 await window.appwriteDatabases.createDocument(
