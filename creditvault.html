@@ -334,13 +334,12 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Product Category *</label>
-                        <select id="Product_Category" required>
+                        <select id="Product_Category" onchange="generateLoanID()" required>
                             <option value="">-Select Category-</option>
                             <option value="Jewel Loan">Jewel Loan</option>
                             <option value="Mobile Phone">Mobile Phone</option>
                             <option value="Home Appliance">Home Appliance</option>
                             <option value="Furniture">Furniture</option>
-                            <option value="Electronics">Electronics</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -383,7 +382,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Loan Amount (₹) <small style="color:#64748b;">(Displays after Tenure)</small></label>
+                        <label>Loan Amount (₹) <small style="color:#64748b;">(Total Payable)</small></label>
                         <input type="number" id="Loan_Amount" readonly style="background-color: #f1f5f9; font-weight: bold;" placeholder="Select Tenure first">
                     </div>
                 </div>
@@ -413,21 +412,7 @@
             const loanDateEl = document.getElementById('Loan_Date');
             if(loanDateEl) loanDateEl.valueAsDate = new Date();
             
-            const year = new Date().getFullYear();
-            try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID
-                );
-                const existingLoans = response.documents;
-                const filteredLoans = existingLoans.filter(l => l.loan_id && l.loan_id.startsWith("VCV"));
-                const nextSeq = filteredLoans.length + 1;
-                const paddedSeq = String(nextSeq).padStart(3, '0');
-                document.getElementById('Loan_ID').value = `VCV-${paddedSeq}/${year}`;
-            } catch (e) {
-                console.error("Error generating sequential Loan ID:", e);
-                document.getElementById('Loan_ID').value = `VCV-001/${year}`;
-            }
+            await generateLoanID();
 
             const borrowerSelect = document.getElementById('Borrowers_Details');
             try {
@@ -453,6 +438,33 @@
                 borrowerSelect.innerHTML = '<option value="">-Error Loading Borrowers-</option>';
             }
         });
+
+        // ProductCategory-ஐப் பொறுத்து சரியான Loan ID Prefix (VJL, VML, VHL, VFL) உருவாக்குதல்
+        async function generateLoanID() {
+            const category = document.getElementById('Product_Category').value;
+            const year = new Date().getFullYear();
+            let prefix = "VCV";
+
+            if (category === "Jewel Loan") prefix = "VJL";
+            else if (category === "Mobile Phone") prefix = "VML";
+            else if (category === "Home Appliance") prefix = "VHL";
+            else if (category === "Furniture") prefix = "VFL";
+
+            try {
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID
+                );
+                const existingLoans = response.documents;
+                const filteredLoans = existingLoans.filter(l => l.loan_id && l.loan_id.startsWith(prefix));
+                const nextSeq = filteredLoans.length + 1;
+                const paddedSeq = String(nextSeq).padStart(3, '0');
+                document.getElementById('Loan_ID').value = `${prefix}-${paddedSeq}/${year}`;
+            } catch (e) {
+                console.error("Error generating sequential Loan ID:", e);
+                document.getElementById('Loan_ID').value = `${prefix}-001/${year}`;
+            }
+        }
 
         function toggleRetailerFields() {
             const issuedBy = document.getElementById('Issued_by').value;
@@ -484,6 +496,7 @@
             calculateCreditVault();
         }
 
+        // கணக்கீடு: Down Payment, Fees, Interest மற்றும் Tenure-ஐப் பொறுத்து Total Payable Loan Amount & Weekly EMI
         function calculateCreditVault() {
             const price = parseFloat(document.getElementById('Product_Price').value) || 0;
             const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
@@ -520,10 +533,10 @@
                     else if (tenureWeeks === 30) interestRate = 0.36;  
 
                     const interestAmount = balanceAmount * interestRate;
-                    const totalPayable = balanceAmount + totalFees + interestAmount;
+                    const totalPayable = balanceAmount + totalFees + interestAmount; // Total Loan Amount for Dashboard mapping
                     const weeklyEmi = Math.ceil(totalPayable / tenureWeeks);
 
-                    document.getElementById('Loan_Amount').value = balanceAmount.toFixed(2);
+                    document.getElementById('Loan_Amount').value = totalPayable.toFixed(2);
                     document.getElementById('Weekly_EMI').value = weeklyEmi;
                 } else {
                     document.getElementById('Loan_Amount').value = '';
@@ -565,6 +578,7 @@
                 return false;
             }
 
+            // Active Loan Check across Personal Loan & Credit Vault
             try {
                 const activeLoansResponse = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
@@ -600,7 +614,7 @@
                     loan_amount: loanAmount.toString(),
                     installment_amount: weeklyEmi,
                     tenure: tenure + " Weeks",
-                    loan_type: "Weekly", // <-- Added missing required loan_type attribute
+                    loan_type: "Weekly",
                     status: loanStatus,
                     loan_category: "Credit Vault"
                 };
