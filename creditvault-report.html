@@ -102,7 +102,7 @@
         }
         .search-box, .filter-select {
             flex: 1;
-            min-width: 220px;
+            min-width: 200px;
             padding: 11px 15px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
@@ -221,6 +221,9 @@
     <div class="filter-row">
         <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name or Phone Number..." onkeyup="filterTable()">
         
+        <!-- Date Filter -->
+        <input type="date" id="dateFilter" class="filter-select" onchange="filterTable()" title="Filter by Loan Date">
+
         <select id="loanTypeFilter" class="filter-select" onchange="filterTable()">
             <option value="">-All Loan Types-</option>
             <option value="Mobile Phone">Mobile Phone</option>
@@ -405,6 +408,7 @@
 
     function filterTable() {
         const input = document.getElementById('searchInput').value.toLowerCase();
+        const dateInput = document.getElementById('dateFilter').value; // Selected Date (YYYY-MM-DD)
         const typeFilter = document.getElementById('loanTypeFilter').value;
         const statusFilter = document.getElementById('statusFilter').value;
 
@@ -415,12 +419,14 @@
             const type = loan.product_category || loan.loan_type || '';
             const status = loan.status || 'ACTIVE';
             const payStatus = getPaymentStatusInfo(loan).label;
+            const loanDateVal = (loan.loan_date || '').split('T')[0]; // YYYY-MM-DD format
 
             const matchesSearch = name.includes(input) || phone.includes(input) || loanId.includes(input);
+            const matchesDate = !dateInput || loanDateVal === dateInput;
             const matchesType = typeFilter === '' || type === typeFilter;
             const matchesStatus = statusFilter === '' || status === statusFilter || payStatus === statusFilter;
 
-            return matchesSearch && matchesType && matchesStatus;
+            return matchesSearch && matchesDate && matchesType && matchesStatus;
         });
 
         renderTable(filtered);
