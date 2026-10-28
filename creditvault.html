@@ -211,6 +211,25 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
         }
+        .calc-summary {
+            background-color: #f8fafc;
+            border: 1px dashed var(--gold);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--navy);
+            display: none;
+        }
+        .calc-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        .calc-item span {
+            font-weight: bold;
+            color: #2F855A;
+        }
         .btn-submit {
             background-color: var(--navy);
             color: white;
@@ -314,15 +333,6 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Challan Number / Type *</label>
-                        <select id="Challan_Number" required>
-                            <option value="">-Select Challan-</option>
-                            <option value="Challan A">Challan A</option>
-                            <option value="Challan B">Challan B</option>
-                            <option value="Standard Challan">Standard Challan</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label>Product Category *</label>
                         <select id="Product_Category" required>
                             <option value="">-Select Category-</option>
@@ -333,47 +343,56 @@
                             <option value="Electronics">Electronics</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="form-row">
                     <div class="form-group">
                         <label>Product Name & Model *</label>
                         <input type="text" id="Product_Name" placeholder="Enter product details" required>
                     </div>
+                </div>
+
+                <div class="form-row">
                     <div class="form-group">
                         <label>Product Price (₹) *</label>
-                        <input type="number" id="Product_Price" oninput="calculateCreditVault()" placeholder="0.00" required>
+                        <input type="number" id="Product_Price" oninput="handlePriceInput()" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Down Payment (₹) * <small style="color:var(--gold);">(Min 25% allowed, Default 30%)</small></label>
+                        <input type="number" id="Down_Payment" oninput="calculateCreditVault()" placeholder="0.00" required>
+                    </div>
+                </div>
+
+                <!-- Fee & Principal Breakdown Box -->
+                <div id="calcSummaryBox" class="calc-summary">
+                    <div class="calc-summary-grid">
+                        <div class="calc-item">Payment to Retailer (Balance): <span id="disp_balance">₹0</span></div>
+                        <div class="calc-item">Setup Fee (4%): <span id="disp_setup">₹0</span></div>
+                        <div class="calc-item">Processing Fee (2.5%): <span id="disp_proc">₹0</span></div>
+                        <div class="calc-item">Document Charge: <span id="disp_doc">₹100</span></div>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Down Payment (₹) *</label>
-                        <input type="number" id="Down_Payment" oninput="calculateCreditVault()" placeholder="0.00" required>
+                        <label>Tenure (Weeks) *</label>
+                        <select id="Tenure" onchange="calculateCreditVault()" required>
+                            <option value="">-Select Tenure-</option>
+                            <option value="10">10 Weeks</option>
+                            <option value="15">15 Weeks</option>
+                            <option value="20">20 Weeks</option>
+                            <option value="25">25 Weeks</option>
+                            <option value="30">30 Weeks</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Loan Amount (₹)</label>
-                        <input type="number" id="Loan_Amount" readonly style="background-color: #f1f5f9;">
+                        <label>Loan Amount (₹) <small style="color:#64748b;">(Displays after Tenure)</small></label>
+                        <input type="number" id="Loan_Amount" readonly style="background-color: #f1f5f9; font-weight: bold;" placeholder="Select Tenure first">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label>Weekly EMI Amount (₹)</label>
-                        <input type="number" id="Weekly_EMI" readonly style="background-color: #f1f5f9; font-weight: bold; color: #2F855A;">
+                        <input type="number" id="Weekly_EMI" readonly style="background-color: #f1f5f9; font-weight: bold; color: #2F855A;" placeholder="0.00">
                     </div>
-                    <div class="form-group">
-                        <label>Tenure (Weeks) *</label>
-                        <select id="Tenure" onchange="calculateCreditVault()" required>
-                            <option value="">-Select Tenure-</option>
-                            <option value="10">10 Weeks</option>
-                            <option value="20">20 Weeks</option>
-                            <option value="30">30 Weeks</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
                     <div class="form-group">
                         <label>Status *</label>
                         <select id="Status" required>
@@ -452,17 +471,74 @@
             document.getElementById('Retailer_Code').value = ret;
         }
 
+        // Product Price போட்டவுடன் 30% Standard Down Payment ஆட்டோமேட்டிக்காக வரும்
+        function handlePriceInput() {
+            const price = parseFloat(document.getElementById('Product_Price').value) || 0;
+            const downPaymentInput = document.getElementById('Down_Payment');
+
+            if (price > 0) {
+                const standardDownPayment = Math.round(price * 0.30);
+                downPaymentInput.value = standardDownPayment;
+            } else {
+                downPaymentInput.value = '';
+            }
+            calculateCreditVault();
+        }
+
+        // Tenure மற்றும் Down Payment-ஐப் பொறுத்து EMI கணக்கீடு
         function calculateCreditVault() {
             const price = parseFloat(document.getElementById('Product_Price').value) || 0;
             const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
-            const tenureWeeks = parseInt(document.getElementById('Tenure').value) || 10;
+            const tenureWeeks = parseInt(document.getElementById('Tenure').value) || 0;
+            const summaryBox = document.getElementById('calcSummaryBox');
 
             if (price > 0 && price >= downPayment) {
-                const loanAmt = price - downPayment;
-                document.getElementById('Loan_Amount').value = loanAmt.toFixed(2);
-                const weeklyEmi = loanAmt / tenureWeeks;
-                document.getElementById('Weekly_EMI').value = weeklyEmi.toFixed(2);
+                // Minimum Down Payment 25% செக்கிங்
+                const minAllowedDownPayment = price * 0.25;
+                if (downPayment < minAllowedDownPayment) {
+                    summaryBox.style.display = 'none';
+                    document.getElementById('Loan_Amount').value = '';
+                    document.getElementById('Weekly_EMI').value = '';
+                    return;
+                }
+
+                // Balance Amount (Payment to Retailer / Principal)
+                const balanceAmount = price - downPayment;
+
+                // Charges based on Product Price
+                const setupFee = price * 0.04;      // 4%
+                const procFee = price * 0.025;      // 2.5%
+                const docCharge = 100;              // ₹100
+                const totalFees = setupFee + procFee + docCharge;
+
+                // Show Breakdown Summary
+                summaryBox.style.display = 'block';
+                document.getElementById('disp_balance').innerText = '₹' + balanceAmount.toFixed(0);
+                document.getElementById('disp_setup').innerText = '₹' + setupFee.toFixed(0);
+                document.getElementById('disp_proc').innerText = '₹' + procFee.toFixed(0);
+                document.getElementById('disp_doc').innerText = '₹' + docCharge;
+
+                // Tenure செலக்ட் செய்திருந்தால் மட்டுமே Loan Amount மற்றும் EMI கணக்கிடப்படும்
+                if (tenureWeeks > 0) {
+                    let interestRate = 0;
+                    if (tenureWeeks === 10) interestRate = 0.075;      // 7.5%
+                    else if (tenureWeeks === 15) interestRate = 0.125; // 12.5%
+                    else if (tenureWeeks === 20) interestRate = 0.24;  // 24%
+                    else if (tenureWeeks === 25) interestRate = 0.30;  // 30%
+                    else if (tenureWeeks === 30) interestRate = 0.36;  // 36%
+
+                    const interestAmount = balanceAmount * interestRate;
+                    const totalPayable = balanceAmount + totalFees + interestAmount;
+                    const weeklyEmi = Math.ceil(totalPayable / tenureWeeks);
+
+                    document.getElementById('Loan_Amount').value = balanceAmount.toFixed(2);
+                    document.getElementById('Weekly_EMI').value = weeklyEmi;
+                } else {
+                    document.getElementById('Loan_Amount').value = '';
+                    document.getElementById('Weekly_EMI').value = '';
+                }
             } else {
+                summaryBox.style.display = 'none';
                 document.getElementById('Loan_Amount').value = '';
                 document.getElementById('Weekly_EMI').value = '';
             }
@@ -470,6 +546,8 @@
 
         async function validateCreditVaultLoan(event) {
             event.preventDefault();
+            const price = parseFloat(document.getElementById('Product_Price').value) || 0;
+            const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
             const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
             const borrowerSelect = document.getElementById('Borrowers_Details');
             const borrowerName = borrowerSelect.value;
@@ -478,16 +556,20 @@
             const issuedBy = document.getElementById('Issued_by').value;
             const retailerCode = document.getElementById('Retailer_Code').value || "";
             const loanDate = document.getElementById('Loan_Date').value;
-            const challanNumber = document.getElementById('Challan_Number').value;
             const productCategory = document.getElementById('Product_Category').value;
             const productName = document.getElementById('Product_Name').value;
-            const productPrice = document.getElementById('Product_Price').value;
-            const downPayment = document.getElementById('Down_Payment').value;
             const weeklyEmi = document.getElementById('Weekly_EMI').value;
             const tenure = document.getElementById('Tenure').value;
             const loanStatus = document.getElementById('Status').value;
 
-            if (loanAmount <= 0 || !borrowerName || !productCategory || !challanNumber) {
+            // Down Payment 25% வாலிடேஷன் செக்
+            const minAllowedDownPayment = price * 0.25;
+            if (downPayment < minAllowedDownPayment) {
+                alert("எச்சரிக்கை: டவுன் பேமெண்ட் குறைந்தபட்சம் 25% (₹" + minAllowedDownPayment.toFixed(0) + ") இருக்க வேண்டும். அதற்கு குறைவாக அனுமதிக்கப்படாது!");
+                return false;
+            }
+
+            if (loanAmount <= 0 || !borrowerName || !productCategory || !tenure) {
                 alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
                 return false;
             }
@@ -509,6 +591,8 @@
                 }
             } catch (err) {
                 console.error("Error checking active loans:", err);
+                alert("லோன் நிலையைச் சரிபார்ப்பதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.");
+                return false;
             }
 
             try {
@@ -519,11 +603,10 @@
                     loan_date: loanDate,
                     borrower_name: borrowerName,
                     phone_number: borrowerPhone,
-                    challan_number: challanNumber,
                     product_category: productCategory,
                     product_name: productName,
-                    product_price: productPrice,
-                    down_payment: downPayment,
+                    product_price: price.toString(),
+                    down_payment: downPayment.toString(),
                     loan_amount: loanAmount.toString(),
                     installment_amount: weeklyEmi,
                     tenure: tenure + " Weeks",
