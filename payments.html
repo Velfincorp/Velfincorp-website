@@ -598,28 +598,28 @@
             if (remInst <= 0 || balanceAmount <= 0) {
                 templateName = "vel_fin_loan_closed";
                 customComponents = {
-                    "customer_name": { "type": "text", "value": String(borrowerName) },
-                    "loan_id": { "type": "text", "value": String(loanId) },
-                    "loan_type": { "type": "text", "value": String(loanTypeDisp) },
-                    "paid_amount": { "type": "text", "value": String(paidAmount.toFixed(2)) },
-                    "pay_date": { "type": "text", "value": String(formattedPayDate) },
-                    "paid_installment": { "type": "text", "value": String(paidInst) },
-                    "remaining_installments": { "type": "text", "value": "0" },
-                    "balance_amount": { "type": "text", "value": "0.00" }
+                    "customer_name": String(borrowerName),
+                    "loan_id": String(loanId),
+                    "loan_type": String(loanTypeDisp),
+                    "paid_amount": String(paidAmount.toFixed(2)),
+                    "pay_date": String(formattedPayDate),
+                    "paid_installment": String(paidInst),
+                    "remaining_installments": "0",
+                    "balance_amount": "0.00"
                 };
             } else {
                 templateName = "vel_fin_payment_receipt";
                 customComponents = {
-                    "body_1": { "type": "text", "value": String(borrowerName) },          
-                    "body_2": { "type": "text", "value": String(loanTypeDisp) },          
-                    "body_3": { "type": "text", "value": String(paidAmount.toFixed(2)) }, 
-                    "body_4": { "type": "text", "value": String(formattedPayDate) },      
-                    "body_5": { "type": "text", "value": String(paidInst) },              
-                    "body_6": { "type": "text", "value": String(remInst) },               
-                    "body_7": { "type": "text", "value": String(balanceAmount.toFixed(2)) }, 
-                    "body_8": { "type": "text", "value": String(nextDueDateStr) },        
-                    "body_9": { "type": "text", "value": String(paymentId) },             
-                    "body_10": { "type": "text", "value": String(loanId) }                
+                    "body_1": String(borrowerName),          
+                    "body_2": String(loanTypeDisp),          
+                    "body_3": String(paidAmount.toFixed(2)), 
+                    "body_4": String(formattedPayDate),      
+                    "body_5": String(paidInst),              
+                    "body_6": String(remInst),               
+                    "body_7": String(balanceAmount.toFixed(2)), 
+                    "body_8": String(nextDueDateStr),        
+                    "body_9": String(paymentId),             
+                    "body_10": String(loanId)                
                 };
             }
 
@@ -631,9 +631,8 @@
                 await appwriteFunctionsInstance.createExecution(
                     '6adb02310009b131da2d',
                     JSON.stringify({
-                        mobile: finalMobile,
-                        templateName: templateName,
-                        customComponents: customComponents
+                        template_name: templateName,
+                        components: customComponents
                     })
                 );
 
