@@ -540,8 +540,19 @@
                     VFC_DB.BORROWERS_ID
                 );
 
-                const nextSeq = (response.documents ? response.documents.length : response.total || 0) + 1;
-                setDefaultId(nextSeq);
+                const documents = response.documents || [];
+                
+                if (issuedBy === 'Retailer' && retailerCode) {
+                    // குறிப்பிட்ட அந்த ரீடெய்லர் கோடைக் கொண்ட பாரோவர்களை மட்டும் கணக்கிடுதல் (Independent Count)
+                    const retailerLoans = documents.filter(doc => doc.borrower_id && doc.borrower_id.startsWith(retailerCode + '/'));
+                    const nextSeq = retailerLoans.length + 1;
+                    setDefaultId(nextSeq);
+                } else {
+                    // அட்மின் (VFC) லோன்களை மட்டும் கணக்கிடுதல்
+                    const adminLoans = documents.filter(doc => doc.borrower_id && doc.borrower_id.startsWith('VFC/'));
+                    const nextSeq = adminLoans.length + 1;
+                    setDefaultId(nextSeq);
+                }
             } catch (e) {
                 setDefaultId(1);
             }
@@ -562,7 +573,7 @@
         }
 
         function autoFillRetailerCode() {
-            // நீங்க கேட்டபடி இதில் எந்தவொரு ஆட்டோ-சேஞ்சும் செய்யப்படவில்லை. நீங்களே மேனுவலாக கோடை டைப் செய்து கொள்ளலாம்.
+            // நீங்கள் கேட்டபடி இதில் எந்தவொரு ஆட்டோ-மேப்பிங்கும் செய்யப்படவில்லை. நீங்களே மேனுவலாக கோடைத் தட்டச்சு செய்து கொள்ளலாம்.
             generateSequentialBorrowerID();
         }
 
