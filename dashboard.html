@@ -219,6 +219,8 @@
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 14px;
+            color: #0f1d36;
+            font-weight: 600;
         }
         .permissions-group {
             width: 100%;
@@ -263,14 +265,18 @@
         }
         .users-table th, .users-table td {
             border: 1px solid #cbd5e1;
-            padding: 10px;
+            padding: 12px;
             font-size: 13px;
             text-align: left;
+            color: #1e293b;
         }
         .users-table th {
             background: var(--navy);
             color: white;
             font-family: 'Cinzel', serif;
+        }
+        .users-table td {
+            font-weight: 500;
         }
     </style>
 </head>
@@ -350,7 +356,7 @@
             <p style="font-size: 13px; color: #64748b;">Enter name, mobile number as Username, generate password, and select specific page access permissions.</p>
             
             <div class="form-row">
-                <input type="text" id="newUserName" placeholder="Staff / Retailer Name (e.g., Kamala Mobiles)">
+                <input type="text" id="newUserName" placeholder="Staff / Retailer Name (e.g., Sri Vinayaga Agencies)">
                 <input type="text" id="newUserId" placeholder="Mobile Number (Username, e.g., 9486886293)">
                 <input type="text" id="newUserPass" placeholder="Generated Password (e.g., Vel@2026)">
                 <select id="newUserRole">
@@ -490,7 +496,7 @@
                     <td><b>${u.name || 'N/A'}</b></td>
                     <td>${u.id || '-'}</td>
                     <td><span style="text-transform: uppercase; font-weight: bold; color: #0F1D36;">${u.role || '-'}</span></td>
-                    <td><code>${u.pass || '-'}</code></td>
+                    <td><code style="font-size: 14px; font-weight: bold; color: #b91c1c;">${u.pass || '-'}</code></td>
                     <td>${u.permissions ? u.permissions.length : 0} Modules</td>
                 `;
                 tbody.appendChild(tr);
