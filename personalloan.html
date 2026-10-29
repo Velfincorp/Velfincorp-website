@@ -415,7 +415,7 @@
                 const deduction = loanAmount * 0.15;
                 const disbursed = loanAmount - deduction;
                 
-                // Correct rounding to prevent decimal shift errors
+                // Fixed rounding to avoid decimal shift
                 document.getElementById('Disbursed_Amount').value = Math.round(disbursed);
                 document.getElementById('Document_Charge').value = 50;
 
@@ -493,7 +493,7 @@
                     loanPayload
                 );
 
-                // 2. Trigger WhatsApp Welcome Message (Exactly 7 parameters matching template)
+                // 2. Trigger WhatsApp Welcome Message (Exactly 7 Parameters matching template order)
                 let cleanMobile = borrowerPhone.replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
