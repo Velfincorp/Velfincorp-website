@@ -224,7 +224,6 @@
             color: #475569;
             font-weight: bold;
         }
-        /* Custom searchable dropdown results list */
         #borrowerSearchResults {
             position: absolute;
             top: 100%;
@@ -489,12 +488,10 @@
             let totalTenure = parseInt(document.getElementById('Paid_Amount').dataset.totalTenure) || 10;
             let paidCount = parseInt(document.getElementById('Paid_Amount').dataset.paidCount) || 0;
 
-            // Advanced payment calculation (Handles extra amounts like 3000, 4000 cleanly)
             let newBalance = totalAmount - totalPaidSoFar - paidAmount;
             if (newBalance < 0) newBalance = 0;
             document.getElementById('Balance_Amount').value = newBalance.toFixed(2);
 
-            // Calculate how many installments are covered by this paid amount
             let extraInstallmentsCovered = Math.floor(paidAmount / emiAmount);
             if (extraInstallmentsCovered < 1) extraInstallmentsCovered = 1;
 
@@ -566,7 +563,6 @@
                         delayed_details: delayDetails
                     }
                 );
-                console.log("Payment saved to Appwrite Cloud Database!");
             } catch (err) {
                 console.error("Error saving payment to Appwrite:", err);
                 alert("Database save failed: " + err.message);
@@ -632,7 +628,7 @@
                     throw new Error("Appwrite Functions instance is not initialized.");
                 }
 
-                const execution = await appwriteFunctionsInstance.createExecution(
+                await appwriteFunctionsInstance.createExecution(
                     '6adb02310009b131da2d',
                     JSON.stringify({
                         mobile: finalMobile,
@@ -641,7 +637,6 @@
                     })
                 );
 
-                console.log("Appwrite Function Execution:", execution);
                 alert("Payment successfully saved to Cloud Database and WhatsApp receipt sent automatically!");
             } catch (error) {
                 console.error("Error triggering WhatsApp function:", error);
