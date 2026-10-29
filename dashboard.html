@@ -490,6 +490,7 @@
             }
 
             users.forEach((u, index) => {
+                const count = u.permissions ? u.permissions.length : (u.modules ? u.modules.length : 0);
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center;">${index + 1}</td>
@@ -497,7 +498,7 @@
                     <td>${u.id || '-'}</td>
                     <td><span style="text-transform: uppercase; font-weight: bold; color: #0F1D36;">${u.role || '-'}</span></td>
                     <td><code style="font-size: 14px; font-weight: bold; color: #b91c1c;">${u.pass || '-'}</code></td>
-                    <td>${u.permissions ? u.permissions.length : 0} Modules</td>
+                    <td>${count} Modules</td>
                 `;
                 tbody.appendChild(tr);
             });
