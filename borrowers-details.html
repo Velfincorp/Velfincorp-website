@@ -279,7 +279,7 @@
                     </div>
                     <div class="form-group">
                         <label>Retailer Code *</label>
-                        <input type="text" id="Retailer_Code" oninput="generateSequentialBorrowerID()" placeholder="e.g. PKM">
+                        <input type="text" id="Retailer_Code" oninput="generateSequentialBorrowerID()" placeholder="e.g. KSV">
                     </div>
                 </div>
                 <div class="section-heading">2. Personal & Family Information</div>
@@ -504,7 +504,7 @@
             selectEl.innerHTML = '<option value="">-Select Retailer-</option>';
             retailers.forEach(r => {
                 const opt = document.createElement('option');
-                opt.value = r.name;
+                opt.value = r.name; // ரீடெய்லர் பெயர் மட்டும் மதிப்பாகச் செல்லும்
                 opt.textContent = `${r.name} (${r.id})`;
                 selectEl.appendChild(opt);
             });
@@ -517,19 +517,20 @@
             if(!borrowerIdField) return;
 
             const issuedBy = issuedByEl ? issuedByEl.value : '';
-            const retailerCode = retailerCodeEl ? retailerCodeEl.value.trim() : '';
+            const retailerCode = retailerCodeEl ? retailerCodeEl.value.trim().toUpperCase() : '';
             const currentYear = new Date().getFullYear();
 
-            const setDefaultId = () => {
+            const setDefaultId = (seq = 1) => {
+                const paddedSeq = String(seq).padStart(3, '0');
                 if (issuedBy === 'Retailer' && retailerCode) {
-                    borrowerIdField.value = `${retailerCode}/001/${currentYear}`;
+                    borrowerIdField.value = `${retailerCode}/${paddedSeq}/${currentYear}`;
                 } else {
-                    borrowerIdField.value = `VFC/001/${currentYear}`;
+                    borrowerIdField.value = `VFC/${paddedSeq}/${currentYear}`;
                 }
             };
 
             if (!window.appwriteDatabases || !window.VFC_DB) {
-                setDefaultId();
+                setDefaultId(1);
                 return;
             }
 
@@ -540,15 +541,9 @@
                 );
 
                 const nextSeq = (response.documents ? response.documents.length : response.total || 0) + 1;
-                const paddedSeq = String(nextSeq).padStart(3, '0');
-
-                if (issuedBy === 'Retailer' && retailerCode) {
-                    borrowerIdField.value = `${retailerCode}/${paddedSeq}/${currentYear}`;
-                } else {
-                    borrowerIdField.value = `VFC/${paddedSeq}/${currentYear}`;
-                }
+                setDefaultId(nextSeq);
             } catch (e) {
-                setDefaultId();
+                setDefaultId(1);
             }
         }
 
@@ -567,9 +562,23 @@
         }
 
         async function autoFillRetailerCode() {
-            const ret = document.getElementById('Retailer_Details').value;
-            // Extract code if format is Name (Mobile)
-            document.getElementById('Retailer_Code').value = ret;
+            const selectEl = document.getElementById('Retailer_Details');
+            const selectedName = selectEl.value;
+            const codeInput = document.getElementById('Retailer_Code');
+
+            if (selectedName) {
+                // பெயரிலிருந்து சுருக்கமான கோடை உருவாக்குதல் (எ.கா: "Sri Vinayaga Agencies" -> "SVA" அல்லது முதல் எழுத்துக்களை எடுத்தல்)
+                const words = selectedName.split(' ');
+                let shortCode = '';
+                if (words.length >= 2) {
+                    shortCode = words.map(w => w[0]).join('').toUpperCase().substring(0, 3);
+                } else {
+                    shortCode = selectedName.substring(0, 3).toUpperCase();
+                }
+                codeInput.value = shortCode;
+            } else {
+                codeInput.value = '';
+            }
             await generateSequentialBorrowerID();
         }
 
@@ -639,7 +648,7 @@
                     retailer_code: document.getElementById('Retailer_Code').value || "",
                     loan_date: document.getElementById('Loan_Date').value,
                     full_name: fullName,
-                    dob: document.getElementById('Date_Of_Birth').value,
+                    dob: document.getElementById('Date_Of_Birth'].value,
                     relative_name: document.getElementById('Relationship').value + " " + document.getElementById('Relative_Name').value,
                     aadhar_number: document.getElementById('Aadhar_Number').value,
                     pan_number: document.getElementById('pan_number').value,
