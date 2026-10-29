@@ -184,6 +184,7 @@
         .form-group {
             flex: 1;
             min-width: 250px;
+            position: relative;
         }
         label {
             display: block;
@@ -205,6 +206,11 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
         }
+        .readonly-field {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: bold;
+        }
         .btn-submit {
             background-color: var(--navy);
             color: white;
@@ -223,6 +229,33 @@
             color: var(--navy);
         }
         .hidden { display: none !important; }
+        
+        #retailerSearchResults {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 99;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .search-item {
+            padding: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .search-item:hover {
+            background-color: rgba(197, 160, 89, 0.15);
+            font-weight: bold;
+            color: var(--navy);
+        }
     </style>
 </head>
 <body>
@@ -267,21 +300,23 @@
                     </div>
                     <div class="form-group">
                         <label>Borrower ID *</label>
-                        <input type="text" id="Borrower_ID" readonly style="background-color: #f1f5f9; font-weight: bold; color: var(--navy);" placeholder="Generating ID...">
+                        <input type="text" id="Borrower_ID" class="readonly-field" readonly placeholder="Auto-generated">
                     </div>
                 </div>
+
                 <div class="form-row hidden" id="retailerFieldsGroup">
                     <div class="form-group">
-                        <label>Retailer Details *</label>
-                        <select id="Retailer_Details" onchange="autoFillRetailerCode()">
-                            <option value="">-Select Retailer-</option>
-                        </select>
+                        <label>Search & Select Retailer *</label>
+                        <input type="text" id="retailerSearchInput" placeholder="Type retailer name or mobile..." oninput="filterRetailers()" autocomplete="off">
+                        <input type="hidden" id="selectedRetailerName">
+                        <div id="retailerSearchResults"></div>
                     </div>
                     <div class="form-group">
                         <label>Retailer Code *</label>
-                        <input type="text" id="Retailer_Code" oninput="generateSequentialBorrowerID()" placeholder="e.g. KSV">
+                        <input type="text" id="Retailer_Code" class="readonly-field" readonly placeholder="Auto-populated code">
                     </div>
                 </div>
+
                 <div class="section-heading">2. Personal & Family Information</div>
                 <div class="form-row">
                     <div class="form-group">
@@ -483,42 +518,99 @@
         </div>
     </div>
     <script>
+        let allRetailers = [];
+
         window.onload = async function() {
             const loanDateEl = document.getElementById('Loan_Date');
             if(loanDateEl) loanDateEl.valueAsDate = new Date();
-            loadRetailersDropdown();
-            await generateSequentialBorrowerID();
+            loadRetailersData();
+            document.getElementById('Borrower_ID').value = "Auto-generated";
         };
 
-        function loadRetailersDropdown() {
-            const selectEl = document.getElementById('Retailer_Details');
-            if(!selectEl) return;
+        function loadRetailersData() {
             let users = [];
             try {
                 users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
             } catch(e) {
                 users = [];
             }
-            const retailers = users.filter(u => u.role === 'retailer');
-            
-            selectEl.innerHTML = '<option value="">-Select Retailer-</option>';
-            retailers.forEach(r => {
-                const opt = document.createElement('option');
-                opt.value = r.name;
-                opt.textContent = `${r.name} (${r.id})`;
-                selectEl.appendChild(opt);
+            allRetailers = users.filter(u => u.role === 'retailer');
+        }
+
+        function filterRetailers() {
+            const query = document.getElementById('retailerSearchInput').value.toLowerCase().trim();
+            const resultsBox = document.getElementById('retailerSearchResults');
+
+            if (query.length === 0) {
+                resultsBox.style.display = 'none';
+                resultsBox.innerHTML = '';
+                return;
+            }
+
+            const filtered = allRetailers.filter(r => {
+                const name = (r.name || '').toLowerCase();
+                const mobile = (r.id || '').toLowerCase();
+                return name.includes(query) || mobile.includes(query);
             });
+
+            if (filtered.length > 0) {
+                resultsBox.innerHTML = '';
+                filtered.forEach(r => {
+                    const item = document.createElement('div');
+                    item.className = 'search-item';
+                    item.textContent = `${r.name} (${r.id})`;
+                    item.onclick = () => selectRetailer(r);
+                    resultsBox.appendChild(item);
+                });
+                resultsBox.style.display = 'block';
+            } else {
+                resultsBox.innerHTML = '<div class="search-item" style="color:#94a3b8;">No matching retailer found</div>';
+                resultsBox.style.display = 'block';
+            }
+        }
+
+        async function selectRetailer(retailer) {
+            document.getElementById('retailerSearchInput').value = `${retailer.name} (${retailer.id})`;
+            document.getElementById('selectedRetailerName').value = retailer.name;
+            document.getElementById('retailerSearchResults').style.display = 'none';
+
+            // ரீடெய்லர் பெயரிலிருந்து சுருக்கமான கோடு (எ.கா: Sri Vinayaga Agencies -> SVA அல்லது கஸ்டமரின் கோடு)
+            // இங்கு நீங்கள் வைத்துள்ள தனித்துவமான கோடை (எ.கா: KSV) ரீடெய்லர் பெயருடன் மேப் செய்யவோ அல்லது பெயரின் முதல் எழுத்துக்களை எடுக்கவோ செய்யலாம்.
+            // இப்போதைக்கு பெயரின் முதல் எழுத்துக்களை வைத்து கோடு உருவாக்கப்பட்டுள்ளது அல்லது நீங்களே அதை உறுதிப்படுத்திக் கொள்ளலாம்.
+            let code = "VFC";
+            const nameParts = retailer.name.split(' ');
+            if (nameParts.length >= 2) {
+                code = nameParts.map(w => w[0]).join('').toUpperCase().substring(0, 3);
+            } else {
+                code = retailer.name.substring(0, 3).toUpperCase();
+            }
+
+            // தேவைப்பட்டால் ஸ்ரீ விநாயகா ஏஜென்சிஸ்க்கு KSV என பிரத்யேகமாக செட் செய்ய:
+            if (retailer.name.toLowerCase().includes('vinayaga')) {
+                code = "KSV";
+            } else if (retailer.name.toLowerCase().includes('kamala')) {
+                code = "PKM";
+            }
+
+            document.getElementById('Retailer_Code').value = code;
+            await generateSequentialBorrowerID();
         }
 
         async function generateSequentialBorrowerID() {
-            const issuedByEl = document.getElementById('Issued_by');
-            const retailerCodeEl = document.getElementById('Retailer_Code');
+            const issuedBy = document.getElementById('Issued_by').value;
             const borrowerIdField = document.getElementById('Borrower_ID');
-            if(!borrowerIdField) return;
-
-            const issuedBy = issuedByEl ? issuedByEl.value : '';
-            const retailerCode = retailerCodeEl ? retailerCodeEl.value.trim().toUpperCase() : '';
+            const retailerCode = document.getElementById('Retailer_Code').value.trim().toUpperCase();
             const currentYear = new Date().getFullYear();
+
+            if (!issuedBy) {
+                borrowerIdField.value = "Auto-generated";
+                return;
+            }
+
+            if (issuedBy === 'Retailer' && !retailerCode) {
+                borrowerIdField.value = "Select Retailer First";
+                return;
+            }
 
             const setDefaultId = (seq = 1) => {
                 const paddedSeq = String(seq).padStart(3, '0');
@@ -541,14 +633,12 @@
                 );
 
                 const documents = response.documents || [];
-                
+
                 if (issuedBy === 'Retailer' && retailerCode) {
-                    // குறிப்பிட்ட அந்த ரீடெய்லர் கோடைக் கொண்ட பாரோவர்களை மட்டும் கணக்கிடுதல் (Independent Count)
                     const retailerLoans = documents.filter(doc => doc.borrower_id && doc.borrower_id.startsWith(retailerCode + '/'));
                     const nextSeq = retailerLoans.length + 1;
                     setDefaultId(nextSeq);
                 } else {
-                    // அட்மின் (VFC) லோன்களை மட்டும் கணக்கிடுதல்
                     const adminLoans = documents.filter(doc => doc.borrower_id && doc.borrower_id.startsWith('VFC/'));
                     const nextSeq = adminLoans.length + 1;
                     setDefaultId(nextSeq);
@@ -563,18 +653,13 @@
             const retailerGroup = document.getElementById('retailerFieldsGroup');
             if (issuedBy === 'Retailer') {
                 retailerGroup.classList.remove('hidden');
-                loadRetailersDropdown();
+                loadRetailersData();
             } else {
                 retailerGroup.classList.add('hidden');
-                document.getElementById('Retailer_Details').value = '';
+                document.getElementById('retailerSearchInput').value = '';
                 document.getElementById('Retailer_Code').value = '';
             }
             await generateSequentialBorrowerID();
-        }
-
-        function autoFillRetailerCode() {
-            // நீங்கள் கேட்டபடி இதில் எந்தவொரு ஆட்டோ-மேப்பிங்கும் செய்யப்படவில்லை. நீங்களே மேனுவலாக கோடைத் தட்டச்சு செய்து கொள்ளலாம்.
-            generateSequentialBorrowerID();
         }
 
         function showHidePaymentDetails() {
