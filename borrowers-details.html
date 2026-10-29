@@ -275,8 +275,6 @@
                         <label>Retailer Details *</label>
                         <select id="Retailer_Details" onchange="autoFillRetailerCode()">
                             <option value="">-Select Retailer-</option>
-                            <option value="PKM">Pappireddipatty Kamala Mobiles (PKM)</option>
-                            <option value="RET002">Fin Partner Two (RET002)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -488,8 +486,29 @@
         window.onload = async function() {
             const loanDateEl = document.getElementById('Loan_Date');
             if(loanDateEl) loanDateEl.valueAsDate = new Date();
+            loadRetailersDropdown();
             await generateSequentialBorrowerID();
         };
+
+        function loadRetailersDropdown() {
+            const selectEl = document.getElementById('Retailer_Details');
+            if(!selectEl) return;
+            let users = [];
+            try {
+                users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+            } catch(e) {
+                users = [];
+            }
+            const retailers = users.filter(u => u.role === 'retailer');
+            
+            selectEl.innerHTML = '<option value="">-Select Retailer-</option>';
+            retailers.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.name;
+                opt.textContent = `${r.name} (${r.id})`;
+                selectEl.appendChild(opt);
+            });
+        }
 
         async function generateSequentialBorrowerID() {
             const issuedByEl = document.getElementById('Issued_by');
@@ -538,6 +557,7 @@
             const retailerGroup = document.getElementById('retailerFieldsGroup');
             if (issuedBy === 'Retailer') {
                 retailerGroup.classList.remove('hidden');
+                loadRetailersDropdown();
             } else {
                 retailerGroup.classList.add('hidden');
                 document.getElementById('Retailer_Details').value = '';
@@ -548,6 +568,7 @@
 
         async function autoFillRetailerCode() {
             const ret = document.getElementById('Retailer_Details').value;
+            // Extract code if format is Name (Mobile)
             document.getElementById('Retailer_Code').value = ret;
             await generateSequentialBorrowerID();
         }
@@ -594,7 +615,6 @@
                     return "";
                 }
 
-                // Parallel Uploads using Promise.all for maximum speed
                 const [photoId, aadharFrontId, aadharBackId, panCardId, rationCardId, cibilId, passbookId] = await Promise.all([
                     uploadFileToStorage('Customer_Photo'),
                     uploadFileToStorage('Aadhar_Front'),
