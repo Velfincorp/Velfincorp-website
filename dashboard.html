@@ -12,7 +12,6 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -25,9 +24,7 @@
             };
 
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) {
-                return; 
-            }
+            if (publicPages.includes(currentPage)) { return; }
 
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
@@ -350,10 +347,11 @@
         <!-- Admin Role & Permission Control Panel -->
         <div class="admin-control-box">
             <h3><i class="fas fa-user-shield"></i> Staff/Retailer Password & Module Access Management</h3>
-            <p style="font-size: 13px; color: #64748b;">Enter mobile number as Username, generate password, and select specific page access permissions.</p>
+            <p style="font-size: 13px; color: #64748b;">Enter name, mobile number as Username, generate password, and select specific page access permissions.</p>
             
             <div class="form-row">
-                <input type="text" id="newUserId" placeholder="Mobile Number (e.g., 9486886293)">
+                <input type="text" id="newUserName" placeholder="Staff / Retailer Name (e.g., Ramesh)">
+                <input type="text" id="newUserId" placeholder="Mobile Number (Username, e.g., 9486886293)">
                 <input type="text" id="newUserPass" placeholder="Generated Password (e.g., Vel@2026)">
                 <select id="newUserRole">
                     <option value="staff">Staff / Collection Agent</option>
@@ -381,6 +379,7 @@
             <table class="users-table">
                 <thead>
                     <tr>
+                        <th>Name</th>
                         <th>Username (Mobile)</th>
                         <th>Role</th>
                         <th>Allowed Modules Count</th>
@@ -407,7 +406,6 @@
 
         async function loadDashboardDataFromAppwrite() {
             try {
-                // Appwrite-ல் இருந்து லோன்கள் மற்றும் பேமெண்ட் தரவுகளைப் பெறுதல்
                 const loansResponse = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
                     VFC_DB.LOANS_ID
@@ -423,10 +421,9 @@
                 let cvTotalAmount = 0, cvCollected = 0, cvCount = 0;
                 let plTotalAmount = 0, plCollected = 0, plCount = 0;
 
-                // லோன்களைப் பிரித்து கணக்கிடுதல் (Credit Vault மற்றும் Personal Loan)
                 loans.forEach(loan => {
                     const amount = parseFloat(loan.loan_amount) || 0;
-                    const isCreditVault = loan.loan_id && (loan.loan_id.includes("VML") || loan.loan_id.includes("VEL") || loan.loan_id.includes("VFL"));
+                    const isCreditVault = loan.loan_id && (loan.loan_id.includes("VML") || loan.loan_id.includes("VEL") || loan.loan_id.includes("VFL") || loan.loan_id.includes("VCV"));
 
                     if (isCreditVault) {
                         if (loan.status === 'ACTIVE') {
@@ -441,13 +438,11 @@
                     }
                 });
 
-                // பேமெண்ட்டுகளைக் கணக்கிடுதல்
                 payments.forEach(pay => {
                     const paid = parseFloat(pay.amount_paid) || 0;
-                    // எந்த லோனைச் சேர்ந்தது என சோதித்தல் (loan_id மூலம்)
                     const parentLoan = loans.find(l => l.loan_id === pay.loan_id);
                     if (parentLoan) {
-                        const isCV = parentLoan.loan_id.includes("VML") || parentLoan.loan_id.includes("VEL") || parentLoan.loan_id.includes("VFL");
+                        const isCV = parentLoan.loan_id.includes("VML") || parentLoan.loan_id.includes("VEL") || parentLoan.loan_id.includes("VFL") || parentLoan.loan_id.includes("VCV");
                         if (isCV) {
                             cvCollected += paid;
                         } else {
@@ -456,7 +451,6 @@
                     }
                 });
 
-                // டாஷ்போர்டில் மதிப்புகளை அद्यுடனுக்குடன் ஏற்றுதல்
                 document.getElementById('cvActiveAmount').innerText = '₹' + cvTotalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2});
                 document.getElementById('cvCollectedAmount').innerText = '₹' + cvCollected.toLocaleString('en-IN', {minimumFractionDigits: 2});
                 document.getElementById('cvActiveCount').innerText = cvCount;
@@ -483,13 +477,14 @@
 
             tbody.innerHTML = '';
             if (users.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
                 return;
             }
 
             users.forEach(u => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td>${u.name || 'N/A'}</td>
                     <td>${u.id || '-'}</td>
                     <td><span style="text-transform: uppercase; font-weight: bold; color: #0F1D36;">${u.role || '-'}</span></td>
                     <td>${u.permissions ? u.permissions.length : 0} Modules</td>
@@ -499,6 +494,7 @@
         }
 
         function generateCredential() {
+            const userName = document.getElementById('newUserName').value.trim();
             const userId = document.getElementById('newUserId').value.trim();
             const userPass = document.getElementById('newUserPass').value.trim();
             const userRole = document.getElementById('newUserRole').value;
@@ -509,18 +505,19 @@
                 permissions.push(checkbox.value);
             });
 
-            if(!userId || !userPass) {
-                alert("Please enter Mobile Number (Username) and Password!");
+            if(!userName || !userId || !userPass) {
+                alert("தயவுசெய்து பெயர், மொபைல் நம்பர் மற்றும் பாஸ்வேர்ட் ஆகிய அனைத்தையும் உள்ளிடவும்!");
                 return;
             }
 
             if(userId.length !== 10) {
-                alert("Please enter a valid 10-digit mobile number as Username!");
+                alert("சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்!");
                 return;
             }
 
             let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
             users.push({ 
+                name: userName,
                 id: userId, 
                 pass: userPass, 
                 role: userRole, 
@@ -530,8 +527,9 @@
             localStorage.setItem('velfincorp_users', JSON.stringify(users));
             localStorage.setItem('velfincorp_staffs', JSON.stringify(users));
 
-            alert(`Access successfully created for Mobile: ${userId} with ${permissions.length} module permissions!`);
+            alert(`Access successfully created for ${userName} (${userId}) with ${permissions.length} module permissions!`);
             
+            document.getElementById('newUserName').value = '';
             document.getElementById('newUserId').value = '';
             document.getElementById('newUserPass').value = '';
             checkboxes.forEach(cb => cb.checked = false);
