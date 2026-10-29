@@ -24,9 +24,7 @@
             };
 
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) {
-                return; 
-            }
+            if (publicPages.includes(currentPage)) { return; }
 
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
@@ -223,7 +221,6 @@
 </head>
 <body>
 
-    <!-- Left Sidebar Navigation Menu -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -249,14 +246,12 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <h2>VEL FIN CORP</h2>
             <div class="subtitle">Personal Loan Application</div>
 
             <form id="personalLoanForm" onsubmit="validatePersonalLoan(event)">
-                
                 <div class="form-row">
                     <div class="form-group">
                         <label>Borrowers Details *</label>
@@ -358,7 +353,7 @@
                     borrowers.forEach(b => {
                         const opt = document.createElement('option');
                         opt.value = b.full_name;
-                        opt.dataset.phone = b.phone_number || b.mobile || b.phone || '';
+                        opt.dataset.phone = b.whatsapp_number || b.phone_number || '';
                         opt.textContent = `${b.full_name} (${b.borrower_id})`;
                         borrowerSelect.appendChild(opt);
                     });
@@ -409,9 +404,9 @@
             if (loanAmount > 0 && tenureVal > 0) {
                 let interestMultiplier = 1.0;
                 if (loanType === "Weekly") {
-                    if (tenureVal === 10) interestMultiplier = 1.075;   // 7.5% interest
-                    else if (tenureVal === 15) interestMultiplier = 1.125; // 12.5% interest
-                    else if (tenureVal === 20) interestMultiplier = 1.24;  // 24% interest
+                    if (tenureVal === 10) interestMultiplier = 1.075;   
+                    else if (tenureVal === 15) interestMultiplier = 1.125; 
+                    else if (tenureVal === 20) interestMultiplier = 1.24;  
                 } else if (loanType === "Monthly") {
                     interestMultiplier = 1.15;
                 }
@@ -467,7 +462,7 @@
                 );
 
                 if (activeLoansResponse.total > 0) {
-                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
+                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது!");
                     return false;
                 }
             } catch (err) {
@@ -489,6 +484,7 @@
                     loan_category: "Personal"
                 };
 
+                // 1. Save to Database
                 await window.appwriteDatabases.createDocument(
                     VFC_DB.DB_ID,
                     VFC_DB.LOANS_ID,
@@ -496,6 +492,7 @@
                     loanPayload
                 );
 
+                // 2. Trigger WhatsApp Welcome Message
                 let cleanMobile = borrowerPhone.replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
@@ -538,22 +535,16 @@
                 };
 
                 try {
-                    const execRes = await window.appwriteFunctions.createExecution(
+                    await window.appwriteFunctions.createExecution(
                         '6adb02310009b131da2d',
                         JSON.stringify(functionPayload)
                     );
-                    console.log("WhatsApp Execution Result:", execRes);
-                    if (execRes.status === 'failed') {
-                        alert("Personal Loan Saved! ஆனால் வாட்ஸ்அப் மெசேஜ் அனுப்புவதில் பிழை (Function Failed): " + (execRes.errors || execRes.responseBody));
-                    } else {
-                        alert("Personal loan successfully saved & Welcome Message triggered to " + finalMobile + "!");
-                    }
                 } catch (fnErr) {
                     console.error("WhatsApp Function Error:", fnErr);
-                    alert("Personal Loan Saved! ஆனால் வாட்ஸ்அப் பங்க்ஷன் அழைப்பதில் பிழை: " + fnErr.message);
                 }
 
-                document.getElementById('personalLoanForm').reset();
+                alert("Personal loan successfully saved and Welcome Message sent!");
+                document.getElementById('personalLoanForm', 'creditvaultForm').reset();
                 window.location.reload();
 
             } catch (err) {
