@@ -12,7 +12,6 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -25,9 +24,7 @@
             };
 
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) {
-                return; 
-            }
+            if (publicPages.includes(currentPage)) { return; }
 
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
@@ -183,6 +180,7 @@
         .form-group {
             flex: 1;
             min-width: 250px;
+            position: relative;
         }
         label {
             display: block;
@@ -226,11 +224,37 @@
             color: #475569;
             font-weight: bold;
         }
+        /* Custom searchable dropdown results list */
+        #borrowerSearchResults {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 99;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .search-result-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .search-result-item:hover {
+            background-color: rgba(197, 160, 89, 0.15);
+            color: var(--navy);
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Left Sidebar Menu (Fixed borrowers-details.html link) -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -256,7 +280,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <h2>VEL FIN CORP</h2>
@@ -266,14 +289,14 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Borrowers Name & Loan *</label>
-                        <select id="Borrowers_Name" onchange="autoFillLoanDetails()" required>
-                            <option value="">-Loading Active Loans-</option>
-                        </select>
+                        <label>Search Borrower (Name / Phone / Loan ID) *</label>
+                        <input type="text" id="borrowerSearchInput" placeholder="Type name, phone or loan ID..." oninput="filterBorrowers()" autocomplete="off">
+                        <input type="hidden" id="selectedLoanId" required>
+                        <div id="borrowerSearchResults"></div>
                     </div>
                     <div class="form-group">
                         <label>Loan ID</label>
-                        <input type="text" id="Loan_ID" class="readonly-field" readonly placeholder="Auto-generated based on selection">
+                        <input type="text" id="Loan_ID" class="readonly-field" readonly placeholder="Auto-filled">
                     </div>
                 </div>
 
@@ -327,7 +350,10 @@
     </div>
 
     <script>
+        let allActiveLoans = [];
+        let selectedLoanData = null;
         let appwriteFunctionsInstance = null;
+
         try {
             if (window.appwriteClient) {
                 appwriteFunctionsInstance = new window.Appwrite.Functions(window.appwriteClient);
@@ -363,60 +389,63 @@
         }
 
         async function loadActiveLoansFromAppwrite() {
-            const selectElement = document.getElementById('Borrowers_Name');
             try {
                 const response = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
                     VFC_DB.LOANS_ID
                 );
                 const loans = response.documents;
-                const activeLoans = loans.filter(loan => loan.status === 'ACTIVE');
-
-                if (activeLoans && activeLoans.length > 0) {
-                    selectElement.innerHTML = '<option value="">-Select Borrower & Loan-</option>';
-                    activeLoans.forEach(loan => {
-                        let opt = document.createElement('option');
-                        opt.value = loan.loan_id;
-                        opt.textContent = `${loan.borrower_name} (${loan.loan_id})`;
-                        
-                        opt.dataset.docid = loan.$id;
-                        opt.dataset.name = loan.borrower_name;
-                        opt.dataset.phone = loan.phone_number || "8778003840";
-                        opt.dataset.emi = parseFloat(loan.installment_amount || 0);
-                        opt.dataset.tenure = parseInt(loan.tenure || 10);
-                        opt.dataset.total = parseFloat(loan.loan_amount || 0);
-                        opt.dataset.loantype = loan.loan_type || 'Weekly';
-
-                        selectElement.appendChild(opt);
-                    });
-                } else {
-                    selectElement.innerHTML = '<option value="">-No Active Loans Found-</option>';
-                }
+                allActiveLoans = loans.filter(loan => loan.status === 'ACTIVE');
             } catch (e) {
                 console.error("Error loading loans for payment:", e);
-                selectElement.innerHTML = '<option value="">-Error Loading Loans-</option>';
+                allActiveLoans = [];
             }
         }
 
-        async function autoFillLoanDetails() {
-            const selectElement = document.getElementById('Borrowers_Name');
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-
-            if (!selectedOption.value) {
-                document.getElementById('Loan_ID').value = '';
-                document.getElementById('Paid_Amount').value = '';
-                document.getElementById('Paid_Installment').value = '';
-                document.getElementById('Remaining_Installment').value = '';
-                document.getElementById('Balance_Amount').value = '';
+        function filterBorrowers() {
+            const query = document.getElementById('borrowerSearchInput').value.toLowerCase().trim();
+            const resultsBox = document.getElementById('borrowerSearchResults');
+            
+            if (query.length === 0) {
+                resultsBox.style.display = 'none';
+                resultsBox.innerHTML = '';
                 return;
             }
 
-            const loanId = selectedOption.value;
-            const emiAmount = parseFloat(selectedOption.dataset.emi);
-            const totalTenure = parseInt(selectedOption.dataset.tenure);
-            const totalAmount = parseFloat(selectedOption.dataset.total);
+            const filtered = allActiveLoans.filter(loan => {
+                const name = (loan.borrower_name || '').toLowerCase();
+                const phone = (loan.phone_number || '').toLowerCase();
+                const loanId = (loan.loan_id || '').toLowerCase();
+                return name.includes(query) || phone.includes(query) || loanId.includes(query);
+            });
 
-            document.getElementById('Loan_ID').value = loanId;
+            if (filtered.length > 0) {
+                resultsBox.innerHTML = '';
+                filtered.forEach(loan => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.textContent = `${loan.borrower_name} (${loan.loan_id}) - ${loan.phone_number || ''}`;
+                    item.onclick = () => selectBorrowerLoan(loan);
+                    resultsBox.appendChild(item);
+                });
+                resultsBox.style.display = 'block';
+            } else {
+                resultsBox.innerHTML = '<div class="search-result-item" style="color:#94a3b8;">No matching loans found</div>';
+                resultsBox.style.display = 'block';
+            }
+        }
+
+        async function selectBorrowerLoan(loan) {
+            selectedLoanData = loan;
+            document.getElementById('borrowerSearchInput').value = `${loan.borrower_name} (${loan.loan_id})`;
+            document.getElementById('selectedLoanId').value = loan.loan_id;
+            document.getElementById('Loan_ID').value = loan.loan_id;
+            document.getElementById('borrowerSearchResults').style.display = 'none';
+
+            const emiAmount = parseFloat(loan.installment_amount || 0);
+            const totalTenure = parseInt(loan.tenure || 10);
+            const totalAmount = parseFloat(loan.loan_amount || 0);
+
             document.getElementById('Paid_Amount').value = emiAmount.toFixed(2);
 
             let paidCount = 0;
@@ -425,7 +454,7 @@
                     VFC_DB.DB_ID,
                     VFC_DB.PAYMENTS_ID
                 );
-                const loanPayments = paymentsResp.documents.filter(p => p.loan_id === loanId);
+                const loanPayments = paymentsResp.documents.filter(p => p.loan_id === loan.loan_id);
                 paidCount = loanPayments.length;
             } catch (err) {
                 console.warn("Could not fetch existing payments count:", err);
@@ -445,33 +474,51 @@
             document.getElementById('Balance_Amount').value = currentBalance.toFixed(2);
             document.getElementById('Paid_Amount').dataset.totalAmount = totalAmount;
             document.getElementById('Paid_Amount').dataset.totalPaidSoFar = totalPaidSoFar;
+            document.getElementById('Paid_Amount').dataset.emiAmount = emiAmount;
+            document.getElementById('Paid_Amount').dataset.totalTenure = totalTenure;
+            document.getElementById('Paid_Amount').dataset.paidCount = paidCount;
         }
 
         function updateCalculations() {
+            if (!selectedLoanData) return;
+
             let paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
             let totalAmount = parseFloat(document.getElementById('Paid_Amount').dataset.totalAmount) || 0;
             let totalPaidSoFar = parseFloat(document.getElementById('Paid_Amount').dataset.totalPaidSoFar) || 0;
+            let emiAmount = parseFloat(document.getElementById('Paid_Amount').dataset.emiAmount) || 1;
+            let totalTenure = parseInt(document.getElementById('Paid_Amount').dataset.totalTenure) || 10;
+            let paidCount = parseInt(document.getElementById('Paid_Amount').dataset.paidCount) || 0;
 
+            // Advanced payment calculation (Handles extra amounts like 3000, 4000 cleanly)
             let newBalance = totalAmount - totalPaidSoFar - paidAmount;
             if (newBalance < 0) newBalance = 0;
-
             document.getElementById('Balance_Amount').value = newBalance.toFixed(2);
+
+            // Calculate how many installments are covered by this paid amount
+            let extraInstallmentsCovered = Math.floor(paidAmount / emiAmount);
+            if (extraInstallmentsCovered < 1) extraInstallmentsCovered = 1;
+
+            let currentPaidInst = paidCount + extraInstallmentsCovered;
+            if (currentPaidInst > totalTenure) currentPaidInst = totalTenure;
+
+            let remainingInst = totalTenure - currentPaidInst;
+            if (remainingInst < 0) remainingInst = 0;
+
+            document.getElementById('Paid_Installment').value = currentPaidInst;
+            document.getElementById('Remaining_Installment').value = remainingInst;
         }
 
         async function validatePayment(event) {
             event.preventDefault();
 
-            const selectElement = document.getElementById('Borrowers_Name');
-            const selectedOption = selectElement.options[selectElement.selectedIndex];
-
-            if (!selectedOption.value) {
-                alert("தயவுசெய்து கஸ்டமர் பெயரை தேர்ந்தெடுக்கவும்!");
+            if (!selectedLoanData) {
+                alert("தயவுசெய்து சரியான கஸ்டமர் / லோனைத் தேர்ந்தெடுக்கவும்!");
                 return;
             }
 
-            const borrowerName = selectedOption.dataset.name;
-            const borrowerPhone = selectedOption.dataset.phone || "8778003840";
-            const loanType = selectedOption.dataset.loantype; 
+            const borrowerName = selectedLoanData.borrower_name;
+            const borrowerPhone = selectedLoanData.phone_number || "8778003840";
+            const loanType = selectedLoanData.loan_type || 'Weekly';
             const loanId = document.getElementById('Loan_ID').value;
             const paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
             const balanceAmount = parseFloat(document.getElementById('Balance_Amount').value) || 0;
@@ -602,6 +649,7 @@
             }
 
             document.getElementById('paymentForm').reset();
+            document.getElementById('borrowerSearchInput').value = '';
             document.getElementById('Date_field').valueAsDate = new Date();
             await loadActiveLoansFromAppwrite();
         }
