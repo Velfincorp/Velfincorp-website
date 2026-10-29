@@ -672,7 +672,7 @@
                     loanPayload
                 );
 
-                // 2. Trigger WhatsApp Welcome Message (7 parameters exact match)
+                // 2. Trigger WhatsApp Welcome Message (Exact 7 parameters matching template)
                 let cleanMobile = borrowerPhone.replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
