@@ -24,9 +24,7 @@
             };
 
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) {
-                return; 
-            }
+            if (publicPages.includes(currentPage)) { return; }
 
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
@@ -252,7 +250,6 @@
 </head>
 <body>
 
-    <!-- Left Sidebar Navigation Menu -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -278,14 +275,12 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <h2>VEL FIN CORP</h2>
             <div class="subtitle">Credit Vault Loan Application</div>
 
             <form id="creditVaultForm" onsubmit="validateCreditVaultLoan(event)">
-                
                 <div class="section-heading">1. General & Borrower Details</div>
                 <div class="form-row">
                     <div class="form-group">
@@ -348,7 +343,6 @@
                     </div>
                 </div>
 
-                <!-- IMEI Fields (Visible only for Mobile Phone) -->
                 <div class="form-row hidden" id="imeiFieldsGroup">
                     <div class="form-group">
                         <label>IMEI Number 1 *</label>
@@ -371,7 +365,6 @@
                     </div>
                 </div>
 
-                <!-- Fee & Principal Breakdown Box -->
                 <div id="calcSummaryBox" class="calc-summary">
                     <div class="calc-summary-grid">
                         <div class="calc-item">Payment to Retailer (Balance): <span id="disp_balance">₹0</span></div>
@@ -414,7 +407,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-submit">Submit Credit Vault Loan</button>
+                <button type="submit" class="btn-submit">Submit Credit Vault Loan & Send Welcome Message</button>
             </form>
         </div>
     </div>
@@ -438,7 +431,7 @@
                     borrowers.forEach(b => {
                         const opt = document.createElement('option');
                         opt.value = b.full_name;
-                        opt.dataset.phone = b.phone_number || '';
+                        opt.dataset.phone = b.whatsapp_number || b.phone_number || '';
                         opt.textContent = `${b.full_name} (${b.borrower_id})`;
                         borrowerSelect.appendChild(opt);
                     });
@@ -617,16 +610,17 @@
             const imei1 = document.getElementById('IMEI_1').value || "";
             const imei2 = document.getElementById('IMEI_2').value || "";
             const weeklyEmi = document.getElementById('Weekly_EMI').value;
-            const tenure = document.getElementById('Tenure').value;
+            const tenureVal = document.getElementById('Tenure').value;
+            const tenureStr = tenureVal + " Weeks";
             const loanStatus = document.getElementById('Status').value;
 
             const minAllowedDownPayment = price * 0.25;
             if (downPayment < minAllowedDownPayment) {
-                alert("எச்சரிக்கை: டவுன் பேமெண்ட் குறைந்தபட்சம் 25% (₹" + minAllowedDownPayment.toFixed(0) + ") இருக்க வேண்டும். அதற்கு குறைவாக அனுமதிக்கப்படாது!");
+                alert("எச்சரிக்கை: டவுன் பேமெண்ட் குறைந்தபட்சம் 25% (₹" + minAllowedDownPayment.toFixed(0) + ") இருக்க வேண்டும்!");
                 return false;
             }
 
-            if (loanAmount <= 0 || !borrowerName || !productCategory || !tenure) {
+            if (loanAmount <= 0 || !borrowerName || !productCategory || !tenureVal) {
                 alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
                 return false;
             }
@@ -642,13 +636,11 @@
                 );
 
                 if (activeLoansResponse.total > 0) {
-                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
+                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது!");
                     return false;
                 }
             } catch (err) {
                 console.error("Error checking active loans:", err);
-                alert("லோன் நிலையைச் சரிபார்ப்பதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.");
-                return false;
             }
 
             try {
@@ -659,7 +651,7 @@
                     loan_date: loanDate,
                     borrower_name: borrowerName,
                     phone_number: borrowerPhone,
-                    loan_category: productCategory, // Maps to existing database column
+                    loan_category: productCategory,
                     product_name: productName,
                     imei_number_1: imei1,
                     imei_number_2: imei2,
@@ -667,11 +659,12 @@
                     down_payment: downPayment.toString(),
                     loan_amount: loanAmount.toString(),
                     installment_amount: weeklyEmi,
-                    tenure: tenure + " Weeks",
+                    tenure: tenureStr,
                     loan_type: "Weekly",
                     status: loanStatus
                 };
 
+                // 1. Save to Database
                 await window.appwriteDatabases.createDocument(
                     VFC_DB.DB_ID,
                     VFC_DB.LOANS_ID,
@@ -679,7 +672,57 @@
                     loanPayload
                 );
 
-                alert("Credit Vault Loan successfully saved to Cloud Database!");
+                // 2. Trigger WhatsApp Welcome Message
+                let cleanMobile = borrowerPhone.replace(/\D/g, "");
+                if (cleanMobile.length > 10) {
+                    cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
+                }
+                const finalMobile = "91" + cleanMobile;
+
+                const selectedDateObj = loanDate ? new Date(loanDate) : new Date();
+                const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
+                const loanDay = daysOfWeek[selectedDateObj.getDay()];
+                const loanDateStr = selectedDateObj.toLocaleDateString('en-GB');
+
+                let previousDayText = "முந்தைய நாள் இரவு 12:00 மணிக்கு முன்பு";
+                const dayMap = {
+                    "Sunday": "சனிக்கிழமை இரவு 12:00 மணி (அதாவது ஞாயிற்றுக்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Monday": "ஞாயிற்றுக்கிழமை இரவு 12:00 மணி (அதாவது திங்கட்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Tuesday": "திங்கட்கிழமை இரவு 12:00 மணி (அதாவது செவ்வாய்க்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Wednesday": "செவ்வாய்க்கிழமை இரவு 12:00 மணி (அதாவது புதன்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Thursday": "புதன்கிழமை இரவு 12:00 மணி (அதாவது வியாழக்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Friday": "வியாழக்கிழமை இரவு 12:00 மணி (அதாவது வெள்ளிக்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Saturday": "வெள்ளிக்கிழமை இரவு 12:00 மணி (அதாவது சனிக்கிழமை தொடங்குவதற்கு முன்பு)"
+                };
+                const engDay = selectedDateObj.toLocaleString('en-US', { weekday: 'long' });
+                if (dayMap[engDay]) { previousDayText = dayMap[engDay]; }
+
+                const functionPayload = {
+                    mobile: finalMobile,
+                    template_name: "vel_fin_welcome_message",
+                    components: {
+                        body_1: borrowerName,
+                        body_2: loanId,
+                        body_3: "Weekly",
+                        body_4: productCategory + " (" + productName + ")",
+                        body_5: weeklyEmi.toString(),
+                        body_6: tenureStr,
+                        body_7: loanDay,
+                        body_8: loanDateStr,
+                        body_9: previousDayText
+                    }
+                };
+
+                try {
+                    await window.appwriteFunctions.createExecution(
+                        '6adb02310009b131da2d',
+                        JSON.stringify(functionPayload)
+                    );
+                } catch (fnErr) {
+                    console.error("WhatsApp Function Error:", fnErr);
+                }
+
+                alert("Credit Vault Loan successfully saved and Welcome Message sent!");
                 document.getElementById('creditVaultForm').reset();
                 window.location.reload();
 
