@@ -287,7 +287,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Loan Amount (₹) *</label>
-                        <input type="number" id="Loan_Amount" oninput="calculatePersonalLoan()" placeholder="0.00" required>
+                        <input type="number" id="Loan_Amount" oninput="calculatePersonalLoan()" placeholder="0" required>
                     </div>
                     <div class="form-group">
                         <label>Disbursed Amount (₹)</label>
@@ -415,7 +415,8 @@
                 const deduction = loanAmount * 0.15;
                 const disbursed = loanAmount - deduction;
                 
-                document.getElementById('Disbursed_Amount').value = disbursed.toFixed(2);
+                // Correct rounding to prevent decimal shift errors
+                document.getElementById('Disbursed_Amount').value = Math.round(disbursed);
                 document.getElementById('Document_Charge').value = 50;
 
                 const installment = totalPayable / tenureVal;
@@ -425,7 +426,7 @@
                 else if (loanType === "Monthly") tenureUnit = " Months";
 
                 document.getElementById('Tenure').value = tenureVal + tenureUnit;
-                document.getElementById('Installment_Amount').value = installment.toFixed(2);
+                document.getElementById('Installment_Amount').value = Math.round(installment);
             } else {
                 document.getElementById('Disbursed_Amount').value = '';
                 document.getElementById('Tenure').value = '';
@@ -441,9 +442,9 @@
             const borrowerName = borrowerSelect.value;
             const borrowerPhone = borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone || "8778003840";
             const loanId = document.getElementById('Loan_ID').value;
-            const emiAmount = document.getElementById('Installment_Amount').value;
+            const emiAmount = Math.round(parseFloat(document.getElementById('Installment_Amount').value) || 0).toString();
             const tenure = document.getElementById('Tenure').value;
-            const disbursedAmount = document.getElementById('Disbursed_Amount').value;
+            const disbursedAmount = Math.round(parseFloat(document.getElementById('Disbursed_Amount').value) || 0).toString();
             const loanStatus = document.getElementById('Status').value;
 
             if (loanAmount <= 0 || !borrowerName || !loanType || !tenure) {
@@ -475,7 +476,7 @@
                     borrower_name: borrowerName,
                     phone_number: borrowerPhone,
                     loan_type: loanType,
-                    loan_amount: loanAmount.toString(),
+                    loan_amount: Math.round(loanAmount).toString(),
                     disbursed_amount: disbursedAmount,
                     installment_amount: emiAmount,
                     tenure: tenure,
@@ -492,7 +493,7 @@
                     loanPayload
                 );
 
-                // 2. Trigger WhatsApp Welcome Message
+                // 2. Trigger WhatsApp Welcome Message (Exactly 7 parameters matching template)
                 let cleanMobile = borrowerPhone.replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
@@ -504,20 +505,6 @@
                 const loanDay = daysOfWeek[today.getDay()];
                 const loanDateStr = today.toLocaleDateString('en-GB');
 
-                let previousDayText = "முந்தைய நாள் இரவு 12:00 மணிக்கு முன்பு";
-                const dayMap = {
-                    "Sunday": "சனிக்கிழமை இரவு 12:00 மணி (அதாவது ஞாயிற்றுக்கிழமை தொடங்குவதற்கு முன்பு)",
-                    "Monday": "ஞாயிற்றுக்கிழமை இரவு 12:00 மணி (அதாவது திங்கட்கிழமை தொடங்குவதற்கு முன்பு)",
-                    "Tuesday": "திங்கட்கிழமை இரவு 12:00 மணி (அதாவது செவ்வாய்க்கிழமை தொடங்குவதற்கு முன்பு)",
-                    "Wednesday": "செவ்வாய்க்கிழமை இரவு 12:00 மணி (அதாவது புதன்கிழமை தொடங்குவதற்கு முன்பு)",
-                    "Thursday": "புதன்கிழமை இரவு 12:00 மணி (அதாவது வியாழக்கிழமை தொடங்குவதற்கு முன்பு)",
-                    "Friday": "வியாழக்கிழமை இரவு 12:00 மணி (அதாவது வெள்ளிக்கிழமை தொடங்குவதற்கு முன்பு)",
-                    "Saturday": "வெள்ளிக்கிழமை இரவு 12:00 மணி (அதாவது சனிக்கிழமை தொடங்குவதற்கு முன்பு)"
-                };
-                if (dayMap[today.toLocaleString('en-US', { weekday: 'long' })]) {
-                    previousDayText = dayMap[today.toLocaleString('en-US', { weekday: 'long' })];
-                }
-
                 const functionPayload = {
                     mobile: finalMobile,
                     template_name: "vel_fin_welcome_message",
@@ -525,12 +512,10 @@
                         body_1: borrowerName,
                         body_2: loanId,
                         body_3: loanType,
-                        body_4: "Personal Loan",
-                        body_5: emiAmount.toString(),
-                        body_6: tenure.toString(),
-                        body_7: loanDay,
-                        body_8: loanDateStr,
-                        body_9: previousDayText
+                        body_4: emiAmount,
+                        body_5: tenure,
+                        body_6: loanDay,
+                        body_7: loanDateStr
                     }
                 };
 
@@ -544,7 +529,7 @@
                 }
 
                 alert("Personal loan successfully saved and Welcome Message sent!");
-                document.getElementById('personalLoanForm', 'creditvaultForm').reset();
+                document.getElementById('personalLoanForm').reset();
                 window.location.reload();
 
             } catch (err) {
