@@ -20,8 +20,8 @@ const LIVE_DB = {
     BORROWERS_ID: '6ad71e920004bbc106eb', // Live_Borrowers
     LOANS_ID: '6ad71f29001d4ff46c50',     // Live_Loans
     PAYMENTS_ID: '6ad71ee900312b70ce69', // Live_Payments
-    CREDIT_VAULT_ID: '6ad71f29001d4ff46c50', 
-    PERSONAL_LOAN_ID: '6ad71f29001d4ff46c50', 
+    CREDIT_VAULT_ID: '6ad71f29001d4ff46c50',  
+    PERSONAL_LOAN_ID: '6ad71f29001d4ff46c50',  
     DOCUMENTS_BUCKET_ID: '6ad728e7001cd61e6b73' 
 };
 
@@ -34,4 +34,15 @@ window.VFC_DB = LIVE_DB;
 window.AppwriteID = ID;
 window.AppwriteQuery = Query;
 
-console.log("Vel Fin Corp Live Environment Initialized Successfully");
+// Automatically inject Website Logo (Favicon) to all pages globally
+(function() {
+    window.addEventListener('DOMContentLoaded', () => {
+        let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        link.type = 'image/jpeg';
+        link.rel = 'icon';
+        link.href = 'velfincorp-logo.jpeg'; // உங்கள் லோகோ ஃபைல் பெயர்
+        document.getElementsByTagName('head')[0].appendChild(link);
+    });
+})();
+
+console.log("Vel Fin Corp Live Environment Initialized Successfully with Global Favicon");
