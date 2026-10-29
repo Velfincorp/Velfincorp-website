@@ -6,14 +6,12 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Vel Fin Corp - Credit Vault Report</title>
+    <title>Vel Fin Corp - Credit Vault Loan Application</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -60,468 +58,703 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 260px;
+            background-color: var(--navy);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            border-right: 3px solid var(--gold);
+            position: fixed;
+            height: 100vh;
+            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
+            overflow-y: auto;
+        }
+        .sidebar-brand {
             padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0,0,0,0.1);
+        }
+        .sidebar-logo {
+            height: 40px;
+            width: 40px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            background: var(--white);
+            padding: 2px;
+        }
+        .sidebar-title {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 15px 0;
+            margin: 0;
+            flex: 1;
+        }
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 25px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active {
+            background-color: rgba(197, 160, 89, 0.15);
+            color: var(--gold);
+            border-left-color: var(--gold);
+        }
+        .sidebar-menu li a i {
+            width: 20px;
+            text-align: center;
+            color: var(--gold);
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .btn-logout {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px;
+            box-sizing: border-box;
         }
         .container {
-            max-width: 1100px;
+            max-width: 900px;
             margin: 0 auto;
             background: var(--white);
-            padding: 30px;
+            padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(15, 29, 54, 0.08);
+            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05);
             border-top: 5px solid var(--navy);
-        }
-        .header-flex {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
         }
         h2 {
             font-family: 'Cinzel', serif;
+            text-align: center;
             color: var(--navy);
-            margin: 0;
-            font-size: 24px;
+            margin-bottom: 5px;
         }
-        .back-btn {
-            background: var(--gold);
+        .subtitle {
+            text-align: center;
+            color: var(--gold);
+            font-weight: 600;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+        .section-heading {
+            font-family: 'Cinzel', serif;
             color: var(--navy);
-            padding: 8px 15px;
-            border-radius: 4px;
-            text-decoration: none;
+            font-size: 16px;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 8px;
+            margin: 30px 0 20px 0;
             font-weight: bold;
-            font-size: 13px;
         }
-        .filter-row {
+        .form-row {
             display: flex;
-            gap: 15px;
+            gap: 20px;
             margin-bottom: 20px;
             flex-wrap: wrap;
         }
-        .search-box, .filter-select {
+        .form-group {
             flex: 1;
-            min-width: 200px;
-            padding: 11px 15px;
+            min-width: 250px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--navy);
+            font-size: 13px;
+        }
+        input, select {
+            width: 100%;
+            padding: 11px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 14px;
             box-sizing: border-box;
-            background: var(--white);
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+        input:focus, select:focus {
+            border-color: var(--gold);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
         }
-        th, td {
-            border: 1px solid #e2e8f0;
-            padding: 12px 15px;
-            text-align: left;
-            font-size: 14px;
-        }
-        th {
-            background-color: var(--navy);
-            color: white;
-            font-family: 'Cinzel', serif;
-        }
-        tr:hover {
+        .calc-summary {
             background-color: #f8fafc;
-            cursor: pointer;
-        }
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: var(--white);
-            width: 750px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-            border-top: 5px solid var(--navy);
-        }
-        .modal-header {
-            font-family: 'Cinzel', serif;
-            font-size: 18px;
-            color: var(--navy);
+            border: 1px dashed var(--gold);
+            border-radius: 6px;
+            padding: 15px;
             margin-bottom: 20px;
-            border-bottom: 2px solid var(--gold);
-            padding-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-size: 13px;
+            color: var(--navy);
+            display: none;
         }
-        .modal-actions {
-            display: flex;
+        .calc-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 10px;
         }
-        .btn-print {
+        .calc-item span {
+            font-weight: bold;
+            color: #2F855A;
+        }
+        .btn-submit {
             background-color: var(--navy);
             color: white;
+            padding: 14px 20px;
             border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
+            width: 100%;
+            font-size: 16px;
             font-weight: bold;
+            margin-top: 30px;
+            transition: 0.3s;
         }
-        .btn-pdf {
+        .btn-submit:hover {
             background-color: var(--gold);
             color: var(--navy);
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
         }
-        .close-btn {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .profile-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .profile-table td {
-            padding: 10px 15px;
-            border: 1px solid #cbd5e1;
-            font-size: 14px;
-        }
-        .profile-table td:first-child {
-            font-weight: bold;
-            color: var(--navy);
-            width: 40%;
-            background: #f1f5f9;
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header-flex">
-        <a href="dashboard.html" class="back-btn">&larr; Back to Dashboard</a>
-        <h2>Credit Vault Loans Report</h2>
-    </div>
-
-    <!-- Search & Filters -->
-    <div class="filter-row">
-        <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name or Phone Number..." onkeyup="filterTable()">
-        
-        <!-- Date Filter -->
-        <input type="date" id="dateFilter" class="filter-select" onchange="filterTable()" title="Filter by Loan Date">
-
-        <select id="loanTypeFilter" class="filter-select" onchange="filterTable()">
-            <option value="">-All Loan Types-</option>
-            <option value="Mobile Phone">Mobile Phone</option>
-            <option value="Home Appliance">Home Appliance</option>
-            <option value="Furniture">Furniture</option>
-            <option value="Jewel Loan">Jewel Loan</option>
-        </select>
-
-        <select id="statusFilter" class="filter-select" onchange="filterTable()">
-            <option value="">-All Status-</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="PENDING">PENDING</option>
-            <option value="CLOSED">CLOSED</option>
-            <option value="PAID">PAID</option>
-            <option value="DELAYED">DELAYED</option>
-            <option value="OVERDUE">OVERDUE</option>
-        </select>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Loan ID</th>
-                <th>Borrower Name</th>
-                <th>Phone Number</th>
-                <th>Loan Type</th>
-                <th>Loan Amount</th>
-                <th>Tenure</th>
-                <th>Weekly EMI</th>
-                <th>Payment Status</th>
-            </tr>
-        </thead>
-        <tbody id="reportTableBody">
-            <tr><td colspan="8" style="text-align: center;">Loading credit vault loans from database...</td></tr>
-        </tbody>
-    </table>
-</div>
-
-<!-- Modal Popup for Full Loan & Borrower Details -->
-<div class="modal" id="loanModal">
-    <div class="modal-content" id="printableArea">
-        <div class="modal-header">
-            <span>Credit Vault Loan & Borrower Full Profile</span>
-            <div class="modal-actions">
-                <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
-                <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
-                <button class="close-btn" onclick="closeModal()">X</button>
-            </div>
+    <!-- Left Sidebar Navigation Menu -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-title">VEL FIN CORP</div>
         </div>
-        <div id="modalBody">
-            <!-- Details loaded dynamically -->
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
+            <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
+            <li><a href="creditvault.html" class="active"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
+            <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
+            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
+            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
+            <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
+            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
     </div>
-</div>
 
-<script>
-    let currentLoan = null;
-    let allCreditVaultLoans = [];
-    let allPayments = [];
-    let allBorrowers = [];
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <h2>VEL FIN CORP</h2>
+            <div class="subtitle">Credit Vault Loan Application</div>
 
-    window.addEventListener('DOMContentLoaded', async () => {
-        await loadReportData();
-    });
-
-    function formatIndianDate(dateStr) {
-        if (!dateStr) return '-';
-        if (dateStr.includes('/')) {
-            const parts = dateStr.split('/');
-            if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
-                return `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${parts[2]}`;
-            }
-            return dateStr;
-        }
-        if (dateStr.includes('-')) {
-            const parts = dateStr.split('-');
-            if (parts.length === 3 && parts[0].length === 4) {
-                return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
-            }
-        }
-        try {
-            const d = new Date(dateStr);
-            if (!isNaN(d.getTime())) {
-                const day = String(d.getDate()).padStart(2, '0');
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const year = d.getFullYear();
-                return `${day}/${month}/${year}`;
-            }
-        } catch (e) {
-            console.error("Date format error:", e);
-        }
-        return dateStr;
-    }
-
-    async function loadReportData() {
-        const tbody = document.getElementById('reportTableBody');
-        try {
-            const [loansRes, paymentsRes, borrowersRes] = await Promise.all([
-                window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID),
-                window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID).catch(() => ({ documents: [] })),
-                window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID).catch(() => ({ documents: [] }))
-            ]);
-
-            allPayments = paymentsRes.documents || [];
-            allBorrowers = borrowersRes.documents || [];
-            const allLoans = loansRes.documents || [];
-
-            if (!allLoans || allLoans.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No credit vault loans found in database.</td></tr>';
-                return;
-            }
-
-            allCreditVaultLoans = allLoans.filter(loan => {
-                const category = loan.loan_category ? loan.loan_category.trim() : '';
-                const loanId = loan.loan_id ? loan.loan_id.toUpperCase() : '';
-                return category === 'Credit Vault' || loanId.startsWith('VML') || loanId.startsWith('VFL') || loanId.startsWith('VHL') || loanId.startsWith('VJL');
-            });
-
-            // Sort loans by date descending (Newest first)
-            allCreditVaultLoans.sort((a, b) => {
-                const dateA = new Date(a.loan_date || a.$createdAt || 0);
-                const dateB = new Date(b.loan_date || b.$createdAt || 0);
-                return dateB - dateA;
-            });
-
-            renderTable(allCreditVaultLoans);
-        } catch(error) {
-            console.error("Error loading credit vault reports:", error);
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
-        }
-    }
-
-    // Determine Payment Status (Paid, Delayed, Overdue) based on payment history and dates
-    function getPaymentStatusInfo(loan) {
-        const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id || p.borrower_name === loan.borrower_name);
-        const today = new Date();
-        const loanDate = new Date(loan.loan_date || loan.$createdAt);
-        const diffTime = Math.abs(today - loanDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const expectedWeeks = Math.floor(diffDays / 7) + 1;
-
-        let totalPaidAmt = 0;
-        loanPayments.forEach(p => {
-            totalPaidAmt += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0);
-        });
-
-        const weeklyEmi = parseFloat(loan.installment_amount || 0);
-        const expectedPaidAmt = weeklyEmi * Math.min(expectedWeeks, 30);
-
-        if (loan.status === 'CLOSED') return { label: 'CLOSED', color: '#C53030' };
-        if (totalPaidAmt >= expectedPaidAmt) return { label: 'PAID', color: '#2F855A' };
-        if (diffDays > (loanPayments.length + 1) * 7 + 7) return { label: 'OVERDUE', color: '#C53030' };
-        return { label: 'DELAYED', color: '#D69E2E' };
-    }
-
-    function renderTable(loans) {
-        const tbody = document.getElementById('reportTableBody');
-        if (loans.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No matching credit vault loans found.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = '';
-        loans.forEach((loan) => {
-            const tr = document.createElement('tr');
-            tr.onclick = () => showLoanDetails(loan);
-            
-            const payStatus = getPaymentStatusInfo(loan);
-            tr.innerHTML = `
-                <td><strong>${loan.loan_id || '-'}</strong></td>
-                <td>${loan.borrower_name || '-'}</td>
-                <td>${loan.phone_number || '-'}</td>
-                <td>${loan.product_category || loan.loan_type || '-'}</td>
-                <td>₹${loan.loan_amount || '0'}</td>
-                <td>${loan.tenure || '-'}</td>
-                <td>₹${loan.installment_amount || '0'}</td>
-                <td><span style="color: ${payStatus.color}; font-weight: bold;">${payStatus.label}</span></td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    function filterTable() {
-        const input = document.getElementById('searchInput').value.toLowerCase();
-        const dateInput = document.getElementById('dateFilter').value; // Selected Date (YYYY-MM-DD)
-        const typeFilter = document.getElementById('loanTypeFilter').value;
-        const statusFilter = document.getElementById('statusFilter').value;
-
-        const filtered = allCreditVaultLoans.filter(loan => {
-            const name = (loan.borrower_name || '').toLowerCase();
-            const phone = (loan.phone_number || '').toLowerCase();
-            const loanId = (loan.loan_id || '').toLowerCase();
-            const type = loan.product_category || loan.loan_type || '';
-            const status = loan.status || 'ACTIVE';
-            const payStatus = getPaymentStatusInfo(loan).label;
-            const loanDateVal = (loan.loan_date || '').split('T')[0]; // YYYY-MM-DD format
-
-            const matchesSearch = name.includes(input) || phone.includes(input) || loanId.includes(input);
-            const matchesDate = !dateInput || loanDateVal === dateInput;
-            const matchesType = typeFilter === '' || type === typeFilter;
-            const matchesStatus = statusFilter === '' || status === statusFilter || payStatus === statusFilter;
-
-            return matchesSearch && matchesDate && matchesType && matchesStatus;
-        });
-
-        renderTable(filtered);
-    }
-
-    function showLoanDetails(loan) {
-        currentLoan = loan;
-        const modal = document.getElementById('loanModal');
-        const modalBody = document.getElementById('modalBody');
-        const formattedDate = formatIndianDate(loan.loan_date);
-
-        const matchedBorrower = allBorrowers.find(b => b.full_name === loan.borrower_name || b.phone_number === loan.phone_number);
-        const borrowerIdStr = matchedBorrower && matchedBorrower.borrower_id ? ` (${matchedBorrower.borrower_id})` : '';
-        const customerDisplayName = (loan.borrower_name || '-') + borrowerIdStr;
-
-        const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id || p.borrower_name === loan.borrower_name);
-        let paidAmount = 0;
-        loanPayments.forEach(p => {
-            paidAmount += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0);
-        });
-
-        const installmentAmt = parseFloat(loan.installment_amount || 0);
-        const paidInstallments = installmentAmt > 0 ? Math.floor(paidAmount / installmentAmt) : loanPayments.length;
-        
-        let totalTenure = 10;
-        if (loan.tenure) {
-            const numMatch = loan.tenure.match(/\d+/);
-            if (numMatch) totalTenure = parseInt(numMatch[0]);
-        }
-
-        const remainingInstallments = Math.max(0, totalTenure - paidInstallments);
-        const totalLoanAmtNum = parseFloat(loan.loan_amount || 0);
-        const remainingAmount = Math.max(0, totalLoanAmtNum - paidAmount);
-        const payStatus = getPaymentStatusInfo(loan);
-
-        modalBody.innerHTML = `
-            <table class="profile-table">
-                <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Loan Information</th></tr>
-                <tr><td>Loan ID</td><td>${loan.loan_id || '-'}</td></tr>
-                <tr><td>Product Category & Name</td><td>${loan.product_category || '-'} | ${loan.product_name || '-'}</td></tr>
-                <tr><td>Total Loan Amount</td><td>₹${totalLoanAmtNum.toFixed(2)}</td></tr>
-                <tr><td>Down Payment</td><td>₹${loan.down_payment || '0'}</td></tr>
-                <tr><td>Weekly EMI Amount</td><td>₹${installmentAmt.toFixed(2)}</td></tr>
-                <tr><td>Tenure</td><td>${loan.tenure || totalTenure + ' Weeks'}</td></tr>
-                <tr><td>Paid Installments</td><td>${paidInstallments} / ${totalTenure}</td></tr>
-                <tr><td>Remaining Installments</td><td>${remainingInstallments}</td></tr>
-                <tr><td>Total Paid Amount</td><td>₹${paidAmount.toFixed(2)}</td></tr>
-                <tr><td>Remaining Balance Amount</td><td>₹${remainingAmount.toFixed(2)}</td></tr>
-                <tr><td>Loan Date</td><td>${formattedDate}</td></tr>
-                <tr><td>Payment Status</td><td><span style="font-weight: bold; color: ${payStatus.color};">${payStatus.label}</span></td></tr>
-                <tr><td>Loan Status</td><td>${loan.status || 'ACTIVE'}</td></tr>
+            <form id="creditVaultForm" onsubmit="validateCreditVaultLoan(event)">
                 
-                <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Details</th></tr>
-                <tr><td>Customer Name</td><td>${customerDisplayName}</td></tr>
-                <tr><td>Phone Number</td><td>${loan.phone_number || '-'}</td></tr>
-            </table>
-        `;
-        modal.style.display = 'flex';
-    }
+                <div class="section-heading">1. General & Borrower Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Issued by *</label>
+                        <select id="Issued_by" onchange="toggleRetailerFields()" required>
+                            <option value="">-Select-</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Retailer">Retailer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Borrowers Details *</label>
+                        <select id="Borrowers_Details" onchange="checkActiveBorrowerLoan()" required>
+                            <option value="">-Loading Borrowers-</option>
+                        </select>
+                    </div>
+                </div>
 
-    function downloadPDF() {
-        const element = document.getElementById('printableArea');
-        const actions = element.querySelector('.modal-actions');
-        actions.style.display = 'none';
+                <div class="form-row hidden" id="retailerFieldsGroup">
+                    <div class="form-group">
+                        <label>Retailer Details *</label>
+                        <select id="Retailer_Details" onchange="autoFillRetailerCode()">
+                            <option value="">-Select Retailer-</option>
+                            <option value="PKM">Pappireddipatty Kamala Mobiles (PKM)</option>
+                            <option value="RET002">Fin Partner Two (RET002)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Retailer Code *</label>
+                        <input type="text" id="Retailer_Code" placeholder="e.g. PKM">
+                    </div>
+                </div>
 
-        let fileName = "Credit_Vault_Loan_Profile.pdf";
-        if (currentLoan) {
-            const cleanName = (currentLoan.borrower_name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
-            const cleanId = (currentLoan.loan_id || 'Loan').replace(/[^a-zA-Z0-9]/g, '_');
-            fileName = `${cleanName}_${cleanId}.pdf`;
+                <div class="section-heading">2. Loan & Product Information</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Loan ID *</label>
+                        <input type="text" id="Loan_ID" readonly style="background-color: #f1f5f9;">
+                    </div>
+                    <div class="form-group">
+                        <label>Loan Date *</label>
+                        <input type="date" id="Loan_Date" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Product Category *</label>
+                        <select id="Product_Category" onchange="handleCategoryChange()" required>
+                            <option value="">-Select Category-</option>
+                            <option value="Jewel Loan">Jewel Loan</option>
+                            <option value="Mobile Phone">Mobile Phone</option>
+                            <option value="Home Appliance">Home Appliance</option>
+                            <option value="Furniture">Furniture</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Product Name & Model *</label>
+                        <input type="text" id="Product_Name" placeholder="Enter product details" required>
+                    </div>
+                </div>
+
+                <!-- IMEI Fields (Visible only for Mobile Phone) -->
+                <div class="form-row hidden" id="imeiFieldsGroup">
+                    <div class="form-group">
+                        <label>IMEI Number 1 *</label>
+                        <input type="text" id="IMEI_1" placeholder="Enter 15-digit IMEI 1">
+                    </div>
+                    <div class="form-group">
+                        <label>IMEI Number 2</label>
+                        <input type="text" id="IMEI_2" placeholder="Enter 15-digit IMEI 2 (Optional)">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Product Price (₹) *</label>
+                        <input type="number" id="Product_Price" oninput="handlePriceInput()" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Down Payment (₹) * <small style="color:var(--gold);">(Min 25% allowed, Default 30%)</small></label>
+                        <input type="number" id="Down_Payment" oninput="calculateCreditVault()" placeholder="0.00" required>
+                    </div>
+                </div>
+
+                <!-- Fee & Principal Breakdown Box -->
+                <div id="calcSummaryBox" class="calc-summary">
+                    <div class="calc-summary-grid">
+                        <div class="calc-item">Payment to Retailer (Balance): <span id="disp_balance">₹0</span></div>
+                        <div class="calc-item">Setup Fee (4%): <span id="disp_setup">₹0</span></div>
+                        <div class="calc-item">Processing Fee (2.5%): <span id="disp_proc">₹0</span></div>
+                        <div class="calc-item">Document Charge: <span id="disp_doc">₹100</span></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tenure (Weeks) *</label>
+                        <select id="Tenure" onchange="calculateCreditVault()" required>
+                            <option value="">-Select Tenure-</option>
+                            <option value="10">10 Weeks</option>
+                            <option value="15">15 Weeks</option>
+                            <option value="20">20 Weeks</option>
+                            <option value="25">25 Weeks</option>
+                            <option value="30">30 Weeks</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Loan Amount (₹) <small style="color:#64748b;">(Total Payable)</small></label>
+                        <input type="number" id="Loan_Amount" readonly style="background-color: #f1f5f9; font-weight: bold;" placeholder="Select Tenure first">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Weekly EMI Amount (₹)</label>
+                        <input type="number" id="Weekly_EMI" readonly style="background-color: #f1f5f9; font-weight: bold; color: #2F855A;" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="Status" required>
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="PENDING">PENDING</option>
+                            <option value="CLOSED">CLOSED</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Submit Credit Vault Loan & Send Welcome Message</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', async () => {
+            const loanDateEl = document.getElementById('Loan_Date');
+            if(loanDateEl) loanDateEl.valueAsDate = new Date();
+            
+            await generateLoanID();
+
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            try {
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.BORROWERS_ID
+                );
+                const borrowers = response.documents;
+                if (borrowers && borrowers.length > 0) {
+                    borrowerSelect.innerHTML = '<option value="">-Select Borrower-</option>';
+                    borrowers.forEach(b => {
+                        const opt = document.createElement('option');
+                        opt.value = b.full_name;
+                        // Fallback check for different possible phone field names
+                        opt.dataset.phone = b.phone_number || b.mobile || b.phone || '';
+                        opt.textContent = `${b.full_name} (${b.borrower_id})`;
+                        borrowerSelect.appendChild(opt);
+                    });
+                } else {
+                    borrowerSelect.innerHTML = '<option value="">-No Borrowers Found-</option>';
+                }
+            } catch (e) {
+                console.error("Error loading borrowers:", e);
+                borrowerSelect.innerHTML = '<option value="">-Error Loading Borrowers-</option>';
+            }
+        });
+
+        async function checkActiveBorrowerLoan() {
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            const borrowerName = borrowerSelect.value;
+            if (!borrowerName) return;
+
+            try {
+                const activeLoansResponse = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    [
+                        window.AppwriteQuery.equal('borrower_name', borrowerName),
+                        window.AppwriteQuery.equal('status', 'ACTIVE')
+                    ]
+                );
+
+                if (activeLoansResponse.total > 0) {
+                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
+                    borrowerSelect.value = ""; 
+                }
+            } catch (err) {
+                console.error("Error checking active loans:", err);
+            }
         }
 
-        const opt = {
-            margin:       10,
-            filename:     fileName,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+        async function generateLoanID() {
+            const category = document.getElementById('Product_Category').value;
+            const year = new Date().getFullYear();
+            let prefix = "VCV";
 
-        html2pdf().from(element).set(opt).save().then(() => {
-            actions.style.display = 'flex';
-        });
-    }
+            if (category === "Jewel Loan") prefix = "VJL";
+            else if (category === "Mobile Phone") prefix = "VML";
+            else if (category === "Home Appliance") prefix = "VHL";
+            else if (category === "Furniture") prefix = "VFL";
 
-    function closeModal() {
-        document.getElementById('loanModal').style.display = 'none';
-    }
+            try {
+                const response = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID
+                );
+                const existingLoans = response.documents;
+                const filteredLoans = existingLoans.filter(l => l.loan_id && (l.loan_id.startsWith(prefix + "-") || l.loan_id.startsWith(prefix + "/")));
+                const nextSeq = filteredLoans.length + 1;
+                const paddedSeq = String(nextSeq).padStart(3, '0');
+                document.getElementById('Loan_ID').value = `${prefix}/${paddedSeq}/${year}`;
+            } catch (e) {
+                console.error("Error generating sequential Loan ID:", e);
+                document.getElementById('Loan_ID').value = `${prefix}/001/${year}`;
+            }
+        }
 
-    function handleLogout() {
-        sessionStorage.clear();
-        localStorage.removeItem('velfincorp_logged_user');
-        window.location.replace('login.html');
-    }
-</script>
+        function handleCategoryChange() {
+            generateLoanID();
+            const category = document.getElementById('Product_Category').value;
+            const imeiGroup = document.getElementById('imeiFieldsGroup');
+            const imei1Input = document.getElementById('IMEI_1');
 
+            if (category === "Mobile Phone") {
+                imeiGroup.classList.remove('hidden');
+                imei1Input.setAttribute('required', 'true');
+            } else {
+                imeiGroup.classList.add('hidden');
+                imei1Input.removeAttribute('required');
+                imei1Input.value = '';
+                document.getElementById('IMEI_2').value = '';
+            }
+        }
+
+        function toggleRetailerFields() {
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerGroup = document.getElementById('retailerFieldsGroup');
+            if (issuedBy === 'Retailer') {
+                retailerGroup.classList.remove('hidden');
+            } else {
+                retailerGroup.classList.add('hidden');
+                document.getElementById('Retailer_Details').value = '';
+                document.getElementById('Retailer_Code').value = '';
+            }
+        }
+
+        function autoFillRetailerCode() {
+            const ret = document.getElementById('Retailer_Details').value;
+            document.getElementById('Retailer_Code').value = ret;
+        }
+
+        function handlePriceInput() {
+            const price = parseFloat(document.getElementById('Product_Price').value) || 0;
+            const downPaymentInput = document.getElementById('Down_Payment');
+
+            if (price > 0) {
+                const standardDownPayment = Math.round(price * 0.30);
+                downPaymentInput.value = standardDownPayment;
+            } else {
+                downPaymentInput.value = '';
+            }
+            calculateCreditVault();
+        }
+
+        function calculateCreditVault() {
+            const price = parseFloat(document.getElementById('Product_Price').value) || 0;
+            const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
+            const tenureWeeks = parseInt(document.getElementById('Tenure').value) || 0;
+            const summaryBox = document.getElementById('calcSummaryBox');
+
+            if (price > 0 && price >= downPayment) {
+                const minAllowedDownPayment = price * 0.25;
+                if (downPayment < minAllowedDownPayment) {
+                    summaryBox.style.display = 'none';
+                    document.getElementById('Loan_Amount').value = '';
+                    document.getElementById('Weekly_EMI').value = '';
+                    return;
+                }
+
+                const balanceAmount = price - downPayment;
+                const setupFee = price * 0.04;      
+                const procFee = price * 0.025;      
+                const docCharge = 100;              
+                const totalFees = setupFee + procFee + docCharge;
+
+                summaryBox.style.display = 'block';
+                document.getElementById('disp_balance').innerText = '₹' + balanceAmount.toFixed(0);
+                document.getElementById('disp_setup').innerText = '₹' + setupFee.toFixed(0);
+                document.getElementById('disp_proc').innerText = '₹' + procFee.toFixed(0);
+                document.getElementById('disp_doc').innerText = '₹' + docCharge;
+
+                if (tenureWeeks > 0) {
+                    let interestRate = 0;
+                    if (tenureWeeks === 10) interestRate = 0.075;      
+                    else if (tenureWeeks === 15) interestRate = 0.125; 
+                    else if (tenureWeeks === 20) interestRate = 0.24;  
+                    else if (tenureWeeks === 25) interestRate = 0.30;  
+                    else if (tenureWeeks === 30) interestRate = 0.36;  
+
+                    const interestAmount = balanceAmount * interestRate;
+                    const totalPayable = balanceAmount + totalFees + interestAmount;
+                    const weeklyEmi = Math.ceil(totalPayable / tenureWeeks);
+
+                    document.getElementById('Loan_Amount').value = totalPayable.toFixed(2);
+                    document.getElementById('Weekly_EMI').value = weeklyEmi;
+                } else {
+                    document.getElementById('Loan_Amount').value = '';
+                    document.getElementById('Weekly_EMI').value = '';
+                }
+            } else {
+                summaryBox.style.display = 'none';
+                document.getElementById('Loan_Amount').value = '';
+                document.getElementById('Weekly_EMI').value = '';
+            }
+        }
+
+        async function validateCreditVaultLoan(event) {
+            event.preventDefault();
+            const price = parseFloat(document.getElementById('Product_Price').value) || 0;
+            const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
+            const loanAmount = parseFloat(document.getElementById('Loan_Amount').value) || 0;
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            const borrowerName = borrowerSelect.value;
+            const borrowerPhone = borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone || "8778003840";
+            const loanId = document.getElementById('Loan_ID').value;
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerCode = document.getElementById('Retailer_Code').value || "";
+            const loanDate = document.getElementById('Loan_Date').value;
+            const productCategory = document.getElementById('Product_Category').value;
+            const productName = document.getElementById('Product_Name').value;
+            const imei1 = document.getElementById('IMEI_1').value || "";
+            const imei2 = document.getElementById('IMEI_2').value || "";
+            const weeklyEmi = document.getElementById('Weekly_EMI').value;
+            const tenure = document.getElementById('Tenure').value + " Weeks";
+            const loanStatus = document.getElementById('Status').value;
+
+            const minAllowedDownPayment = price * 0.25;
+            if (downPayment < minAllowedDownPayment) {
+                alert("எச்சரிக்கை: டவுன் பேமெண்ட் குறைந்தபட்சம் 25% (₹" + minAllowedDownPayment.toFixed(0) + ") இருக்க வேண்டும். அதற்கு குறைவாக அனுமதிக்கப்படாது!");
+                return false;
+            }
+
+            if (loanAmount <= 0 || !borrowerName || !productCategory || !document.getElementById('Tenure').value) {
+                alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
+                return false;
+            }
+
+            try {
+                const activeLoansResponse = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    [
+                        window.AppwriteQuery.equal('borrower_name', borrowerName),
+                        window.AppwriteQuery.equal('status', 'ACTIVE')
+                    ]
+                );
+
+                if (activeLoansResponse.total > 0) {
+                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
+                    return false;
+                }
+            } catch (err) {
+                console.error("Error checking active loans:", err);
+                alert("லோன் நிலையைச் சரிபார்ப்பதில் பிழை ஏற்பட்டது. மீண்டும் முயற்சிக்கவும்.");
+                return false;
+            }
+
+            try {
+                const loanPayload = {
+                    loan_id: loanId,
+                    issued_by: issuedBy,
+                    retailer_code: retailerCode,
+                    loan_date: loanDate,
+                    borrower_name: borrowerName,
+                    phone_number: borrowerPhone,
+                    loan_category: productCategory,
+                    product_name: productName,
+                    imei_number_1: imei1,
+                    imei_number_2: imei2,
+                    product_price: price.toString(),
+                    down_payment: downPayment.toString(),
+                    loan_amount: loanAmount.toString(),
+                    installment_amount: weeklyEmi.toString(),
+                    tenure: tenure,
+                    loan_type: "Weekly",
+                    status: loanStatus
+                };
+
+                // 1. Save to Database
+                await window.appwriteDatabases.createDocument(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    window.AppwriteID.unique(),
+                    loanPayload
+                );
+
+                // 2. Prepare & Trigger Welcome WhatsApp Message
+                let cleanMobile = borrowerPhone.replace(/\D/g, "");
+                if (cleanMobile.length > 10) {
+                    cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
+                }
+                const finalMobile = "91" + cleanMobile;
+
+                const selectedDateObj = loanDate ? new Date(loanDate) : new Date();
+                const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
+                const loanDay = daysOfWeek[selectedDateObj.getDay()];
+                const loanDateStr = selectedDateObj.toLocaleDateString('en-GB');
+
+                let previousDayText = "முந்தைய நாள் இரவு 12:00 மணிக்கு முன்பு";
+                const dayMap = {
+                    "Sunday": "சனிக்கிழமை இரவு 12:00 மணி (அதாவது ஞாயிற்றுக்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Monday": "ஞாயிற்றுக்கிழமை இரவு 12:00 மணி (அதாவது திங்கட்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Tuesday": "திங்கட்கிழமை இரவு 12:00 மணி (அதாவது செவ்வாய்க்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Wednesday": "செவ்வாய்க்கிழமை இரவு 12:00 மணி (அதாவது புதன்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Thursday": "புதன்கிழமை இரவு 12:00 மணி (அதாவது வியாழக்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Friday": "வியாழக்கிழமை இரவு 12:00 மணி (அதாவது வெள்ளிக்கிழமை தொடங்குவதற்கு முன்பு)",
+                    "Saturday": "வெள்ளிக்கிழமை இரவு 12:00 மணி (அதாவது சனிக்கிழமை தொடங்குவதற்கு முன்பு)"
+                };
+                const engDay = selectedDateObj.toLocaleString('en-US', { weekday: 'long' });
+                if (dayMap[engDay]) {
+                    previousDayText = dayMap[engDay];
+                }
+
+                const functionPayload = {
+                    mobile: finalMobile,
+                    template_name: "vel_fin_welcome_message",
+                    components: {
+                        body_1: borrowerName,
+                        body_2: loanId,
+                        body_3: "Weekly",
+                        body_4: productCategory + " (" + productName + ")",
+                        body_5: weeklyEmi.toString(),
+                        body_6: tenure,
+                        body_7: loanDay,
+                        body_8: loanDateStr,
+                        body_9: previousDayText
+                    }
+                };
+
+                try {
+                    const execRes = await window.appwriteFunctions.createExecution(
+                        '6adb02310009b131da2d',
+                        JSON.stringify(functionPayload)
+                    );
+                    console.log("WhatsApp Execution Result:", execRes);
+                    if (execRes.status === 'failed') {
+                        alert("Loan Saved! ஆனால் வாட்ஸ்அப் மெசேஜ் அனுப்புவதில் பிழை (Function Failed): " + (execRes.errors || execRes.responseBody));
+                    } else {
+                        alert("Credit Vault Loan successfully saved & Welcome Message triggered to " + finalMobile + "!");
+                    }
+                } catch (fnErr) {
+                    console.error("WhatsApp Function Error:", fnErr);
+                    alert("Loan Saved! ஆனால் வாட்ஸ்அப் பங்க்ஷன் அழைப்பதில் பிழை: " + fnErr.message);
+                }
+
+                document.getElementById('creditVaultForm').reset();
+                window.location.reload();
+
+            } catch (err) {
+                console.error("Error in Credit Vault submission:", err);
+                alert("Error saving data: " + err.message);
+                return false;
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
+        }
+    </script>
 </body>
 </html>
