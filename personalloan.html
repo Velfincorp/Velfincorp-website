@@ -340,10 +340,10 @@
                 const filteredLoans = existingLoans.filter(l => l.loan_id && l.loan_id.startsWith("VPL"));
                 const nextSeq = filteredLoans.length + 1;
                 const paddedSeq = String(nextSeq).padStart(3, '0');
-                document.getElementById('Loan_ID').value = `VPL-${paddedSeq}/${year}`;
+                document.getElementById('Loan_ID').value = `VPL/${paddedSeq}/${year}`;
             } catch (e) {
                 console.error("Error generating sequential Loan ID:", e);
-                document.getElementById('Loan_ID').value = `VPL-001/${year}`;
+                document.getElementById('Loan_ID').value = `VPL/001/${year}`;
             }
 
             const borrowerSelect = document.getElementById('Borrowers_Details');
@@ -358,7 +358,7 @@
                     borrowers.forEach(b => {
                         const opt = document.createElement('option');
                         opt.value = b.full_name;
-                        opt.dataset.phone = b.phone_number || '';
+                        opt.dataset.phone = b.phone_number || b.mobile || b.phone || '';
                         opt.textContent = `${b.full_name} (${b.borrower_id})`;
                         borrowerSelect.appendChild(opt);
                     });
@@ -407,7 +407,6 @@
             const tenureVal = parseInt(document.getElementById('Tenure_Select').value) || 0;
 
             if (loanAmount > 0 && tenureVal > 0) {
-                // Interest & Repayment calculation based on Tenure / Type
                 let interestMultiplier = 1.0;
                 if (loanType === "Weekly") {
                     if (tenureVal === 10) interestMultiplier = 1.075;   // 7.5% interest
@@ -486,7 +485,7 @@
                     installment_amount: emiAmount,
                     tenure: tenure,
                     status: loanStatus,
-                    loan_date: new Date().toLocaleDateString(),
+                    loan_date: new Date().toISOString().split('T')[0],
                     loan_category: "Personal"
                 };
 
@@ -497,7 +496,7 @@
                     loanPayload
                 );
 
-                let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
+                let cleanMobile = borrowerPhone.replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
                 }
@@ -538,12 +537,22 @@
                     }
                 };
 
-                await window.appwriteFunctions.createExecution(
-                    '6adb02310009b131da2d',
-                    JSON.stringify(functionPayload)
-                );
+                try {
+                    const execRes = await window.appwriteFunctions.createExecution(
+                        '6adb02310009b131da2d',
+                        JSON.stringify(functionPayload)
+                    );
+                    console.log("WhatsApp Execution Result:", execRes);
+                    if (execRes.status === 'failed') {
+                        alert("Personal Loan Saved! ஆனால் வாட்ஸ்அப் மெசேஜ் அனுப்புவதில் பிழை (Function Failed): " + (execRes.errors || execRes.responseBody));
+                    } else {
+                        alert("Personal loan successfully saved & Welcome Message triggered to " + finalMobile + "!");
+                    }
+                } catch (fnErr) {
+                    console.error("WhatsApp Function Error:", fnErr);
+                    alert("Personal Loan Saved! ஆனால் வாட்ஸ்அப் பங்க்ஷன் அழைப்பதில் பிழை: " + fnErr.message);
+                }
 
-                alert("Personal loan successfully saved to Cloud Database and Welcome Message sent via Appwrite Server Function!");
                 document.getElementById('personalLoanForm').reset();
                 window.location.reload();
 
