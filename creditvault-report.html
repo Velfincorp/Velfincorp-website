@@ -50,6 +50,7 @@
             --text-main: #2D3748;
             --white: #FFFFFF;
             --danger: #C53030;
+            --success: #2F855A;
         }
         body {
             font-family: 'Manrope', Arial, sans-serif;
@@ -149,35 +150,65 @@
             box-sizing: border-box;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             background: var(--white);
-            padding: 40px;
+            padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05);
             border-top: 5px solid var(--navy);
         }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
         h2 {
             font-family: 'Cinzel', serif;
-            text-align: center;
             color: var(--navy);
-            margin-bottom: 5px;
+            margin: 0;
         }
-        .subtitle {
-            text-align: center;
-            color: var(--gold);
-            font-weight: 600;
-            margin-bottom: 30px;
-            font-size: 15px;
+        .btn-back {
+            background-color: var(--gold);
+            color: var(--navy);
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+        .btn-back:hover {
+            opacity: 0.9;
+        }
+        .filters-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .filters-row input, .filters-row select {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 14px;
+            margin-top: 10px;
+            font-size: 13px;
         }
         th, td {
-            padding: 12px 15px;
+            padding: 12px 14px;
             border: 1px solid #cbd5e1;
             text-align: left;
         }
@@ -189,10 +220,9 @@
         tr:nth-child(even) {
             background-color: #f8fafc;
         }
-        .status-active {
-            color: #2F855A;
-            font-weight: bold;
-        }
+        .status-active { color: var(--success); font-weight: bold; }
+        .status-closed { color: var(--danger); font-weight: bold; }
+        .status-pending { color: #d69e2e; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -226,17 +256,41 @@
     <!-- Main Content -->
     <div class="main-content">
         <div class="container">
-            <h2>VEL FIN CORP</h2>
-            <div class="subtitle">Credit Vault Loans Report</div>
+            <div class="header-row">
+                <h2>Credit Vault Loans Report</h2>
+                <a href="dashboard.html" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            </div>
 
+            <!-- Filters Section -->
+            <div class="filters-row">
+                <input type="text" id="searchInput" placeholder="Search by Borrower Name, Phone or Loan ID..." oninput="filterTable()">
+                <input type="date" id="dateFilter" onchange="filterTable()">
+                <select id="categoryFilter" onchange="filterTable()">
+                    <option value="">-All Categories-</option>
+                    <option value="Jewel Loan">Jewel Loan</option>
+                    <option value="Mobile Phone">Mobile Phone</option>
+                    <option value="Home Appliance">Home Appliance</option>
+                    <option value="Furniture">Furniture</option>
+                </select>
+                <select id="statusFilter" onchange="filterTable()">
+                    <option value="">-All Status-</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="CLOSED">CLOSED</option>
+                </select>
+            </div>
+
+            <!-- Report Table -->
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
                             <th>Loan ID</th>
                             <th>Borrower Name</th>
+                            <th>Phone Number</th>
                             <th>Category</th>
                             <th>Product Name</th>
+                            <th>Loan Date</th>
                             <th>Loan Amount (₹)</th>
                             <th>EMI (₹)</th>
                             <th>Tenure</th>
@@ -245,7 +299,7 @@
                     </thead>
                     <tbody id="reportTableBody">
                         <tr>
-                            <td colspan="8" style="text-align: center; color: #64748b;">Loading Credit Vault Reports...</td>
+                            <td colspan="10" style="text-align: center; color: #64748b;">Loading Credit Vault Reports...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -254,6 +308,8 @@
     </div>
 
     <script>
+        let allCreditVaultLoans = [];
+
         window.addEventListener('DOMContentLoaded', async () => {
             await loadCreditVaultReports();
         });
@@ -266,32 +322,61 @@
                     VFC_DB.LOANS_ID
                 );
                 const loans = response.documents;
-                // Filter only Credit Vault loans (excluding Personal Loans starting with VPL)
-                const cvLoans = loans.filter(l => l.loan_id && !l.loan_id.startsWith("VPL"));
-
-                if (cvLoans && cvLoans.length > 0) {
-                    tbody.innerHTML = '';
-                    cvLoans.forEach(loan => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${loan.loan_id || '-'}</td>
-                            <td>${loan.borrower_name || '-'}</td>
-                            <td>${loan.loan_category || '-'}</td>
-                            <td>${loan.product_name || '-'}</td>
-                            <td>₹${parseFloat(loan.loan_amount || 0).toLocaleString('en-IN')}</td>
-                            <td>₹${parseFloat(loan.installment_amount || 0).toLocaleString('en-IN')}</td>
-                            <td>${loan.tenure || '-'}</td>
-                            <td><span class="status-active">${loan.status || 'ACTIVE'}</span></td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b;">No Credit Vault Loans Found.</td></tr>';
-                }
+                // Filter only Credit Vault loans (Exclude Personal Loans starting with VPL)
+                allCreditVaultLoans = loans.filter(l => l.loan_id && !l.loan_id.startsWith("VPL"));
+                renderTable(allCreditVaultLoans);
             } catch (err) {
                 console.error("Error loading Credit Vault reports:", err);
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--danger);">Error loading report data.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--danger);">Error loading report data.</td></tr>';
             }
+        }
+
+        function renderTable(loans) {
+            const tbody = document.getElementById('reportTableBody');
+            if (loans && loans.length > 0) {
+                tbody.innerHTML = '';
+                loans.forEach(loan => {
+                    const statusClass = loan.status === 'ACTIVE' ? 'status-active' : (loan.status === 'CLOSED' ? 'status-closed' : 'status-pending');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${loan.loan_id || '-'}</td>
+                        <td>${loan.borrower_name || '-'}</td>
+                        <td>${loan.phone_number || '-'}</td>
+                        <td>${loan.loan_category || '-'}</td>
+                        <td>${loan.product_name || '-'}</td>
+                        <td>${loan.loan_date || '-'}</td>
+                        <td>₹${parseFloat(loan.loan_amount || 0).toLocaleString('en-IN')}</td>
+                        <td>₹${parseFloat(loan.installment_amount || 0).toLocaleString('en-IN')}</td>
+                        <td>${loan.tenure || '-'}</td>
+                        <td><span class="${statusClass}">${loan.status || 'ACTIVE'}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #64748b;">No matching Credit Vault Loans found.</td></tr>';
+            }
+        }
+
+        function filterTable() {
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+            const dateQuery = document.getElementById('dateFilter').value;
+            const categoryQuery = document.getElementById('categoryFilter').value;
+            const statusQuery = document.getElementById('statusFilter').value;
+
+            const filtered = allCreditVaultLoans.filter(loan => {
+                const name = (loan.borrower_name || '').toLowerCase();
+                const phone = (loan.phone_number || '').toLowerCase();
+                const loanId = (loan.loan_id || '').toLowerCase();
+                
+                const matchesSearch = name.includes(searchQuery) || phone.includes(searchQuery) || loanId.includes(searchQuery);
+                const matchesDate = !dateQuery || loan.loan_date === dateQuery;
+                const matchesCategory = !categoryQuery || loan.loan_category === categoryQuery;
+                const matchesStatus = !statusQuery || loan.status === statusQuery;
+
+                return matchesSearch && matchesDate && matchesCategory && matchesStatus;
+            });
+
+            renderTable(filtered);
         }
 
         function handleLogout() {
