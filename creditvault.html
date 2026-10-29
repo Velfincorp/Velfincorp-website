@@ -250,6 +250,7 @@
 </head>
 <body>
 
+    <!-- Left Sidebar Navigation Menu (Fixed Correct Link for Report) -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -259,10 +260,10 @@
             <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
             <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
             <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
-            <li><a href="creditvault.html" class="active"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
             <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
             <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
-            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+            <li><a href="creditvault-report.html" class="active"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
             <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
@@ -275,12 +276,14 @@
         </div>
     </div>
 
+    <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <h2>VEL FIN CORP</h2>
             <div class="subtitle">Credit Vault Loan Application</div>
 
             <form id="creditVaultForm" onsubmit="validateCreditVaultLoan(event)">
+                
                 <div class="section-heading">1. General & Borrower Details</div>
                 <div class="form-row">
                     <div class="form-group">
@@ -357,11 +360,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Product Price (₹) *</label>
-                        <input type="number" id="Product_Price" oninput="handlePriceInput()" placeholder="0" required>
+                        <input type="number" id="Product_Price" oninput="handlePriceInput()" placeholder="0.00" required>
                     </div>
                     <div class="form-group">
                         <label>Down Payment (₹) * <small style="color:var(--gold);">(Min 25% allowed, Default 30%)</small></label>
-                        <input type="number" id="Down_Payment" oninput="calculateCreditVault()" placeholder="0" required>
+                        <input type="number" id="Down_Payment" oninput="calculateCreditVault()" placeholder="0.00" required>
                     </div>
                 </div>
 
@@ -395,7 +398,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Weekly EMI Amount (₹)</label>
-                        <input type="number" id="Weekly_EMI" readonly style="background-color: #f1f5f9; font-weight: bold; color: #2F855A;" placeholder="0">
+                        <input type="number" id="Weekly_EMI" readonly style="background-color: #f1f5f9; font-weight: bold; color: #2F855A;" placeholder="0.00">
                     </div>
                     <div class="form-group">
                         <label>Status *</label>
@@ -431,7 +434,7 @@
                     borrowers.forEach(b => {
                         const opt = document.createElement('option');
                         opt.value = b.full_name;
-                        opt.dataset.phone = b.whatsapp_number || b.phone_number || '';
+                        opt.dataset.phone = b.phone_number || b.mobile || b.phone || '';
                         opt.textContent = `${b.full_name} (${b.borrower_id})`;
                         borrowerSelect.appendChild(opt);
                     });
@@ -672,7 +675,7 @@
                     loanPayload
                 );
 
-                // 2. Trigger WhatsApp Welcome Message (Exact 7 parameters matching template)
+                // 2. Trigger WhatsApp Welcome Message (EXACTLY 7 Parameters matching template order)
                 let cleanMobile = borrowerPhone.replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
