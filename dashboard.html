@@ -350,12 +350,12 @@
             <p style="font-size: 13px; color: #64748b;">Enter name, mobile number as Username, generate password, and select specific page access permissions.</p>
             
             <div class="form-row">
-                <input type="text" id="newUserName" placeholder="Staff / Retailer Name (e.g., Ramesh)">
+                <input type="text" id="newUserName" placeholder="Staff / Retailer Name (e.g., Kamala Mobiles)">
                 <input type="text" id="newUserId" placeholder="Mobile Number (Username, e.g., 9486886293)">
                 <input type="text" id="newUserPass" placeholder="Generated Password (e.g., Vel@2026)">
                 <select id="newUserRole">
-                    <option value="staff">Staff / Collection Agent</option>
                     <option value="retailer">Retailer / Partner</option>
+                    <option value="staff">Staff / Collection Agent</option>
                 </select>
             </div>
 
@@ -379,10 +379,12 @@
             <table class="users-table">
                 <thead>
                     <tr>
+                        <th style="width: 50px;">S.No</th>
                         <th>Name</th>
                         <th>Username (Mobile)</th>
                         <th>Role</th>
-                        <th>Allowed Modules Count</th>
+                        <th>Password</th>
+                        <th>Allowed Modules</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
@@ -477,16 +479,18 @@
 
             tbody.innerHTML = '';
             if (users.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
                 return;
             }
 
-            users.forEach(u => {
+            users.forEach((u, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${u.name || 'N/A'}</td>
+                    <td style="text-align:center;">${index + 1}</td>
+                    <td><b>${u.name || 'N/A'}</b></td>
                     <td>${u.id || '-'}</td>
                     <td><span style="text-transform: uppercase; font-weight: bold; color: #0F1D36;">${u.role || '-'}</span></td>
+                    <td><code>${u.pass || '-'}</code></td>
                     <td>${u.permissions ? u.permissions.length : 0} Modules</td>
                 `;
                 tbody.appendChild(tr);
