@@ -351,20 +351,6 @@
     <script>
         let allActiveLoans = [];
         let selectedLoanData = null;
-        let appwriteFunctionsInstance = null;
-
-        try {
-            if (window.appwriteClient) {
-                appwriteFunctionsInstance = new window.Appwrite.Functions(window.appwriteClient);
-            } else if (window.Appwrite && typeof VFC_DB !== 'undefined') {
-                const client = new window.Appwrite.Client()
-                    .setEndpoint(VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1')
-                    .setProject(VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e');
-                appwriteFunctionsInstance = new window.Appwrite.Functions(client);
-            }
-        } catch (err) {
-            console.error("Error initializing Appwrite Functions:", err);
-        }
 
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('Date_field').valueAsDate = new Date();
@@ -448,6 +434,7 @@
             document.getElementById('Paid_Amount').value = emiAmount.toFixed(2);
 
             let paidCount = 0;
+            let totalPaidSoFar = 0;
             try {
                 const paymentsResp = await window.appwriteDatabases.listDocuments(
                     VFC_DB.DB_ID,
@@ -455,8 +442,18 @@
                 );
                 const loanPayments = paymentsResp.documents.filter(p => p.loan_id === loan.loan_id);
                 paidCount = loanPayments.length;
+                loanPayments.forEach(p => {
+                    totalPaidSoFar += parseFloat(p.amount_paid || 0);
+                });
+                if (paidCount > 0) {
+                    const lastPay = loanPayments[loanPayments.length - 1];
+                    if (lastPay.paid_installment) {
+                        paidCount = parseInt(lastPay.paid_installment) || paidCount;
+                    }
+                }
             } catch (err) {
                 console.warn("Could not fetch existing payments count:", err);
+                totalPaidSoFar = emiAmount * paidCount;
             }
 
             const currentPaidInst = paidCount + 1;
@@ -466,7 +463,6 @@
             document.getElementById('Paid_Installment').value = currentPaidInst;
             document.getElementById('Remaining_Installment').value = remainingInst;
 
-            let totalPaidSoFar = emiAmount * paidCount;
             let currentBalance = totalAmount - totalPaidSoFar - emiAmount;
             if (currentBalance < 0) currentBalance = 0;
 
@@ -514,7 +510,25 @@
             }
 
             const borrowerName = selectedLoanData.borrower_name;
-            const borrowerPhone = selectedLoanData.phone_number || "8778003840";
+            let rawPhone = selectedLoanData.phone_number || selectedLoanData.mobile || selectedLoanData.whatsapp_number || "";
+            
+            // ஒருவேளை லோன் டேபிளில் போன் நம்பர் இல்லையென்றால், Borrowers டேபிளில் இருந்து எடுக்கும் வசதி
+            if (!rawPhone) {
+                try {
+                    const bResp = await window.appwriteDatabases.listDocuments(
+                        VFC_DB.DB_ID,
+                        VFC_DB.BORROWERS_ID
+                    );
+                    const bMatch = bResp.documents.find(b => b.full_name === borrowerName);
+                    if (bMatch) {
+                        rawPhone = bMatch.whatsapp_number || bMatch.phone_number || "";
+                    }
+                } catch (e) {
+                    console.warn("Borrower phone lookup failed:", e);
+                }
+            }
+            const borrowerPhone = rawPhone || "8778003840";
+
             const loanType = selectedLoanData.loan_type || 'Weekly';
             const loanId = document.getElementById('Loan_ID').value;
             const paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
@@ -522,7 +536,7 @@
             const paymentDateRaw = document.getElementById('Date_field').value;
             const paymentMode = document.getElementById('Payment_Mode').value;
             const delayDetails = document.getElementById('Delayed_Details').value;
-            const paidInst = document.getElementById('Paid_Installment').value;
+            const paidInst = parseInt(document.getElementById('Paid_Installment').value) || 1;
             const remInst = parseInt(document.getElementById('Remaining_Installment').value) || 0;
 
             if (paidAmount <= 0) {
@@ -569,19 +583,28 @@
                 return;
             }
 
-            let dueDateObj = new Date(paymentDateRaw);
+            // லோன் தொடங்கிய தேதியிலிருந்து சரியான கிழமையில் (Fixed Schedule) அடுத்த தவணைத் தேதியைக் கணக்கிடுதல்
+            let baseLoanDateStr = selectedLoanData.loan_date || paymentDateRaw;
+            let dueDateObj = new Date(baseLoanDateStr);
+            if (isNaN(dueDateObj.getTime())) {
+                dueDateObj = new Date(paymentDateRaw);
+            }
+
+            const nextInstallmentNumber = paidInst + 1;
+
             if (loanType.toLowerCase().includes('daily') || loanType.toLowerCase().includes('டெய்லி')) {
-                dueDateObj.setDate(dueDateObj.getDate() + 1);
+                dueDateObj.setDate(dueDateObj.getDate() + nextInstallmentNumber);
             } else if (loanType.toLowerCase().includes('monthly') || loanType.toLowerCase().includes('மாதம்')) {
-                dueDateObj.setMonth(dueDateObj.getMonth() + 1);
+                dueDateObj.setMonth(dueDateObj.getMonth() + nextInstallmentNumber);
             } else {
-                dueDateObj.setDate(dueDateObj.getDate() + 7);
+                // Weekly Loan: லோன் வாங்கிய தேதியிலிருந்து (Paid Installments + 1) * 7 நாட்கள்
+                dueDateObj.setDate(dueDateObj.getDate() + (nextInstallmentNumber * 7));
             }
             
             const formattedPayDate = formatDateCustom(paymentDateRaw);
             const nextDueDateStr = formatDateCustom(dueDateObj);
 
-            let cleanMobile = borrowerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
+            let cleanMobile = String(borrowerPhone).replace(/\D/g, "");
             if (cleanMobile.length > 10) {
                 cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
             }
@@ -623,20 +646,34 @@
                 };
             }
 
+            // மொபைல் நம்பரின் அனைத்து ஃபார்மட்களும் (mobile, phone, to) சேர்த்து அனுப்பப்படுகின்றன
+            const functionPayload = {
+                mobile: finalMobile,
+                phone: finalMobile,
+                to: finalMobile,
+                recipient: finalMobile,
+                template_name: templateName,
+                templateName: templateName,
+                components: customComponents,
+                customComponents: customComponents
+            };
+
             try {
-                if (!appwriteFunctionsInstance) {
-                    throw new Error("Appwrite Functions instance is not initialized.");
+                const fnInstance = window.appwriteFunctions;
+                if (!fnInstance) {
+                    throw new Error("Appwrite Functions is not initialized in db.js");
                 }
 
-                await appwriteFunctionsInstance.createExecution(
+                const execRes = await fnInstance.createExecution(
                     '6adb02310009b131da2d',
-                    JSON.stringify({
-                        template_name: templateName,
-                        components: customComponents
-                    })
+                    JSON.stringify(functionPayload)
                 );
 
-                alert("Payment successfully saved to Cloud Database and WhatsApp receipt sent automatically!");
+                if (execRes.status === 'failed') {
+                    alert("Payment Saved! ஆனால் வாட்ஸ்அப் அனுப்புவதில் பிழை: " + (execRes.errors || execRes.responseBody));
+                } else {
+                    alert("Payment successfully saved to Cloud Database and WhatsApp receipt sent to " + finalMobile + "!");
+                }
             } catch (error) {
                 console.error("Error triggering WhatsApp function:", error);
                 alert("Payment saved to database, but automated WhatsApp dispatch failed: " + error.message);
