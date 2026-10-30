@@ -373,7 +373,6 @@
                         <div class="calc-item">Payment to Retailer (Balance): <span id="disp_balance">₹0</span></div>
                         <div class="calc-item">Setup Fee (4%): <span id="disp_setup">₹0</span></div>
                         <div class="calc-item">Processing Fee (2.5%): <span id="disp_proc">₹0</span></div>
-                        <div class="calc-item">Document Charge: <span id="disp_doc">₹100</span></div>
                     </div>
                 </div>
 
@@ -560,31 +559,20 @@
                 }
 
                 const balanceAmount = price - downPayment;
-                const setupFee = price * 0.04;      
-                const procFee = price * 0.025;      
-                const docCharge = 100;              
-                const totalFees = setupFee + procFee + docCharge;
+                const setupFee = balanceAmount * 0.04;       // 4% of Balance Amount
+                const procFee = balanceAmount * 0.025;      // 2.5% of Balance Amount
+                const totalPayable = balanceAmount + setupFee + procFee;
 
                 summaryBox.style.display = 'block';
                 document.getElementById('disp_balance').innerText = '₹' + Math.round(balanceAmount);
                 document.getElementById('disp_setup').innerText = '₹' + Math.round(setupFee);
                 document.getElementById('disp_proc').innerText = '₹' + Math.round(procFee);
-                document.getElementById('disp_doc').innerText = '₹' + docCharge;
 
                 if (tenureWeeks > 0) {
-                    let interestRate = 0;
-                    if (tenureWeeks === 10) interestRate = 0.075;      
-                    else if (tenureWeeks === 15) interestRate = 0.125; 
-                    else if (tenureWeeks === 20) interestRate = 0.24;  
-                    else if (tenureWeeks === 25) interestRate = 0.30;  
-                    else if (tenureWeeks === 30) interestRate = 0.36;  
-
-                    const interestAmount = balanceAmount * interestRate;
-                    const totalPayable = balanceAmount + totalFees + interestAmount;
-                    const weeklyEmi = Math.ceil(totalPayable / tenureWeeks);
+                    const weeklyEmi = Math.round(totalPayable / tenureWeeks);
 
                     document.getElementById('Loan_Amount').value = Math.round(totalPayable);
-                    document.getElementById('Weekly_EMI').value = Math.round(weeklyEmi);
+                    document.getElementById('Weekly_EMI').value = weeklyEmi;
                 } else {
                     document.getElementById('Loan_Amount').value = '';
                     document.getElementById('Weekly_EMI').value = '';
@@ -714,7 +702,7 @@
                 document.getElementById('creditVaultForm').reset();
                 window.location.reload();
 
-            } catch (err) {
+            } `catch (err) {
                 console.error("Error in Credit Vault submission:", err);
                 alert("Error saving data: " + err.message);
                 return false;
