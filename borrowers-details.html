@@ -208,7 +208,7 @@
         }
         .readonly-field {
             background-color: #f1f5f9;
-            color: #475569;
+            color: var(--navy);
             font-weight: bold;
         }
         .btn-submit {
@@ -228,8 +228,11 @@
             background-color: var(--gold);
             color: var(--navy);
         }
+        .btn-submit:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
         .hidden { display: none !important; }
-        
         #retailerSearchResults {
             position: absolute;
             top: 100%;
@@ -239,14 +242,14 @@
             border: 1px solid #cbd5e1;
             border-top: none;
             border-radius: 0 0 6px 6px;
-            max-height: 180px;
+            max-height: 200px;
             overflow-y: auto;
             z-index: 99;
             display: none;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .search-item {
-            padding: 10px;
+            padding: 10px 12px;
             cursor: pointer;
             font-size: 13px;
             border-bottom: 1px solid #f1f5f9;
@@ -300,20 +303,20 @@
                     </div>
                     <div class="form-group">
                         <label>Borrower ID *</label>
-                        <input type="text" id="Borrower_ID" class="readonly-field" readonly placeholder="Auto-generated">
+                        <input type="text" id="Borrower_ID" class="readonly-field" readonly value="Auto-generated">
                     </div>
                 </div>
 
                 <div class="form-row hidden" id="retailerFieldsGroup">
                     <div class="form-group">
                         <label>Search & Select Retailer *</label>
-                        <input type="text" id="retailerSearchInput" placeholder="Type retailer name or mobile..." oninput="filterRetailers()" autocomplete="off">
+                        <input type="text" id="retailerSearchInput" placeholder="Click or type retailer name / mobile..." onfocus="showAllRetailers()" oninput="filterRetailers()" autocomplete="off">
                         <input type="hidden" id="selectedRetailerName">
                         <div id="retailerSearchResults"></div>
                     </div>
                     <div class="form-group">
                         <label>Retailer Code *</label>
-                        <input type="text" id="Retailer_Code" class="readonly-field" readonly placeholder="Auto-populated code">
+                        <input type="text" id="Retailer_Code" class="readonly-field" readonly placeholder="Auto-generated">
                     </div>
                 </div>
 
@@ -486,27 +489,27 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Upload Aadhar Front side *</label>
-                        <input type="file" id="Aadhar_Front" required>
+                        <input type="file" id="Aadhar_Front" accept="image/*,application/pdf" required>
                     </div>
                     <div class="form-group">
                         <label>Upload Aadhar Back Side *</label>
-                        <input type="file" id="Aadhar_Back" required>
+                        <input type="file" id="Aadhar_Back" accept="image/*,application/pdf" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Upload Pan Card *</label>
-                        <input type="file" id="Pan_Card" required>
+                        <input type="file" id="Pan_Card" accept="image/*,application/pdf" required>
                     </div>
                     <div class="form-group">
                         <label>Upload Ration card front side *</label>
-                        <input type="file" id="Ration_Card" required>
+                        <input type="file" id="Ration_Card" accept="image/*,application/pdf" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>CIBIL Score / Document *</label>
-                        <input type="file" id="CIBIL_Score" required>
+                        <input type="file" id="CIBIL_Score" accept="image/*,application/pdf" required>
                     </div>
                     <div class="form-group">
                         <label>Email ID</label>
@@ -518,85 +521,112 @@
         </div>
     </div>
     <script>
+        const RETAILERS_COLLECTION_ID = (window.VFC_DB && VFC_DB.RETAILERS_ID) ? VFC_DB.RETAILERS_ID : '6ada05fd0007206813cf';
         let allRetailers = [];
+        let cachedBorrowers = [];
 
         window.onload = async function() {
             const loanDateEl = document.getElementById('Loan_Date');
             if(loanDateEl) loanDateEl.valueAsDate = new Date();
-            loadRetailersData();
             document.getElementById('Borrower_ID').value = "Auto-generated";
+            await preloadCloudData();
         };
 
-        function loadRetailersData() {
-            let users = [];
-            try {
-                users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
-            } catch(e) {
-                users = [];
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#retailerFieldsGroup')) {
+                document.getElementById('retailerSearchResults').style.display = 'none';
             }
-            allRetailers = users.filter(u => u.role === 'retailer');
+        });
+
+        async function preloadCloudData() {
+            try {
+                const [retResp, borResp] = await Promise.all([
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, RETAILERS_COLLECTION_ID, [window.AppwriteQuery.limit(100)]),
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID, [window.AppwriteQuery.limit(100)])
+                ]);
+
+                const docs = retResp.documents || [];
+                allRetailers = docs
+                    .filter(d => (d.user_type || '').toLowerCase() === 'retailer')
+                    .map(d => ({
+                        name: d.show_room_name || '',
+                        owner: d.owner_name || '',
+                        id: d.whatsapp_number || '',
+                        city: d.city || ''
+                    }));
+
+                cachedBorrowers = borResp.documents || [];
+            } catch (e) {
+                console.warn("Cloud preload error, falling back to local cache:", e);
+                const localUsers = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+                allRetailers = localUsers.filter(u => u.role === 'retailer');
+            }
+        }
+
+        function computeThreeLetterRetailerCode(retailer) {
+            const rawShop = (retailer.name || '').replace(/\(.*\)/g, '').trim();
+            const rawCity = (retailer.city || '').trim();
+            const shopWords = rawShop.split(/\s+/).filter(Boolean);
+
+            if (rawShop.toLowerCase().includes('vinayaga')) return 'KSV';
+            if (rawShop.toLowerCase().includes('kamala')) return 'PKM';
+
+            if (rawCity && rawCity !== '-' && shopWords.length >= 2) {
+                return (rawCity[0] + shopWords[0][0] + shopWords[1][0]).toUpperCase();
+            } else if (shopWords.length >= 3) {
+                return (shopWords[0][0] + shopWords[1][0] + shopWords[2][0]).toUpperCase();
+            } else if (shopWords.length === 2) {
+                return (shopWords[0].substring(0, 2) + shopWords[1][0]).toUpperCase();
+            }
+            return rawShop.substring(0, 3).toUpperCase() || 'RET';
+        }
+
+        function renderRetailerResults(list) {
+            const resultsBox = document.getElementById('retailerSearchResults');
+            resultsBox.innerHTML = '';
+            if (list.length > 0) {
+                list.forEach(r => {
+                    const item = document.createElement('div');
+                    item.className = 'search-item';
+                    const cityText = (r.city && r.city !== '-') ? ` - ${r.city}` : '';
+                    item.textContent = `${r.name}${cityText} (${r.id})`;
+                    item.onclick = () => selectRetailer(r);
+                    resultsBox.appendChild(item);
+                });
+            } else {
+                resultsBox.innerHTML = '<div class="search-item" style="color:#94a3b8;">No matching retailer found</div>';
+            }
+            resultsBox.style.display = 'block';
+        }
+
+        function showAllRetailers() {
+            renderRetailerResults(allRetailers);
         }
 
         function filterRetailers() {
             const query = document.getElementById('retailerSearchInput').value.toLowerCase().trim();
-            const resultsBox = document.getElementById('retailerSearchResults');
-
             if (query.length === 0) {
-                resultsBox.style.display = 'none';
-                resultsBox.innerHTML = '';
+                renderRetailerResults(allRetailers);
                 return;
             }
-
             const filtered = allRetailers.filter(r => {
-                const name = (r.name || '').toLowerCase();
-                const mobile = (r.id || '').toLowerCase();
-                return name.includes(query) || mobile.includes(query);
+                return (r.name || '').toLowerCase().includes(query) ||
+                       (r.id || '').toLowerCase().includes(query) ||
+                       (r.city || '').toLowerCase().includes(query);
             });
-
-            if (filtered.length > 0) {
-                resultsBox.innerHTML = '';
-                filtered.forEach(r => {
-                    const item = document.createElement('div');
-                    item.className = 'search-item';
-                    item.textContent = `${r.name} (${r.id})`;
-                    item.onclick = () => selectRetailer(r);
-                    resultsBox.appendChild(item);
-                });
-                resultsBox.style.display = 'block';
-            } else {
-                resultsBox.innerHTML = '<div class="search-item" style="color:#94a3b8;">No matching retailer found</div>';
-                resultsBox.style.display = 'block';
-            }
+            renderRetailerResults(filtered);
         }
 
-        async function selectRetailer(retailer) {
+        function selectRetailer(retailer) {
+            const code = computeThreeLetterRetailerCode(retailer);
             document.getElementById('retailerSearchInput').value = `${retailer.name} (${retailer.id})`;
             document.getElementById('selectedRetailerName').value = retailer.name;
-            document.getElementById('retailerSearchResults').style.display = 'none';
-
-            // ரீடெய்லர் பெயரிலிருந்து சுருக்கமான கோடு (எ.கா: Sri Vinayaga Agencies -> SVA அல்லது கஸ்டமரின் கோடு)
-            // இங்கு நீங்கள் வைத்துள்ள தனித்துவமான கோடை (எ.கா: KSV) ரீடெய்லர் பெயருடன் மேப் செய்யவோ அல்லது பெயரின் முதல் எழுத்துக்களை எடுக்கவோ செய்யலாம்.
-            // இப்போதைக்கு பெயரின் முதல் எழுத்துக்களை வைத்து கோடு உருவாக்கப்பட்டுள்ளது அல்லது நீங்களே அதை உறுதிப்படுத்திக் கொள்ளலாம்.
-            let code = "VFC";
-            const nameParts = retailer.name.split(' ');
-            if (nameParts.length >= 2) {
-                code = nameParts.map(w => w[0]).join('').toUpperCase().substring(0, 3);
-            } else {
-                code = retailer.name.substring(0, 3).toUpperCase();
-            }
-
-            // தேவைப்பட்டால் ஸ்ரீ விநாயகா ஏஜென்சிஸ்க்கு KSV என பிரத்யேகமாக செட் செய்ய:
-            if (retailer.name.toLowerCase().includes('vinayaga')) {
-                code = "KSV";
-            } else if (retailer.name.toLowerCase().includes('kamala')) {
-                code = "PKM";
-            }
-
             document.getElementById('Retailer_Code').value = code;
-            await generateSequentialBorrowerID();
+            document.getElementById('retailerSearchResults').style.display = 'none';
+            generateSequentialBorrowerID();
         }
 
-        async function generateSequentialBorrowerID() {
+        function generateSequentialBorrowerID() {
             const issuedBy = document.getElementById('Issued_by').value;
             const borrowerIdField = document.getElementById('Borrower_ID');
             const retailerCode = document.getElementById('Retailer_Code').value.trim().toUpperCase();
@@ -608,58 +638,30 @@
             }
 
             if (issuedBy === 'Retailer' && !retailerCode) {
-                borrowerIdField.value = "Select Retailer First";
+                borrowerIdField.value = "Auto-generated";
                 return;
             }
 
-            const setDefaultId = (seq = 1) => {
-                const paddedSeq = String(seq).padStart(3, '0');
-                if (issuedBy === 'Retailer' && retailerCode) {
-                    borrowerIdField.value = `${retailerCode}/${paddedSeq}/${currentYear}`;
-                } else {
-                    borrowerIdField.value = `VFC/${paddedSeq}/${currentYear}`;
-                }
-            };
-
-            if (!window.appwriteDatabases || !window.VFC_DB) {
-                setDefaultId(1);
-                return;
-            }
-
-            try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.BORROWERS_ID
-                );
-
-                const documents = response.documents || [];
-
-                if (issuedBy === 'Retailer' && retailerCode) {
-                    const retailerLoans = documents.filter(doc => doc.borrower_id && doc.borrower_id.startsWith(retailerCode + '/'));
-                    const nextSeq = retailerLoans.length + 1;
-                    setDefaultId(nextSeq);
-                } else {
-                    const adminLoans = documents.filter(doc => doc.borrower_id && doc.borrower_id.startsWith('VFC/'));
-                    const nextSeq = adminLoans.length + 1;
-                    setDefaultId(nextSeq);
-                }
-            } catch (e) {
-                setDefaultId(1);
-            }
+            const prefix = (issuedBy === 'Retailer') ? retailerCode : 'VFC';
+            const existingForPrefix = cachedBorrowers.filter(doc => doc.borrower_id && doc.borrower_id.startsWith(prefix + '/'));
+            const nextSeq = existingForPrefix.length + 1;
+            const paddedSeq = String(nextSeq).padStart(3, '0');
+            borrowerIdField.value = `${prefix}/${paddedSeq}/${currentYear}`;
         }
 
-        async function toggleRetailerFields() {
+        function toggleRetailerFields() {
             const issuedBy = document.getElementById('Issued_by').value;
             const retailerGroup = document.getElementById('retailerFieldsGroup');
             if (issuedBy === 'Retailer') {
                 retailerGroup.classList.remove('hidden');
-                loadRetailersData();
+                document.getElementById('retailerSearchInput').value = '';
+                document.getElementById('Retailer_Code').value = '';
             } else {
                 retailerGroup.classList.add('hidden');
                 document.getElementById('retailerSearchInput').value = '';
                 document.getElementById('Retailer_Code').value = '';
             }
-            await generateSequentialBorrowerID();
+            generateSequentialBorrowerID();
         }
 
         function showHidePaymentDetails() {
@@ -683,21 +685,65 @@
             window.location.replace("login.html");
         }
 
+        async function compressImageIfNeeded(file) {
+            if (!file || !file.type.startsWith('image/') || file.size <= 250 * 1024) {
+                return file;
+            }
+            return new Promise((resolve) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 1200;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > height && width > maxDim) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else if (height > maxDim) {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+                        } else {
+                            resolve(file);
+                        }
+                    }, 'image/jpeg', 0.72);
+                };
+                img.onerror = () => resolve(file);
+                img.src = url;
+            });
+        }
+
         async function validateAndSubmit(event) {
             event.preventDefault();
+            const issuedBy = document.getElementById('Issued_by').value;
+            if (issuedBy === 'Retailer' && !document.getElementById('Retailer_Code').value) {
+                alert("தயவுசெய்து ரீடெய்லரைத் தேர்ந்தெடுக்கவும்!");
+                return false;
+            }
+
             const submitBtn = document.querySelector('.btn-submit');
-            submitBtn.innerText = "Uploading Files & Saving Data...";
+            submitBtn.innerText = "Saving Fast...";
             submitBtn.disabled = true;
 
             try {
                 async function uploadFileToStorage(fileElementId) {
                     const fileInput = document.getElementById(fileElementId);
                     if (fileInput && fileInput.files.length > 0) {
-                        const file = fileInput.files[0];
+                        const rawFile = fileInput.files[0];
+                        const optimizedFile = await compressImageIfNeeded(rawFile);
                         const uploadedFile = await window.appwriteStorage.createFile(
                             VFC_DB.DOCUMENTS_BUCKET_ID,
                             AppwriteID.unique(),
-                            file
+                            optimizedFile
                         );
                         return uploadedFile.$id;
                     }
@@ -724,7 +770,7 @@
 
                 const dataPayload = {
                     borrower_id: document.getElementById('Borrower_ID').value,
-                    issued_by: document.getElementById('Issued_by').value,
+                    issued_by: issuedBy,
                     retailer_code: document.getElementById('Retailer_Code').value || "",
                     loan_date: document.getElementById('Loan_Date').value,
                     full_name: fullName,
@@ -758,15 +804,19 @@
                     bank_passbook: passbookId
                 };
 
-                await window.appwriteDatabases.createDocument(
+                const createdBorrower = await window.appwriteDatabases.createDocument(
                     VFC_DB.DB_ID,
                     VFC_DB.BORROWERS_ID,
                     documentId,
                     dataPayload
                 );
 
-                alert("Borrower Registration Successful! Files & Data saved successfully.");
-                window.location.reload();
+                cachedBorrowers.push(createdBorrower);
+                alert("Borrower Registration Successful! Files & Data saved.");
+                document.getElementById('borrowerRegistrationForm').reset();
+                document.getElementById('Loan_Date').valueAsDate = new Date();
+                document.getElementById('retailerFieldsGroup').classList.add('hidden');
+                document.getElementById('Borrower_ID').value = "Auto-generated";
 
             } catch (error) {
                 console.error("Appwrite Submission Error:", error);
