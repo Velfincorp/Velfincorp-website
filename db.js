@@ -17,9 +17,11 @@ const functions = new Functions(client);
 // உண்மையான லைவ் டேட்டாபேஸ் மற்றும் கலெக்ஷன் ஐடிகள் (Live IDs)
 const LIVE_DB = {
     DB_ID: '6ad71cc60012c0f125b9',
-    BORROWERS_ID: '6ad71e920004bbc106eb', // Live_Borrowers
-    LOANS_ID: '6ad71f29001d4ff46c50',     // Live_Loans
-    PAYMENTS_ID: '6ad71ee900312b70ce69', // Live_Payments
+    BORROWERS_ID: '6ad71e920004bbc106eb',       // Live_Borrowers
+    LOANS_ID: '6ad71f29001d4ff46c50',           // Live_Loans
+    PAYMENTS_ID: '6ad71ee900312b70ce69',        // Live_Payments
+    RETAILERS_ID: '6ada05fd0007206813cf',       // Retialers/Staffs
+    STAFFS_ID: '6ada05fd0007206813cf',          // Retialers/Staffs (Alias)
     CREDIT_VAULT_ID: '6ad71f29001d4ff46c50',  
     PERSONAL_LOAN_ID: '6ad71f29001d4ff46c50',  
     DOCUMENTS_BUCKET_ID: '6ad728e7001cd61e6b73' 
