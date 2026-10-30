@@ -12,7 +12,6 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -32,7 +31,6 @@
                 return;
             }
 
-            // Restrict borrowers from accessing admin/staff pages
             if (userRole === 'borrower') {
                 window.location.replace('borrower-portal.html');
             }
@@ -55,7 +53,6 @@
             display: flex;
             min-height: 100vh;
         }
-        /* Left Sidebar Menu */
         .sidebar {
             width: 260px;
             background-color: var(--navy);
@@ -139,7 +136,6 @@
             text-align: center;
             box-sizing: border-box;
         }
-        /* Main Content Area */
         .main-content {
             margin-left: 260px;
             flex: 1;
@@ -237,11 +233,14 @@
             background-color: var(--gold);
             color: var(--navy);
         }
+        .btn-submit:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Left Sidebar Menu -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -267,7 +266,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <div class="header">
@@ -275,7 +273,6 @@
             </div>
 
             <form id="registrationForm" onsubmit="saveData(event)">
-                <!-- Role Selection Dropdown -->
                 <div class="form-group">
                     <label>Select User Type *</label>
                     <select id="userType" onchange="toggleFormFields()" required>
@@ -284,13 +281,11 @@
                     </select>
                 </div>
 
-                <!-- Common Field -->
                 <div class="form-group">
                     <label>Unique Code (Auto-generated)</label>
-                    <input type="text" id="userCode" readonly style="background: #f1f5f9;">
+                    <input type="text" id="userCode" readonly style="background: #f1f5f9; font-weight: bold; color: var(--navy);">
                 </div>
 
-                <!-- Retailer Specific Fields -->
                 <div id="retailerFields">
                     <div class="form-group">
                         <label>Show Room Name *</label>
@@ -314,7 +309,7 @@
                     </div>
                     <div class="form-group">
                         <label>City / Location *</label>
-                        <input type="text" id="cityLocation" placeholder="Enter city or location">
+                        <input type="text" id="cityLocation" placeholder="Enter city or location (e.g., Cuddalore)">
                     </div>
                     <div class="form-group">
                         <label>Complete Address</label>
@@ -344,7 +339,6 @@
                     </div>
                 </div>
 
-                <!-- Staff Specific Fields -->
                 <div id="staffFields" style="display: none;">
                     <div class="form-group">
                         <label>Staff Name *</label>
@@ -374,26 +368,57 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Details</button>
+                <button type="submit" id="submitBtn" class="btn-submit"><i class="fas fa-save"></i> Save Details</button>
             </form>
         </div>
     </div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', () => {
+        const RETAILERS_COLLECTION_ID = (window.VFC_DB && VFC_DB.RETAILERS_ID) ? VFC_DB.RETAILERS_ID : '6ada05fd0007206813cf';
+        let cachedRecords = [];
+
+        window.addEventListener('DOMContentLoaded', async () => {
             toggleFormFields();
+            await fetchExistingCounts();
         });
+
+        async function fetchExistingCounts() {
+            try {
+                const res = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    RETAILERS_COLLECTION_ID,
+                    [window.AppwriteQuery.limit(100)]
+                );
+                cachedRecords = res.documents || [];
+                updateAutoCode();
+            } catch (err) {
+                console.warn("Could not fetch count:", err);
+                updateAutoCode();
+            }
+        }
+
+        function updateAutoCode() {
+            const userType = document.getElementById('userType').value;
+            const codeInput = document.getElementById('userCode');
+            const year = new Date().getFullYear();
+
+            if (userType === 'retailer') {
+                const count = cachedRecords.filter(d => (d.user_type || '').toLowerCase() === 'retailer').length + 1;
+                codeInput.value = `VFC-RET-${year}-${String(count).padStart(3, '0')}`;
+            } else {
+                const count = cachedRecords.filter(d => (d.user_type || '').toLowerCase() === 'staff').length + 1;
+                codeInput.value = `VFC-STF-${year}-${String(count).padStart(3, '0')}`;
+            }
+        }
 
         function toggleFormFields() {
             const userType = document.getElementById('userType').value;
             const retailerFields = document.getElementById('retailerFields');
             const staffFields = document.getElementById('staffFields');
-            const codeInput = document.getElementById('userCode');
 
             if (userType === 'retailer') {
                 retailerFields.style.display = 'block';
                 staffFields.style.display = 'none';
-                codeInput.value = `VFC-RET-2026-001`;
 
                 document.getElementById('showroomName').setAttribute('required', 'true');
                 document.getElementById('ownerName').setAttribute('required', 'true');
@@ -408,7 +433,6 @@
             } else {
                 retailerFields.style.display = 'none';
                 staffFields.style.display = 'block';
-                codeInput.value = `VFC-STF-2026-001`;
 
                 document.getElementById('staffName').setAttribute('required', 'true');
                 document.getElementById('staffPhone').setAttribute('required', 'true');
@@ -421,96 +445,94 @@
                 document.getElementById('retailerEmail').removeAttribute('required');
                 document.getElementById('cityLocation').removeAttribute('required');
             }
+            updateAutoCode();
         }
 
         async function saveData(event) {
             event.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Now...';
+
             const userType = document.getElementById('userType').value;
 
-            if (userType === 'retailer') {
-                const retailerId = document.getElementById('retailerPhone').value.trim();
-                const retailerPass = document.getElementById('retailerPass').value.trim();
+            try {
+                if (userType === 'retailer') {
+                    const retailerId = document.getElementById('retailerPhone').value.trim();
+                    const retailerPass = document.getElementById('retailerPass').value.trim();
 
-                const retailerPayload = {
-                    user_type: "retailer",
-                    unique_code: document.getElementById('userCode').value,
-                    show_room_name: document.getElementById('showroomName').value.trim(),
-                    owner_name: document.getElementById('ownerName').value.trim(),
-                    whatsapp_number: retailerId,
-                    password: retailerPass,
-                    email: document.getElementById('retailerEmail').value.trim(),
-                    city: document.getElementById('cityLocation').value.trim(),
-                    address: document.getElementById('fullAddress').value.trim(),
-                    gst_number: document.getElementById('gstNumber').value.trim(),
-                    pan_number: document.getElementById('panNumber').value.trim(),
-                    aadhaar_number: document.getElementById('aadharNumber').value.trim(),
-                    bank_account_number: document.getElementById('accountNumber').value.trim(),
-                    ifsc_code: document.getElementById('ifscCode').value.trim()
-                };
+                    const retailerPayload = {
+                        user_type: "retailer",
+                        unique_code: document.getElementById('userCode').value,
+                        show_room_name: document.getElementById('showroomName').value.trim(),
+                        owner_name: document.getElementById('ownerName').value.trim(),
+                        whatsapp_number: retailerId,
+                        password: retailerPass,
+                        email: document.getElementById('retailerEmail').value.trim(),
+                        city: document.getElementById('cityLocation').value.trim(),
+                        address: document.getElementById('fullAddress').value.trim() || "-",
+                        gst_number: document.getElementById('gstNumber').value.trim() || "-",
+                        pan_number: document.getElementById('panNumber').value.trim() || "-",
+                        aadhaar_number: document.getElementById('aadharNumber').value.trim() || "-",
+                        bank_account_number: document.getElementById('accountNumber').value.trim() || "-",
+                        ifsc_code: document.getElementById('ifscCode').value.trim() || "-"
+                    };
 
-                try {
-                    // Appwrite கிளவுட் டேட்டாபேஸில் சேமித்தல்
-                    await window.appwriteDatabases.createDocument(
+                    const createdDoc = await window.appwriteDatabases.createDocument(
                         VFC_DB.DB_ID,
-                        '6ada05fd0007206813cf', // Retialers/Staffs Collection ID
+                        RETAILERS_COLLECTION_ID,
                         window.AppwriteID.unique(),
                         retailerPayload
                     );
 
-                    // Backup local storage copy for login verification compatibility
-                    let retailers = JSON.parse(localStorage.getItem('velfincorp_retailers') || '[]');
-                    retailers.push(retailerPayload);
-                    localStorage.setItem('velfincorp_retailers', JSON.stringify(retailers));
+                    cachedRecords.push(createdDoc);
 
                     let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
                     users.push({
                         id: retailerId,
                         pass: retailerPass,
                         role: 'retailer',
-                        name: retailerPayload.show_room_name + ' (' + retailerPayload.owner_name + ')',
+                        name: `${retailerPayload.show_room_name} (${retailerPayload.owner_name})`,
+                        city: retailerPayload.city,
+                        show_room_name: retailerPayload.show_room_name,
                         permissions: ['borrowers-details.html', 'creditvault.html']
                     });
                     localStorage.setItem('velfincorp_users', JSON.stringify(users));
 
                     alert("Retailer registered & saved to Cloud Database successfully!");
-                } catch (err) {
-                    console.error("Error saving retailer to Appwrite:", err);
-                    alert("Cloud Database save failed: " + err.message);
-                    return;
-                }
-            } else {
-                const staffId = document.getElementById('staffPhone').value.trim();
-                const staffPass = document.getElementById('staffPass').value.trim();
-                
-                const checkboxes = document.querySelectorAll('input[name="perm"]:checked');
-                let permissions = [];
-                checkboxes.forEach((cb) => permissions.push(cb.value));
+                } else {
+                    const staffId = document.getElementById('staffPhone').value.trim();
+                    const staffPass = document.getElementById('staffPass').value.trim();
 
-                const staffPayload = {
-                    user_type: "staff",
-                    unique_code: document.getElementById('userCode').value,
-                    show_room_name: document.getElementById('staffName').value.trim(),
-                    owner_name: "-",
-                    whatsapp_number: staffId,
-                    password: staffPass,
-                    email: "-",
-                    city: "-",
-                    address: "-",
-                    gst_number: "-",
-                    pan_number: "-",
-                    aadhaar_number: "-",
-                    bank_account_number: "-",
-                    ifsc_code: "-"
-                };
+                    const checkboxes = document.querySelectorAll('input[name="perm"]:checked');
+                    let permissions = [];
+                    checkboxes.forEach((cb) => permissions.push(cb.value));
 
-                try {
-                    // Appwrite கிளவுட் டேட்டாபேஸில் சேமித்தல்
-                    await window.appwriteDatabases.createDocument(
+                    const staffPayload = {
+                        user_type: "staff",
+                        unique_code: document.getElementById('userCode').value,
+                        show_room_name: document.getElementById('staffName').value.trim(),
+                        owner_name: "-",
+                        whatsapp_number: staffId,
+                        password: staffPass,
+                        email: "-",
+                        city: "-",
+                        address: permissions.join(','),
+                        gst_number: "-",
+                        pan_number: "-",
+                        aadhaar_number: "-",
+                        bank_account_number: "-",
+                        ifsc_code: "-"
+                    };
+
+                    const createdDoc = await window.appwriteDatabases.createDocument(
                         VFC_DB.DB_ID,
-                        '6ada05fd0007206813cf', // Retialers/Staffs Collection ID
+                        RETAILERS_COLLECTION_ID,
                         window.AppwriteID.unique(),
                         staffPayload
                     );
+
+                    cachedRecords.push(createdDoc);
 
                     let users = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
                     users.push({
@@ -525,15 +547,17 @@
                     localStorage.setItem('velfincorp_staffs', JSON.stringify(users));
 
                     alert("Staff access created and saved to Cloud Database successfully!");
-                } catch (err) {
-                    console.error("Error saving staff to Appwrite:", err);
-                    alert("Cloud Database save failed: " + err.message);
-                    return;
                 }
-            }
 
-            document.getElementById('registrationForm').reset();
-            toggleFormFields();
+                document.getElementById('registrationForm').reset();
+                toggleFormFields();
+            } catch (err) {
+                console.error("Error saving to Appwrite:", err);
+                alert("Cloud Database save failed: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Details';
+            }
         }
 
         function handleLogout() {
