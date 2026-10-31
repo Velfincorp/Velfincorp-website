@@ -490,7 +490,6 @@
         let allLoans = [];
         let lockedRetailerObj = null;
 
-        // IMEI 5-5-5 Digit Formatter (Strictly max 15 digits)
         function formatIMEIInput(el) {
             const digits = el.value.replace(/\D/g, '').substring(0, 15);
             const parts = [];
@@ -921,7 +920,6 @@
             submitBtn.innerText = "Saving Loan & Sending WhatsApp...";
 
             try {
-                // அனைத்து விவரங்களும் முழுமையாக Live_Loans டேபிளில் சேமிக்கப்படுகின்றன
                 const loanPayload = {
                     loan_id: loanId,
                     issued_by: issuedBy,
@@ -964,14 +962,16 @@
                 const loanDay = daysOfWeek[selectedDateObj.getDay()] || "திங்கள்";
                 const loanDateStr = document.getElementById('Loan_Date_Display').value || selectedDateObj.toLocaleDateString('en-GB');
 
+                // MSG91 டெம்ப்ளேட் வரிசைப்படி சரியாக 8 பாராமீட்டர்கள் (body_1 முதல் body_8 வரை)
                 const customComponents = {
                     body_1: String(borrowerName),
-                    body_2: String(loanId),
-                    body_3: String(productCategory + " (" + productName + ")"),
+                    body_2: String(productCategory + " (" + productName + ")"),
+                    body_3: String(loanId),
                     body_4: String(weeklyEmi),
-                    body_5: String(tenureStr),
+                    body_5: String(tenureVal),
                     body_6: String(loanDay),
-                    body_7: String(loanDateStr)
+                    body_7: String(loanDateStr),
+                    body_8: "இரவு அல்லது அதிகாலை 12:00 மணிக்கு முன்பாக"
                 };
 
                 const functionPayload = {
@@ -1019,8 +1019,7 @@
 
         function handleLogout() {
             sessionStorage.clear();
-            localStorage.removeItem('velfincorp_logged_user');
-            window.location.replace('login.html');
+            window.location.replace("login.html");
         }
     </script>
 </body>
