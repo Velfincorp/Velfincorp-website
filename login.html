@@ -12,29 +12,22 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
     <script>
-        (function() {
-            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-            const userRole = sessionStorage.getItem('velfincorp_role');
-
-            window.pageshow = function(event) {
-                if (event.persisted) {
-                    window.location.reload();
-                }
-            };
-
-            if (loggedUser && userRole) {
-                if (userRole === 'borrower') {
-                    window.location.replace('borrower-portal.html');
-                } else if (userRole === 'retailer') {
-                    window.location.replace('borrowers-details.html');
-                } else if (userRole === 'staff') {
-                    const perms = JSON.parse(sessionStorage.getItem('velfincorp_permissions') || '["borrowers-details.html"]');
-                    window.location.replace(perms[0] || 'borrowers-details.html');
-                } else {
-                    window.location.replace('dashboard.html');
-                }
+        // லாகின் பக்கத்திற்கு எப்போது வந்தாலும் (அல்லது Back பட்டன் மூலம் வந்தாலும்) செஷனை உடனடியாக அழித்து, மீண்டும் யூசர்நேம்/பாஸ்வேர்ட் கேட்க வைக்கும் பாதுகாப்பு கோடு
+        function clearSessionAndRequireLogin() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            const form = document.getElementById('loginForm');
+            if (form) form.reset();
+            const btn = document.getElementById('loginBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = "Secure Login";
             }
-        })();
+        }
+
+        clearSessionAndRequireLogin();
+        window.addEventListener('pageshow', clearSessionAndRequireLogin);
+        window.addEventListener('popstate', clearSessionAndRequireLogin);
     </script>
     <style>
         :root {
@@ -140,7 +133,7 @@
         <h2>VEL FIN CORP</h2>
         <p>Secure Enterprise Portal Login</p>
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off">
             <div class="form-group">
                 <label>Select User Role *</label>
                 <select id="userRole" required>
@@ -154,13 +147,13 @@
 
             <div class="form-group">
                 <label>Username / ID / Mobile *</label>
-                <input type="text" id="username" placeholder="Registered mobile number" required>
+                <input type="text" id="username" placeholder="Registered mobile number" autocomplete="off" required>
             </div>
 
             <div class="form-group">
                 <label>Password / PIN *</label>
                 <div class="pass-wrapper">
-                    <input type="password" id="password" placeholder="Enter password (e.g., Vel@8425 or PIN)" required>
+                    <input type="password" id="password" placeholder="Enter password (e.g., Vel@8425 or PIN)" autocomplete="new-password" required>
                     <i class="fas fa-eye toggle-pass" id="togglePassIcon" onclick="togglePasswordVisibility()"></i>
                 </div>
             </div>
@@ -188,6 +181,8 @@
 
         async function handleLogin(event) {
             event.preventDefault();
+            sessionStorage.clear();
+
             const role = document.getElementById('userRole').value;
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -202,6 +197,7 @@
                 if (password === expectedPassword || password.toLowerCase() === ('vel@' + expectedPassword)) {
                     sessionStorage.setItem('velfincorp_logged_user', username);
                     sessionStorage.setItem('velfincorp_role', 'borrower');
+                    sessionStorage.setItem('velfincorp_permissions', JSON.stringify(['borrower-portal.html']));
                     window.location.replace('borrower-portal.html');
                 } else {
                     alert("தவறான பாஸ்வேர்ட்! உங்கள் மொபைல் எண்ணின் கடைசி 4 இலக்கங்களை உள்ளிடவும்.");
@@ -262,15 +258,12 @@
                 let allowedModules = ['borrowers-details.html', 'creditvault.html'];
                 if (role === 'staff') {
                     if (matchedUser.address && matchedUser.address.includes('.html')) {
-                        allowedModules = matchedUser.address.split(',').map(s => s.trim()).filter(Boolean);
+                        allowedModules = matchedUser.address
+                            .split(',')
+                            .map(s => s.trim() === 'Support Mail' ? 'mail-inbox.html' : s.trim())
+                            .filter(s => s && s !== 'dashboard.html');
                     } else {
                         allowedModules = ['borrowers-details.html', 'payments.html'];
-                    }
-                } else if (role === 'retailer') {
-                    if (matchedUser.address && matchedUser.address.includes('.html')) {
-                        allowedModules = matchedUser.address.split(',').map(s => s.trim()).filter(Boolean);
-                    } else {
-                        allowedModules = ['borrowers-details.html', 'creditvault.html'];
                     }
                 }
 
