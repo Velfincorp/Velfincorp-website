@@ -32,13 +32,9 @@
             }
 
             if (userRole === 'borrower') {
-                if (currentPage !== 'borrower-portal.html') {
-                    window.location.replace('borrower-portal.html');
-                }
-            } else {
-                if (currentPage === 'borrower-portal.html') {
-                    window.location.replace('dashboard.html');
-                }
+                window.location.replace('borrower-portal.html');
+            } else if (userRole === 'retailer') {
+                window.location.replace('borrowers-details.html');
             }
         })();
     </script>
@@ -357,8 +353,8 @@
                 <input type="text" id="newUserName" placeholder="Staff / Retailer Name (e.g., Sri Vinayaga Agencies)">
                 <input type="text" id="newUserCity" placeholder="City / Location (e.g., Cuddalore)">
                 <input type="text" id="newUserId" placeholder="Mobile Number (Username)" maxlength="10">
-                <input type="text" id="newUserPass" placeholder="Password (e.g., Vel@2026)">
-                <select id="newUserRole">
+                <input type="text" id="newUserPass" placeholder="Password (e.g., Vel@8425)">
+                <select id="newUserRole" onchange="setDefaultRoleModules()">
                     <option value="retailer">Retailer / Partner</option>
                     <option value="staff">Staff / Collection Agent</option>
                 </select>
@@ -366,19 +362,19 @@
 
             <div class="permissions-group">
                 <div style="font-weight: bold; font-size: 13px; color: var(--navy); margin-bottom: 8px;">Select Allowed Access Modules:</div>
-                <label><input type="checkbox" name="perm" value="borrowers-details.html"> Borrower Details</label>
-                <label><input type="checkbox" name="perm" value="creditvault.html"> Credit Vault Loan</label>
+                <label><input type="checkbox" name="perm" value="borrowers-details.html" checked> Borrower Details</label>
+                <label><input type="checkbox" name="perm" value="creditvault.html" checked> Credit Vault Loan</label>
                 <label><input type="checkbox" name="perm" value="personalloan.html"> Personal Loan</label>
                 <label><input type="checkbox" name="perm" value="payments.html"> Payment Collection</label>
                 <label><input type="checkbox" name="perm" value="creditvault-report.html"> Credit Vault Report</label>
                 <label><input type="checkbox" name="perm" value="personalloan-report.html"> Personal Loan Report</label>
                 <label><input type="checkbox" name="perm" value="allpayments-report.html"> All Payments Report</label>
-                <label><input type="checkbox" name="perm" value="Support Mail"> Support Mail Inbox</label>
+                <label><input type="checkbox" name="perm" value="mail-inbox.html"> Support Mail Inbox</label>
                 <label><input type="checkbox" name="perm" value="reminders.html"> WhatsApp Reminders</label>
                 <label><input type="checkbox" name="perm" value="retailers.html"> Retailers & Staff</label>
             </div>
 
-            <button class="btn-add-user" id="createAccessBtn" onclick="generateCredential()">Create User Access & Save</button>
+            <button class="btn-add-user" id="createAccessBtn" onclick="generateCredential()">Create / Update User Access & Save</button>
 
             <h3 style="margin-top: 30px;"><i class="fas fa-list"></i> Created Staff & Retailers List (Cloud Synced)</h3>
             <table class="users-table">
@@ -402,11 +398,24 @@
 
     <script>
         const RETAILERS_COLLECTION_ID = (window.VFC_DB && VFC_DB.RETAILERS_ID) ? VFC_DB.RETAILERS_ID : '6ada05fd0007206813cf';
+        let cloudUserDocs = [];
 
         function handleLogout() {
             sessionStorage.clear();
             localStorage.removeItem('velfincorp_logged_user');
             window.location.replace('login.html');
+        }
+
+        function setDefaultRoleModules() {
+            const role = document.getElementById('newUserRole').value;
+            const checkboxes = document.querySelectorAll('input[name="perm"]');
+            checkboxes.forEach(cb => {
+                if (role === 'retailer') {
+                    cb.checked = (cb.value === 'borrowers-details.html' || cb.value === 'creditvault.html');
+                } else {
+                    cb.checked = false;
+                }
+            });
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -479,17 +488,17 @@
                     RETAILERS_COLLECTION_ID,
                     [window.AppwriteQuery.limit(100)]
                 );
-                const docs = res.documents || [];
+                cloudUserDocs = res.documents || [];
 
                 tbody.innerHTML = '';
-                if (docs.length === 0) {
+                if (cloudUserDocs.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
                     return;
                 }
 
                 const syncedLocalUsers = [];
 
-                docs.forEach((doc, index) => {
+                cloudUserDocs.forEach((doc, index) => {
                     const role = (doc.user_type || 'retailer').toLowerCase();
                     const dispName = (doc.owner_name && doc.owner_name !== '-') 
                         ? `${doc.show_room_name} (${doc.owner_name})` 
@@ -500,7 +509,7 @@
 
                     let perms = ['borrowers-details.html', 'creditvault.html'];
                     if (doc.address && doc.address.includes('.html')) {
-                        perms = doc.address.split(',').filter(Boolean);
+                        perms = doc.address.split(',').map(s => s.trim()).filter(Boolean);
                     }
 
                     syncedLocalUsers.push({
@@ -535,7 +544,7 @@
 
         async function generateCredential() {
             const userName = document.getElementById('newUserName').value.trim();
-            const userCity = document.getElementById('newUserCity').value.trim() || '-';
+            const userCity = document.getElementById('newUserCity').value.trim();
             const userId = document.getElementById('newUserId').value.trim();
             const userPass = document.getElementById('newUserPass').value.trim();
             const userRole = document.getElementById('newUserRole').value;
@@ -544,8 +553,12 @@
             let permissions = [];
             checkboxes.forEach((checkbox) => permissions.push(checkbox.value));
 
-            if (!userName || !userId || !userPass) {
-                alert("தயவுசெய்து பெயர், மொபைல் நம்பர் மற்றும் பாஸ்வேர்ட் ஆகிய அனைத்தையும் உள்ளிடவும்!");
+            if (userRole === 'retailer' && permissions.length === 0) {
+                permissions = ['borrowers-details.html', 'creditvault.html'];
+            }
+
+            if (!userId || !userPass) {
+                alert("தயவுசெய்து மொபைல் நம்பர் மற்றும் பாஸ்வேர்ட் ஆகியவற்றை உள்ளிடவும்!");
                 return;
             }
 
@@ -559,44 +572,71 @@
             btn.innerText = "Saving to Cloud...";
 
             try {
-                const year = new Date().getFullYear();
-                const prefix = userRole === 'retailer' ? 'RET' : 'STF';
-                const uniqueCode = `VFC-${prefix}-${year}-${Math.floor(100 + Math.random() * 900)}`;
+                // ஏற்கனவே இந்த மொபைல் எண் கிளவுட்டில் உள்ளதா எனச் சோதித்து Update செய்தல்
+                const existingDoc = cloudUserDocs.find(d => String(d.whatsapp_number || '').trim() === userId);
 
-                await window.appwriteDatabases.createDocument(
-                    VFC_DB.DB_ID,
-                    RETAILERS_COLLECTION_ID,
-                    window.AppwriteID.unique(),
-                    {
+                if (existingDoc) {
+                    const updatePayload = {
                         user_type: userRole,
-                        unique_code: uniqueCode,
-                        show_room_name: userName,
-                        owner_name: "-",
-                        whatsapp_number: userId,
                         password: userPass,
-                        email: "-",
-                        city: userCity,
-                        address: permissions.length > 0 ? permissions.join(',') : "borrowers-details.html",
-                        gst_number: "-",
-                        pan_number: "-",
-                        aadhaar_number: "-",
-                        bank_account_number: "-",
-                        ifsc_code: "-"
-                    }
-                );
+                        address: permissions.join(',')
+                    };
+                    if (userName) updatePayload.show_room_name = userName;
+                    if (userCity) updatePayload.city = userCity;
 
-                alert(`Access successfully created in Cloud for ${userName} (${userId}) with ${permissions.length} module permissions!`);
+                    await window.appwriteDatabases.updateDocument(
+                        VFC_DB.DB_ID,
+                        RETAILERS_COLLECTION_ID,
+                        existingDoc.$id,
+                        updatePayload
+                    );
+                    alert(`Updated Password & Access (${permissions.length} Modules) for Mobile: ${userId}!`);
+                } else {
+                    if (!userName) {
+                        alert("புதிய பயனருக்குப் பெயர் (Name / Showroom) அவசியம்!");
+                        btn.disabled = false;
+                        btn.innerText = "Create / Update User Access & Save";
+                        return;
+                    }
+                    const year = new Date().getFullYear();
+                    const prefix = userRole === 'retailer' ? 'RET' : 'STF';
+                    const uniqueCode = `VFC-${prefix}-${year}-${Math.floor(100 + Math.random() * 900)}`;
+
+                    await window.appwriteDatabases.createDocument(
+                        VFC_DB.DB_ID,
+                        RETAILERS_COLLECTION_ID,
+                        window.AppwriteID.unique(),
+                        {
+                            user_type: userRole,
+                            unique_code: uniqueCode,
+                            show_room_name: userName,
+                            owner_name: "-",
+                            whatsapp_number: userId,
+                            password: userPass,
+                            email: "-",
+                            city: userCity || "-",
+                            address: permissions.join(','),
+                            gst_number: "-",
+                            pan_number: "-",
+                            aadhaar_number: "-",
+                            bank_account_number: "-",
+                            ifsc_code: "-"
+                        }
+                    );
+                    alert(`Access successfully created in Cloud for ${userName} (${userId}) with ${permissions.length} module permissions!`);
+                }
+
                 document.getElementById('newUserName').value = '';
                 document.getElementById('newUserCity').value = '';
                 document.getElementById('newUserId').value = '';
                 document.getElementById('newUserPass').value = '';
-                checkboxes.forEach(cb => cb.checked = false);
+                setDefaultRoleModules();
                 await loadCloudUsersList();
             } catch (err) {
                 alert("Failed to save to Cloud: " + err.message);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Create User Access & Save";
+                btn.innerText = "Create / Update User Access & Save";
             }
         }
     </script>
