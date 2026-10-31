@@ -9,9 +9,9 @@
     <title>Vel Fin Corp - Secure Portal Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
             const userRole = sessionStorage.getItem('velfincorp_role');
@@ -22,10 +22,14 @@
                 }
             };
 
-            // If already logged in, redirect to respective portals automatically
             if (loggedUser && userRole) {
                 if (userRole === 'borrower') {
                     window.location.replace('borrower-portal.html');
+                } else if (userRole === 'retailer') {
+                    window.location.replace('borrowers-details.html');
+                } else if (userRole === 'staff') {
+                    const perms = JSON.parse(sessionStorage.getItem('velfincorp_permissions') || '["borrowers-details.html"]');
+                    window.location.replace(perms[0] || 'borrowers-details.html');
                 } else {
                     window.location.replace('dashboard.html');
                 }
@@ -74,6 +78,7 @@
         .form-group {
             margin-bottom: 20px;
             text-align: left;
+            position: relative;
         }
         label {
             display: block;
@@ -95,6 +100,17 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
         }
+        .pass-wrapper {
+            position: relative;
+        }
+        .toggle-pass {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #64748b;
+        }
         .btn-login {
             background-color: var(--navy);
             color: white;
@@ -112,6 +128,10 @@
             background-color: var(--gold);
             color: var(--navy);
         }
+        .btn-login:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -126,6 +146,7 @@
                 <select id="userRole" required>
                     <option value="">-Select Role-</option>
                     <option value="admin">Admin / Management</option>
+                    <option value="retailer">Retailer / Showroom Partner</option>
                     <option value="staff">Staff / Collection Agent</option>
                     <option value="borrower">Borrower / Customer</option>
                 </select>
@@ -138,39 +159,132 @@
 
             <div class="form-group">
                 <label>Password / PIN *</label>
-                <input type="password" id="password" placeholder="Enter password (Last 4 digits for borrower)" required>
+                <div class="pass-wrapper">
+                    <input type="password" id="password" placeholder="Enter password (e.g., Vel@8425 or PIN)" required>
+                    <i class="fas fa-eye toggle-pass" id="togglePassIcon" onclick="togglePasswordVisibility()"></i>
+                </div>
             </div>
 
-            <button type="submit" class="btn-login">Secure Login</button>
+            <button type="submit" id="loginBtn" class="btn-login">Secure Login</button>
         </form>
     </div>
 
     <script>
-        function handleLogin(event) {
+        const RETAILERS_COLLECTION_ID = (window.VFC_DB && VFC_DB.RETAILERS_ID) ? VFC_DB.RETAILERS_ID : '6ada05fd0007206813cf';
+
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('password');
+            const icon = document.getElementById('togglePassIcon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        async function handleLogin(event) {
             event.preventDefault();
             const role = document.getElementById('userRole').value;
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
 
             if (role === 'borrower') {
                 if (username.length !== 10) {
                     alert("தயவுசெய்து சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்.");
                     return;
                 }
-
                 const expectedPassword = username.slice(-4);
-                
-                if (password === expectedPassword) {
+                if (password === expectedPassword || password.toLowerCase() === ('vel@' + expectedPassword)) {
                     sessionStorage.setItem('velfincorp_logged_user', username);
                     sessionStorage.setItem('velfincorp_role', 'borrower');
                     window.location.replace('borrower-portal.html');
                 } else {
-                    alert("தவறான பாஸ்வேர்ட்! உங்கள் மொபைல் எண்ணின் கடைசி 4 இலக்கங்களை பாஸ்வேர்ட்டாக உள்ளிடவும்.");
+                    alert("தவறான பாஸ்வேர்ட்! உங்கள் மொபைல் எண்ணின் கடைசி 4 இலக்கங்களை உள்ளிடவும்.");
                 }
-            } else {
+                return;
+            }
+
+            if (role === 'admin') {
+                sessionStorage.setItem('velfincorp_logged_user', username);
+                sessionStorage.setItem('velfincorp_role', 'admin');
+                sessionStorage.removeItem('velfincorp_permissions');
+                window.location.replace('dashboard.html');
+                return;
+            }
+
+            // Retailer & Staff Cloud Verification
+            loginBtn.disabled = true;
+            loginBtn.innerText = "Verifying...";
+
+            try {
+                const res = await window.appwriteDatabases.listDocuments(
+                    VFC_DB.DB_ID,
+                    RETAILERS_COLLECTION_ID,
+                    [window.AppwriteQuery.limit(100)]
+                );
+                const docs = res.documents || [];
+                const matchedUser = docs.find(d => 
+                    String(d.whatsapp_number || '').trim() === username &&
+                    String(d.user_type || '').toLowerCase() === role.toLowerCase()
+                );
+
+                if (!matchedUser) {
+                    alert("இந்த மொபைல் எண்ணில் " + role.toUpperCase() + " கணக்கு எதுவும் இல்லை!");
+                    loginBtn.disabled = false;
+                    loginBtn.innerText = "Secure Login";
+                    return;
+                }
+
+                const dbPass = String(matchedUser.password || '').trim();
+                const last4 = username.slice(-4);
+                const velFormatPass = 'vel@' + last4;
+
+                const isPasswordValid = (
+                    password === dbPass ||
+                    password.toLowerCase() === dbPass.toLowerCase() ||
+                    password.toLowerCase() === velFormatPass ||
+                    password === last4
+                );
+
+                if (!isPasswordValid) {
+                    alert("தவறான பாஸ்வேர்ட்! சரியான பாஸ்வேர்டை உள்ளிடவும்.");
+                    loginBtn.disabled = false;
+                    loginBtn.innerText = "Secure Login";
+                    return;
+                }
+
+                // ரீடெய்லருக்கு எப்போதும் 2 மாடியூல்கள் மட்டுமே (Borrower Details & Credit Vault Loan)
+                let allowedModules = ['borrowers-details.html', 'creditvault.html'];
+                if (role === 'staff') {
+                    if (matchedUser.address && matchedUser.address.includes('.html')) {
+                        allowedModules = matchedUser.address.split(',').map(s => s.trim()).filter(Boolean);
+                    } else {
+                        allowedModules = ['borrowers-details.html', 'payments.html'];
+                    }
+                } else if (role === 'retailer') {
+                    if (matchedUser.address && matchedUser.address.includes('.html')) {
+                        allowedModules = matchedUser.address.split(',').map(s => s.trim()).filter(Boolean);
+                    } else {
+                        allowedModules = ['borrowers-details.html', 'creditvault.html'];
+                    }
+                }
+
                 sessionStorage.setItem('velfincorp_logged_user', username);
                 sessionStorage.setItem('velfincorp_role', role);
-                window.location.replace('dashboard.html');
+                sessionStorage.setItem('velfincorp_user_name', matchedUser.show_room_name || username);
+                sessionStorage.setItem('velfincorp_permissions', JSON.stringify(allowedModules));
+
+                window.location.replace(allowedModules[0] || 'borrowers-details.html');
+            } catch (err) {
+                console.error("Login verification error:", err);
+                alert("Login Error: " + err.message);
+                loginBtn.disabled = false;
+                loginBtn.innerText = "Secure Login";
             }
         }
     </script>
