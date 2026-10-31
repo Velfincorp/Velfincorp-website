@@ -260,7 +260,7 @@
         }
         .calc-summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
             gap: 10px;
         }
         .calc-item span {
@@ -440,8 +440,9 @@
                 <div id="calcSummaryBox" class="calc-summary">
                     <div class="calc-summary-grid">
                         <div class="calc-item">Payment to Retailer (Balance): <span id="disp_balance">₹0</span></div>
-                        <div class="calc-item">Setup Fee (4%): <span id="disp_setup">₹0</span></div>
-                        <div class="calc-item">Processing Fee (2.5%): <span id="disp_proc">₹0</span></div>
+                        <div class="calc-item">Setup Fee (4% on Price): <span id="disp_setup">₹0</span></div>
+                        <div class="calc-item">Processing Fee (2.5% on Price): <span id="disp_proc">₹0</span></div>
+                        <div class="calc-item">Doc Charge: <span id="disp_doc">₹100</span></div>
                     </div>
                 </div>
 
@@ -814,6 +815,7 @@
             calculateCreditVault();
         }
 
+        // VEL FIN CORP - EMI QUOTATION துல்லியமான கால்குலேஷன்
         function calculateCreditVault() {
             const price = parseFloat(document.getElementById('Product_Price').value) || 0;
             const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
@@ -829,20 +831,38 @@
                     return;
                 }
 
+                // 1. Payment to Retailer (Balance Amount)
                 const balanceAmount = price - downPayment;
-                const setupFee = balanceAmount * 0.04;
-                const procFee = balanceAmount * 0.025;
-                const totalPayable = balanceAmount + setupFee + procFee;
+
+                // 2. Fees calculated on Product Price + ₹100 Document Charge
+                const setupFee = price * 0.04;      // 4% on Product Price
+                const procFee = price * 0.025;      // 2.5% on Product Price
+                const docCharge = 100;              // Fixed ₹100
 
                 summaryBox.style.display = 'block';
                 document.getElementById('disp_balance').innerText = '₹' + Math.round(balanceAmount);
                 document.getElementById('disp_setup').innerText = '₹' + Math.round(setupFee);
                 document.getElementById('disp_proc').innerText = '₹' + Math.round(procFee);
+                document.getElementById('disp_doc').innerText = '₹' + docCharge;
 
                 if (tenureWeeks > 0) {
-                    const weeklyEmi = Math.round(totalPayable / tenureWeeks);
-                    document.getElementById('Loan_Amount').value = Math.round(totalPayable);
+                    // 3. Tenure-specific Interest Rates on Balance Amount
+                    const interestRates = {
+                        10: 0.075,  // 7.5% for 10 weeks
+                        15: 0.125,  // 12.5% for 15 weeks
+                        20: 0.24,   // 24% for 20 weeks
+                        25: 0.30,   // 30% for 25 weeks
+                        30: 0.36    // 36% for 30 weeks
+                    };
+                    const rate = interestRates[tenureWeeks] || 0;
+                    const interestAmount = balanceAmount * rate;
+
+                    const rawTotalPayable = balanceAmount + setupFee + procFee + docCharge + interestAmount;
+                    const weeklyEmi = Math.round(rawTotalPayable / tenureWeeks);
+                    const finalTotalPayable = weeklyEmi * tenureWeeks;
+
                     document.getElementById('Weekly_EMI').value = weeklyEmi;
+                    document.getElementById('Loan_Amount').value = finalTotalPayable;
                 } else {
                     document.getElementById('Loan_Amount').value = '';
                     document.getElementById('Weekly_EMI').value = '';
@@ -959,10 +979,12 @@
                     ? new Date(document.getElementById('Loan_Date').value) 
                     : new Date();
                 const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
-                const loanDay = daysOfWeek[selectedDateObj.getDay()] || "திங்கள்";
+                const dayIdx = isNaN(selectedDateObj.getDay()) ? 6 : selectedDateObj.getDay();
+                const loanDay = daysOfWeek[dayIdx];
+                const prevDay = daysOfWeek[(dayIdx + 6) % 7] + "க்கிழமை";
                 const loanDateStr = document.getElementById('Loan_Date_Display').value || selectedDateObj.toLocaleDateString('en-GB');
 
-                // MSG91 டெம்ப்ளேட் வரிசைப்படி சரியாக 8 பாராமீட்டர்கள் (body_1 முதல் body_8 வரை)
+                // MSG91 vel_fin_welcome_message டெம்ப்ளேட்டின் 8 பாராமீட்டர்கள் (body_1 முதல் body_8 வரை)
                 const customComponents = {
                     body_1: String(borrowerName),
                     body_2: String(productCategory + " (" + productName + ")"),
@@ -971,7 +993,7 @@
                     body_5: String(tenureVal),
                     body_6: String(loanDay),
                     body_7: String(loanDateStr),
-                    body_8: "இரவு அல்லது அதிகாலை 12:00 மணிக்கு முன்பாக"
+                    body_8: String(prevDay)
                 };
 
                 const functionPayload = {
@@ -1019,7 +1041,8 @@
 
         function handleLogout() {
             sessionStorage.clear();
-            window.location.replace("login.html");
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
         }
     </script>
 </body>
