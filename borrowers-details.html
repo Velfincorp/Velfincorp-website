@@ -207,9 +207,37 @@
             box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
         }
         .readonly-field {
-            background-color: #f1f5f9;
+            background-color: #f1f5f9 !important;
+            color: var(--navy) !important;
+            font-weight: bold !important;
+            pointer-events: none;
+        }
+        .date-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .date-wrapper input[type="text"] {
+            padding-right: 40px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .date-wrapper input[type="date"] {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 42px;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .date-wrapper .cal-icon {
+            position: absolute;
+            right: 14px;
             color: var(--navy);
-            font-weight: bold;
+            pointer-events: none;
+            z-index: 1;
         }
         .btn-submit {
             background-color: var(--navy);
@@ -327,8 +355,12 @@
                         <input type="file" id="Customer_Photo" accept="image/*" required>
                     </div>
                     <div class="form-group">
-                        <label>Loan Date *</label>
-                        <input type="date" id="Loan_Date" required>
+                        <label>Loan Date (DD-MM-YYYY) *</label>
+                        <div class="date-wrapper">
+                            <input type="text" id="Loan_Date_Display" placeholder="dd-mm-yyyy" maxlength="10" oninput="formatTypedDate(this, 'Loan_Date')" required>
+                            <input type="date" id="Loan_Date" onchange="syncPickerToDisplay('Loan_Date', 'Loan_Date_Display')" tabindex="-1">
+                            <i class="fas fa-calendar-alt cal-icon"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="form-row">
@@ -345,8 +377,12 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Date of Birth (DOB) *</label>
-                        <input type="date" id="Date_Of_Birth" required>
+                        <label>Date of Birth (DD-MM-YYYY) *</label>
+                        <div class="date-wrapper">
+                            <input type="text" id="DOB_Display" placeholder="dd-mm-yyyy" maxlength="10" oninput="formatTypedDate(this, 'Date_Of_Birth')" required>
+                            <input type="date" id="Date_Of_Birth" onchange="syncPickerToDisplay('Date_Of_Birth', 'DOB_Display')" tabindex="-1">
+                            <i class="fas fa-calendar-alt cal-icon"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="form-row">
@@ -368,22 +404,22 @@
                 <div class="section-heading">3. Identity Proofs & Contact Details</div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Aadhaar Number *</label>
-                        <input type="text" id="Aadhar_Number" placeholder="12 digit Aadhar" maxlength="14" required>
+                        <label>Aadhaar Number (12 Digits) *</label>
+                        <input type="text" id="Aadhar_Number" placeholder="XXXX XXXX XXXX" maxlength="14" oninput="formatAadhaarInput(this)" required>
                     </div>
                     <div class="form-group">
                         <label>PAN Number *</label>
-                        <input type="text" id="pan_number" placeholder="ABCDE1234F" maxlength="10" required>
+                        <input type="text" id="pan_number" placeholder="ABCDE1234F" maxlength="10" style="text-transform: uppercase;" oninput="formatUppercaseCode(this, 10)" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Phone Number *</label>
-                        <input type="text" id="Phone_Number" maxlength="10" placeholder="10 digit number" required>
+                        <input type="text" id="Phone_Number" maxlength="10" placeholder="10 digit number" oninput="this.value = this.value.replace(/\D/g, '').substring(0, 10)" required>
                     </div>
                     <div class="form-group">
                         <label>WhatsApp Number *</label>
-                        <input type="text" id="Whatsapp_Number" maxlength="10" placeholder="10 digit number" required>
+                        <input type="text" id="Whatsapp_Number" maxlength="10" placeholder="10 digit number" oninput="this.value = this.value.replace(/\D/g, '').substring(0, 10)" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -393,7 +429,7 @@
                     </div>
                     <div class="form-group">
                         <label>Nominee Contact Number *</label>
-                        <input type="text" id="Nominee_Contact_Number" maxlength="10" placeholder="10 digit number" required>
+                        <input type="text" id="Nominee_Contact_Number" maxlength="10" placeholder="10 digit number" oninput="this.value = this.value.replace(/\D/g, '').substring(0, 10)" required>
                     </div>
                 </div>
                 <div class="section-heading">4. Address & Employment Details</div>
@@ -418,7 +454,7 @@
                     </div>
                     <div class="form-group">
                         <label>Postal Code *</label>
-                        <input type="text" id="Postal_Code" maxlength="6" placeholder="Pincode" required>
+                        <input type="text" id="Postal_Code" maxlength="6" placeholder="Pincode" oninput="this.value = this.value.replace(/\D/g, '').substring(0, 6)" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -478,7 +514,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>IFSC Code *</label>
-                            <input type="text" id="IFSC_Code" maxlength="11" placeholder="11 character IFSC">
+                            <input type="text" id="IFSC_Code" maxlength="11" placeholder="11 character IFSC" style="text-transform: uppercase;" oninput="formatUppercaseCode(this, 11)">
                         </div>
                         <div class="form-group">
                             <label>Upload Bank Passbook / Statement *</label>
@@ -524,12 +560,59 @@
         const RETAILERS_COLLECTION_ID = (window.VFC_DB && VFC_DB.RETAILERS_ID) ? VFC_DB.RETAILERS_ID : '6ada05fd0007206813cf';
         let allRetailers = [];
         let cachedBorrowers = [];
+        let lockedRetailerObj = null;
+
+        function setTodayDateDDMMYYYY() {
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, '0');
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yyyy = now.getFullYear();
+            document.getElementById('Loan_Date_Display').value = `${dd}-${mm}-${yyyy}`;
+            document.getElementById('Loan_Date').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        function syncPickerToDisplay(pickerId, displayId) {
+            const val = document.getElementById(pickerId).value;
+            if (val && val.includes('-')) {
+                const [yyyy, mm, dd] = val.split('-');
+                document.getElementById(displayId).value = `${dd}-${mm}-${yyyy}`;
+            }
+        }
+
+        function formatTypedDate(displayEl, hiddenPickerId) {
+            let digits = displayEl.value.replace(/\D/g, '').substring(0, 8);
+            let formatted = '';
+            if (digits.length > 4) {
+                formatted = digits.substring(0, 2) + '-' + digits.substring(2, 4) + '-' + digits.substring(4, 8);
+            } else if (digits.length > 2) {
+                formatted = digits.substring(0, 2) + '-' + digits.substring(2, 4);
+            } else {
+                formatted = digits;
+            }
+            displayEl.value = formatted;
+
+            if (digits.length === 8) {
+                const dd = digits.substring(0, 2);
+                const mm = digits.substring(2, 4);
+                const yyyy = digits.substring(4, 8);
+                document.getElementById(hiddenPickerId).value = `${yyyy}-${mm}-${dd}`;
+            }
+        }
+
+        function formatAadhaarInput(el) {
+            const digits = el.value.replace(/\D/g, '').substring(0, 12);
+            el.value = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+        }
+
+        function formatUppercaseCode(el, maxLen) {
+            el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, maxLen);
+        }
 
         window.onload = async function() {
-            const loanDateEl = document.getElementById('Loan_Date');
-            if(loanDateEl) loanDateEl.valueAsDate = new Date();
+            setTodayDateDDMMYYYY();
             document.getElementById('Borrower_ID').value = "Auto-generated";
             await preloadCloudData();
+            applyRetailerAutoLockIfApplicable();
         };
 
         document.addEventListener('click', (e) => {
@@ -551,7 +634,7 @@
                     .map(d => ({
                         name: d.show_room_name || '',
                         owner: d.owner_name || '',
-                        id: d.whatsapp_number || '',
+                        id: String(d.whatsapp_number || '').trim(),
                         city: d.city || ''
                     }));
 
@@ -581,7 +664,50 @@
             return rawShop.substring(0, 3).toUpperCase() || 'RET';
         }
 
+        function applyRetailerAutoLockIfApplicable() {
+            const userRole = sessionStorage.getItem('velfincorp_role');
+            const loggedUser = (sessionStorage.getItem('velfincorp_logged_user') || '').trim();
+            const loggedName = (sessionStorage.getItem('velfincorp_user_name') || '').trim().toLowerCase();
+
+            if (userRole === 'retailer') {
+                let myRetailer = allRetailers.find(r => String(r.id).trim() === loggedUser);
+                if (!myRetailer && loggedName) {
+                    myRetailer = allRetailers.find(r => (r.name || '').toLowerCase().includes(loggedName));
+                }
+                if (!myRetailer) {
+                    myRetailer = {
+                        name: sessionStorage.getItem('velfincorp_user_name') || 'Retailer Partner',
+                        id: loggedUser,
+                        city: ''
+                    };
+                }
+
+                lockedRetailerObj = myRetailer;
+
+                const issuedByEl = document.getElementById('Issued_by');
+                issuedByEl.value = 'Retailer';
+                issuedByEl.classList.add('readonly-field');
+
+                const retailerGroup = document.getElementById('retailerFieldsGroup');
+                retailerGroup.classList.remove('hidden');
+
+                const searchInput = document.getElementById('retailerSearchInput');
+                searchInput.value = `${myRetailer.name} (${myRetailer.id})`;
+                searchInput.readOnly = true;
+                searchInput.classList.add('readonly-field');
+                searchInput.onfocus = null;
+                searchInput.oninput = null;
+
+                document.getElementById('selectedRetailerName').value = myRetailer.name;
+                document.getElementById('Retailer_Code').value = computeThreeLetterRetailerCode(myRetailer);
+                document.getElementById('retailerSearchResults').style.display = 'none';
+
+                generateSequentialBorrowerID();
+            }
+        }
+
         function renderRetailerResults(list) {
+            if (lockedRetailerObj) return;
             const resultsBox = document.getElementById('retailerSearchResults');
             resultsBox.innerHTML = '';
             if (list.length > 0) {
@@ -600,10 +726,12 @@
         }
 
         function showAllRetailers() {
+            if (lockedRetailerObj) return;
             renderRetailerResults(allRetailers);
         }
 
         function filterRetailers() {
+            if (lockedRetailerObj) return;
             const query = document.getElementById('retailerSearchInput').value.toLowerCase().trim();
             if (query.length === 0) {
                 renderRetailerResults(allRetailers);
@@ -650,6 +778,10 @@
         }
 
         function toggleRetailerFields() {
+            if (lockedRetailerObj) {
+                applyRetailerAutoLockIfApplicable();
+                return;
+            }
             const issuedBy = document.getElementById('Issued_by').value;
             const retailerGroup = document.getElementById('retailerFieldsGroup');
             if (issuedBy === 'Retailer') {
@@ -767,17 +899,19 @@
                 const fullName = prefix + " " + firstName + (lastName ? " " + lastName : "");
 
                 const documentId = 'vfc_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+                const loanDateVal = document.getElementById('Loan_Date').value || document.getElementById('Loan_Date_Display').value;
+                const dobVal = document.getElementById('Date_Of_Birth').value || document.getElementById('DOB_Display').value;
 
                 const dataPayload = {
                     borrower_id: document.getElementById('Borrower_ID').value,
                     issued_by: issuedBy,
                     retailer_code: document.getElementById('Retailer_Code').value || "",
-                    loan_date: document.getElementById('Loan_Date').value,
+                    loan_date: loanDateVal,
                     full_name: fullName,
-                    dob: document.getElementById('Date_Of_Birth').value,
+                    dob: dobVal,
                     relative_name: document.getElementById('Relationship').value + " " + document.getElementById('Relative_Name').value,
                     aadhar_number: document.getElementById('Aadhar_Number').value,
-                    pan_number: document.getElementById('pan_number').value,
+                    pan_number: document.getElementById('pan_number').value.toUpperCase(),
                     phone_number: document.getElementById('Phone_Number').value,
                     whatsapp_number: document.getElementById('Whatsapp_Number').value,
                     email: document.getElementById('Email').value || "",
@@ -794,7 +928,7 @@
                     bank_name: document.getElementById('Bank_Name').value || "",
                     account_holder_name: document.getElementById('Account_Holder_Name').value || "",
                     bank_account_no: document.getElementById('Bank_Account_Number').value || "",
-                    ifsc_code: document.getElementById('IFSC_Code').value || "",
+                    ifsc_code: (document.getElementById('IFSC_Code').value || "").toUpperCase(),
                     customer_photo: photoId,
                     aadhar_front: aadharFrontId,
                     aadhar_back: aadharBackId,
@@ -814,9 +948,14 @@
                 cachedBorrowers.push(createdBorrower);
                 alert("Borrower Registration Successful! Files & Data saved.");
                 document.getElementById('borrowerRegistrationForm').reset();
-                document.getElementById('Loan_Date').valueAsDate = new Date();
-                document.getElementById('retailerFieldsGroup').classList.add('hidden');
-                document.getElementById('Borrower_ID').value = "Auto-generated";
+                setTodayDateDDMMYYYY();
+
+                if (lockedRetailerObj) {
+                    applyRetailerAutoLockIfApplicable();
+                } else {
+                    document.getElementById('retailerFieldsGroup').classList.add('hidden');
+                    document.getElementById('Borrower_ID').value = "Auto-generated";
+                }
 
             } catch (error) {
                 console.error("Appwrite Submission Error:", error);
