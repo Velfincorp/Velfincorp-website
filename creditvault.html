@@ -188,6 +188,7 @@
         .form-group {
             flex: 1;
             min-width: 250px;
+            position: relative;
         }
         label {
             display: block;
@@ -208,6 +209,39 @@
             border-color: var(--gold);
             outline: none;
             box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15);
+        }
+        .readonly-field {
+            background-color: #f1f5f9 !important;
+            color: var(--navy) !important;
+            font-weight: bold !important;
+            pointer-events: none;
+        }
+        .date-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .date-wrapper input[type="text"] {
+            padding-right: 40px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .date-wrapper input[type="date"] {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 42px;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .date-wrapper .cal-icon {
+            position: absolute;
+            right: 14px;
+            color: var(--navy);
+            pointer-events: none;
+            z-index: 1;
         }
         .calc-summary {
             background-color: #f8fafc;
@@ -245,12 +279,41 @@
             background-color: var(--gold);
             color: var(--navy);
         }
+        .btn-submit:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
         .hidden { display: none !important; }
+        #retailerSearchResults {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 99;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .search-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .search-item:hover {
+            background-color: rgba(197, 160, 89, 0.15);
+            font-weight: bold;
+            color: var(--navy);
+        }
     </style>
 </head>
 <body>
 
-    <!-- Left Sidebar Navigation Menu -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -276,7 +339,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <h2>VEL FIN CORP</h2>
@@ -297,23 +359,21 @@
                     <div class="form-group">
                         <label>Borrowers Details *</label>
                         <select id="Borrowers_Details" onchange="checkActiveBorrowerLoan()" required>
-                            <option value="">-Loading Borrowers-</option>
+                            <option value="">-Select Borrower-</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-row hidden" id="retailerFieldsGroup">
                     <div class="form-group">
-                        <label>Retailer Details *</label>
-                        <select id="Retailer_Details" onchange="autoFillRetailerCode()">
-                            <option value="">-Select Retailer-</option>
-                            <option value="PKM">Pappireddipatty Kamala Mobiles (PKM)</option>
-                            <option value="RET002">Fin Partner Two (RET002)</option>
-                        </select>
+                        <label>Search & Select Retailer *</label>
+                        <input type="text" id="retailerSearchInput" placeholder="Click or type retailer name / mobile..." onfocus="showAllRetailers()" oninput="filterRetailers()" autocomplete="off">
+                        <input type="hidden" id="selectedRetailerName">
+                        <div id="retailerSearchResults"></div>
                     </div>
                     <div class="form-group">
                         <label>Retailer Code *</label>
-                        <input type="text" id="Retailer_Code" placeholder="e.g. PKM">
+                        <input type="text" id="Retailer_Code" class="readonly-field" readonly placeholder="Auto-generated">
                     </div>
                 </div>
 
@@ -321,11 +381,15 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Loan ID *</label>
-                        <input type="text" id="Loan_ID" readonly style="background-color: #f1f5f9;">
+                        <input type="text" id="Loan_ID" class="readonly-field" readonly value="Select Category First">
                     </div>
                     <div class="form-group">
-                        <label>Loan Date *</label>
-                        <input type="date" id="Loan_Date" required>
+                        <label>Loan Date (DD-MM-YYYY) *</label>
+                        <div class="date-wrapper">
+                            <input type="text" id="Loan_Date_Display" placeholder="dd-mm-yyyy" maxlength="10" oninput="formatTypedDate(this, 'Loan_Date')" required>
+                            <input type="date" id="Loan_Date" onchange="syncPickerToDisplay('Loan_Date', 'Loan_Date_Display')" tabindex="-1">
+                            <i class="fas fa-calendar-alt cal-icon"></i>
+                        </div>
                     </div>
                 </div>
 
@@ -349,11 +413,11 @@
                 <div class="form-row hidden" id="imeiFieldsGroup">
                     <div class="form-group">
                         <label>IMEI Number 1 *</label>
-                        <input type="text" id="IMEI_1" placeholder="Enter 15-digit IMEI 1">
+                        <input type="text" id="IMEI_1" placeholder="Enter 15-digit IMEI 1" maxlength="15">
                     </div>
                     <div class="form-group">
                         <label>IMEI Number 2</label>
-                        <input type="text" id="IMEI_2" placeholder="Enter 15-digit IMEI 2 (Optional)">
+                        <input type="text" id="IMEI_2" placeholder="Enter 15-digit IMEI 2 (Optional)" maxlength="15">
                     </div>
                 </div>
 
@@ -390,7 +454,7 @@
                     </div>
                     <div class="form-group">
                         <label>Loan Amount (₹) <small style="color:#64748b;">(Total Payable)</small></label>
-                        <input type="number" id="Loan_Amount" readonly style="background-color: #f1f5f9; font-weight: bold;" placeholder="Select Tenure first">
+                        <input type="number" id="Loan_Amount" class="readonly-field" readonly placeholder="Select Tenure first">
                     </div>
                 </div>
 
@@ -409,68 +473,276 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-submit">Submit Credit Vault Loan & Send Welcome Message</button>
+                <button type="submit" id="submitBtn" class="btn-submit">Submit Credit Vault Loan & Send Welcome Message</button>
             </form>
         </div>
     </div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', async () => {
-            const loanDateEl = document.getElementById('Loan_Date');
-            if(loanDateEl) loanDateEl.valueAsDate = new Date();
-            
-            await generateLoanID();
+        const RETAILERS_COLLECTION_ID = (window.VFC_DB && VFC_DB.RETAILERS_ID) ? VFC_DB.RETAILERS_ID : '6ada05fd0007206813cf';
+        let allRetailers = [];
+        let allBorrowers = [];
+        let allLoans = [];
+        let lockedRetailerObj = null;
 
-            const borrowerSelect = document.getElementById('Borrowers_Details');
-            try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.BORROWERS_ID
-                );
-                const borrowers = response.documents;
-                if (borrowers && borrowers.length > 0) {
-                    borrowerSelect.innerHTML = '<option value="">-Select Borrower-</option>';
-                    borrowers.forEach(b => {
-                        const opt = document.createElement('option');
-                        opt.value = b.full_name;
-                        opt.dataset.phone = b.phone_number || b.mobile || b.phone || '';
-                        opt.textContent = `${b.full_name} (${b.borrower_id})`;
-                        borrowerSelect.appendChild(opt);
-                    });
-                } else {
-                    borrowerSelect.innerHTML = '<option value="">-No Borrowers Found-</option>';
-                }
-            } catch (e) {
-                console.error("Error loading borrowers:", e);
-                borrowerSelect.innerHTML = '<option value="">-Error Loading Borrowers-</option>';
+        function setTodayDateDDMMYYYY() {
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, '0');
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yyyy = now.getFullYear();
+            document.getElementById('Loan_Date_Display').value = `${dd}-${mm}-${yyyy}`;
+            document.getElementById('Loan_Date').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        function syncPickerToDisplay(pickerId, displayId) {
+            const val = document.getElementById(pickerId).value;
+            if (val && val.includes('-')) {
+                const [yyyy, mm, dd] = val.split('-');
+                document.getElementById(displayId).value = `${dd}-${mm}-${yyyy}`;
+            }
+        }
+
+        function formatTypedDate(displayEl, hiddenPickerId) {
+            let digits = displayEl.value.replace(/\D/g, '').substring(0, 8);
+            let formatted = '';
+            if (digits.length > 4) {
+                formatted = digits.substring(0, 2) + '-' + digits.substring(2, 4) + '-' + digits.substring(4, 8);
+            } else if (digits.length > 2) {
+                formatted = digits.substring(0, 2) + '-' + digits.substring(2, 4);
+            } else {
+                formatted = digits;
+            }
+            displayEl.value = formatted;
+
+            if (digits.length === 8) {
+                const dd = digits.substring(0, 2);
+                const mm = digits.substring(2, 4);
+                const yyyy = digits.substring(4, 8);
+                document.getElementById(hiddenPickerId).value = `${yyyy}-${mm}-${dd}`;
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#retailerFieldsGroup')) {
+                document.getElementById('retailerSearchResults').style.display = 'none';
             }
         });
 
-        async function checkActiveBorrowerLoan() {
+        window.addEventListener('DOMContentLoaded', async () => {
+            setTodayDateDDMMYYYY();
+            await preloadAllCloudData();
+            applyRetailerAutoLockIfApplicable();
+            populateBorrowersDropdown();
+            generateLoanID();
+        });
+
+        async function preloadAllCloudData() {
+            try {
+                const [retResp, borResp, loanResp] = await Promise.all([
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, RETAILERS_COLLECTION_ID, [window.AppwriteQuery.limit(100)]),
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID, [window.AppwriteQuery.limit(100)]),
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID, [window.AppwriteQuery.limit(100)])
+                ]);
+
+                allRetailers = (retResp.documents || [])
+                    .filter(d => (d.user_type || '').toLowerCase() === 'retailer')
+                    .map(d => ({
+                        name: d.show_room_name || '',
+                        owner: d.owner_name || '',
+                        id: String(d.whatsapp_number || '').trim(),
+                        city: d.city || ''
+                    }));
+
+                allBorrowers = borResp.documents || [];
+                allLoans = loanResp.documents || [];
+            } catch (e) {
+                console.error("Error preloading cloud data:", e);
+            }
+        }
+
+        function computeThreeLetterRetailerCode(retailer) {
+            const rawShop = (retailer.name || '').replace(/\(.*\)/g, '').trim();
+            const rawCity = (retailer.city || '').trim();
+            const shopWords = rawShop.split(/\s+/).filter(Boolean);
+
+            if (rawShop.toLowerCase().includes('vinayaga')) return 'KSV';
+            if (rawShop.toLowerCase().includes('kamala')) return 'PKM';
+
+            if (rawCity && rawCity !== '-' && shopWords.length >= 2) {
+                return (rawCity[0] + shopWords[0][0] + shopWords[1][0]).toUpperCase();
+            } else if (shopWords.length >= 3) {
+                return (shopWords[0][0] + shopWords[1][0] + shopWords[2][0]).toUpperCase();
+            } else if (shopWords.length === 2) {
+                return (shopWords[0].substring(0, 2) + shopWords[1][0]).toUpperCase();
+            }
+            return rawShop.substring(0, 3).toUpperCase() || 'RET';
+        }
+
+        function applyRetailerAutoLockIfApplicable() {
+            const userRole = sessionStorage.getItem('velfincorp_role');
+            const loggedUser = (sessionStorage.getItem('velfincorp_logged_user') || '').trim();
+            const loggedName = (sessionStorage.getItem('velfincorp_user_name') || '').trim().toLowerCase();
+
+            if (userRole === 'retailer') {
+                let myRetailer = allRetailers.find(r => String(r.id).trim() === loggedUser);
+                if (!myRetailer && loggedName) {
+                    myRetailer = allRetailers.find(r => (r.name || '').toLowerCase().includes(loggedName));
+                }
+                if (!myRetailer) {
+                    myRetailer = {
+                        name: sessionStorage.getItem('velfincorp_user_name') || 'Retailer Partner',
+                        id: loggedUser,
+                        city: ''
+                    };
+                }
+
+                lockedRetailerObj = myRetailer;
+
+                const issuedByEl = document.getElementById('Issued_by');
+                issuedByEl.value = 'Retailer';
+                issuedByEl.classList.add('readonly-field');
+
+                const retailerGroup = document.getElementById('retailerFieldsGroup');
+                retailerGroup.classList.remove('hidden');
+
+                const searchInput = document.getElementById('retailerSearchInput');
+                searchInput.value = `${myRetailer.name} (${myRetailer.id})`;
+                searchInput.readOnly = true;
+                searchInput.classList.add('readonly-field');
+                searchInput.onfocus = null;
+                searchInput.oninput = null;
+
+                document.getElementById('selectedRetailerName').value = myRetailer.name;
+                document.getElementById('Retailer_Code').value = computeThreeLetterRetailerCode(myRetailer);
+                document.getElementById('retailerSearchResults').style.display = 'none';
+            }
+        }
+
+        function populateBorrowersDropdown() {
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerCode = document.getElementById('Retailer_Code').value.trim().toUpperCase();
+
+            let filteredBorrowers = [];
+
+            if (lockedRetailerObj) {
+                filteredBorrowers = allBorrowers.filter(b => 
+                    (b.retailer_code && b.retailer_code.toUpperCase() === retailerCode) ||
+                    (b.borrower_id && b.borrower_id.toUpperCase().startsWith(retailerCode + '/'))
+                );
+            } else if (issuedBy === 'Retailer') {
+                if (retailerCode) {
+                    filteredBorrowers = allBorrowers.filter(b => 
+                        (b.retailer_code && b.retailer_code.toUpperCase() === retailerCode) ||
+                        (b.borrower_id && b.borrower_id.toUpperCase().startsWith(retailerCode + '/'))
+                    );
+                } else {
+                    borrowerSelect.innerHTML = '<option value="">-Select Retailer First-</option>';
+                    return;
+                }
+            } else if (issuedBy === 'Admin') {
+                filteredBorrowers = allBorrowers.filter(b => 
+                    b.issued_by === 'Admin' || (b.borrower_id && b.borrower_id.startsWith('VFC/'))
+                );
+            } else {
+                filteredBorrowers = allBorrowers;
+            }
+
+            if (filteredBorrowers.length > 0) {
+                borrowerSelect.innerHTML = '<option value="">-Select Borrower-</option>';
+                filteredBorrowers.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b.full_name;
+                    opt.dataset.phone = b.whatsapp_number || b.phone_number || '';
+                    opt.textContent = `${b.full_name} (${b.borrower_id})`;
+                    borrowerSelect.appendChild(opt);
+                });
+            } else {
+                borrowerSelect.innerHTML = '<option value="">-No Borrowers Found-</option>';
+            }
+        }
+
+        function renderRetailerResults(list) {
+            if (lockedRetailerObj) return;
+            const resultsBox = document.getElementById('retailerSearchResults');
+            resultsBox.innerHTML = '';
+            if (list.length > 0) {
+                list.forEach(r => {
+                    const item = document.createElement('div');
+                    item.className = 'search-item';
+                    const cityText = (r.city && r.city !== '-') ? ` - ${r.city}` : '';
+                    item.textContent = `${r.name}${cityText} (${r.id})`;
+                    item.onclick = () => selectRetailer(r);
+                    resultsBox.appendChild(item);
+                });
+            } else {
+                resultsBox.innerHTML = '<div class="search-item" style="color:#94a3b8;">No matching retailer found</div>';
+            }
+            resultsBox.style.display = 'block';
+        }
+
+        function showAllRetailers() {
+            if (lockedRetailerObj) return;
+            renderRetailerResults(allRetailers);
+        }
+
+        function filterRetailers() {
+            if (lockedRetailerObj) return;
+            const query = document.getElementById('retailerSearchInput').value.toLowerCase().trim();
+            if (query.length === 0) {
+                renderRetailerResults(allRetailers);
+                return;
+            }
+            const filtered = allRetailers.filter(r => {
+                return (r.name || '').toLowerCase().includes(query) ||
+                       (r.id || '').toLowerCase().includes(query) ||
+                       (r.city || '').toLowerCase().includes(query);
+            });
+            renderRetailerResults(filtered);
+        }
+
+        function selectRetailer(retailer) {
+            const code = computeThreeLetterRetailerCode(retailer);
+            document.getElementById('retailerSearchInput').value = `${retailer.name} (${retailer.id})`;
+            document.getElementById('selectedRetailerName').value = retailer.name;
+            document.getElementById('Retailer_Code').value = code;
+            document.getElementById('retailerSearchResults').style.display = 'none';
+            populateBorrowersDropdown();
+        }
+
+        function toggleRetailerFields() {
+            if (lockedRetailerObj) {
+                applyRetailerAutoLockIfApplicable();
+                populateBorrowersDropdown();
+                return;
+            }
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerGroup = document.getElementById('retailerFieldsGroup');
+            if (issuedBy === 'Retailer') {
+                retailerGroup.classList.remove('hidden');
+                document.getElementById('retailerSearchInput').value = '';
+                document.getElementById('Retailer_Code').value = '';
+            } else {
+                retailerGroup.classList.add('hidden');
+                document.getElementById('retailerSearchInput').value = '';
+                document.getElementById('Retailer_Code').value = '';
+            }
+            populateBorrowersDropdown();
+        }
+
+        function checkActiveBorrowerLoan() {
             const borrowerSelect = document.getElementById('Borrowers_Details');
             const borrowerName = borrowerSelect.value;
             if (!borrowerName) return;
 
-            try {
-                const activeLoansResponse = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID,
-                    [
-                        window.AppwriteQuery.equal('borrower_name', borrowerName),
-                        window.AppwriteQuery.equal('status', 'ACTIVE')
-                    ]
-                );
-
-                if (activeLoansResponse.total > 0) {
-                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
-                    borrowerSelect.value = ""; 
-                }
-            } catch (err) {
-                console.error("Error checking active loans:", err);
+            const hasActive = allLoans.some(l => l.borrower_name === borrowerName && l.status === 'ACTIVE');
+            if (hasActive) {
+                alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
+                borrowerSelect.value = "";
             }
         }
 
-        async function generateLoanID() {
+        function generateLoanID() {
             const category = document.getElementById('Product_Category').value;
             const year = new Date().getFullYear();
             let prefix = "VCV";
@@ -480,20 +752,10 @@
             else if (category === "Home Appliance") prefix = "VHL";
             else if (category === "Furniture") prefix = "VFL";
 
-            try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID
-                );
-                const existingLoans = response.documents;
-                const filteredLoans = existingLoans.filter(l => l.loan_id && (l.loan_id.startsWith(prefix + "-") || l.loan_id.startsWith(prefix + "/")));
-                const nextSeq = filteredLoans.length + 1;
-                const paddedSeq = String(nextSeq).padStart(3, '0');
-                document.getElementById('Loan_ID').value = `${prefix}/${paddedSeq}/${year}`;
-            } catch (e) {
-                console.error("Error generating sequential Loan ID:", e);
-                document.getElementById('Loan_ID').value = `${prefix}/001/${year}`;
-            }
+            const filteredLoans = allLoans.filter(l => l.loan_id && (l.loan_id.startsWith(prefix + "-") || l.loan_id.startsWith(prefix + "/")));
+            const nextSeq = filteredLoans.length + 1;
+            const paddedSeq = String(nextSeq).padStart(3, '0');
+            document.getElementById('Loan_ID').value = `${prefix}/${paddedSeq}/${year}`;
         }
 
         function handleCategoryChange() {
@@ -511,23 +773,6 @@
                 imei1Input.value = '';
                 document.getElementById('IMEI_2').value = '';
             }
-        }
-
-        function toggleRetailerFields() {
-            const issuedBy = document.getElementById('Issued_by').value;
-            const retailerGroup = document.getElementById('retailerFieldsGroup');
-            if (issuedBy === 'Retailer') {
-                retailerGroup.classList.remove('hidden');
-            } else {
-                retailerGroup.classList.add('hidden');
-                document.getElementById('Retailer_Details').value = '';
-                document.getElementById('Retailer_Code').value = '';
-            }
-        }
-
-        function autoFillRetailerCode() {
-            const ret = document.getElementById('Retailer_Details').value;
-            document.getElementById('Retailer_Code').value = ret;
         }
 
         function handlePriceInput() {
@@ -559,8 +804,8 @@
                 }
 
                 const balanceAmount = price - downPayment;
-                const setupFee = balanceAmount * 0.04;       // 4% of Balance Amount
-                const procFee = balanceAmount * 0.025;      // 2.5% of Balance Amount
+                const setupFee = balanceAmount * 0.04;
+                const procFee = balanceAmount * 0.025;
                 const totalPayable = balanceAmount + setupFee + procFee;
 
                 summaryBox.style.display = 'block';
@@ -570,7 +815,6 @@
 
                 if (tenureWeeks > 0) {
                     const weeklyEmi = Math.round(totalPayable / tenureWeeks);
-
                     document.getElementById('Loan_Amount').value = Math.round(totalPayable);
                     document.getElementById('Weekly_EMI').value = weeklyEmi;
                 } else {
@@ -591,11 +835,13 @@
             const loanAmount = Math.round(parseFloat(document.getElementById('Loan_Amount').value) || 0);
             const borrowerSelect = document.getElementById('Borrowers_Details');
             const borrowerName = borrowerSelect.value;
-            const borrowerPhone = borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone || "8778003840";
+            const borrowerPhone = (borrowerSelect.selectedIndex >= 0 && borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone) 
+                ? borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone 
+                : "8778003840";
             const loanId = document.getElementById('Loan_ID').value;
             const issuedBy = document.getElementById('Issued_by').value;
             const retailerCode = document.getElementById('Retailer_Code').value || "";
-            const loanDate = document.getElementById('Loan_Date').value;
+            const loanDate = document.getElementById('Loan_Date').value || document.getElementById('Loan_Date_Display').value;
             const productCategory = document.getElementById('Product_Category').value;
             const productName = document.getElementById('Product_Name').value;
             const imei1 = document.getElementById('IMEI_1').value || "";
@@ -604,6 +850,11 @@
             const tenureVal = document.getElementById('Tenure').value;
             const tenureStr = tenureVal + " Weeks";
             const loanStatus = document.getElementById('Status').value;
+
+            if (issuedBy === 'Retailer' && !retailerCode) {
+                alert("தயவுசெய்து ரீடெய்லரைத் தேர்ந்தெடுக்கவும்!");
+                return false;
+            }
 
             const minAllowedDownPayment = price * 0.25;
             if (downPayment < minAllowedDownPayment) {
@@ -616,23 +867,9 @@
                 return false;
             }
 
-            try {
-                const activeLoansResponse = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID,
-                    [
-                        window.AppwriteQuery.equal('borrower_name', borrowerName),
-                        window.AppwriteQuery.equal('status', 'ACTIVE')
-                    ]
-                );
-
-                if (activeLoansResponse.total > 0) {
-                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது!");
-                    return false;
-                }
-            } catch (err) {
-                console.error("Error checking active loans:", err);
-            }
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Saving Loan & Sending WhatsApp...";
 
             try {
                 const loanPayload = {
@@ -655,16 +892,15 @@
                     status: loanStatus
                 };
 
-                // 1. Save to Database
-                await window.appwriteDatabases.createDocument(
+                const createdLoan = await window.appwriteDatabases.createDocument(
                     VFC_DB.DB_ID,
                     VFC_DB.LOANS_ID,
                     window.AppwriteID.unique(),
                     loanPayload
                 );
+                allLoans.push(createdLoan);
 
-                // 2. Trigger WhatsApp Welcome Message (EXACTLY 7 Parameters matching template order)
-                let cleanMobile = borrowerPhone.replace(/\D/g, "");
+                let cleanMobile = String(borrowerPhone).replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
                 }
@@ -672,11 +908,13 @@
 
                 const selectedDateObj = loanDate ? new Date(loanDate) : new Date();
                 const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
-                const loanDay = daysOfWeek[selectedDateObj.getDay()];
-                const loanDateStr = selectedDateObj.toLocaleDateString('en-GB');
+                const loanDay = daysOfWeek[selectedDateObj.getDay()] || "திங்கள்";
+                const loanDateStr = document.getElementById('Loan_Date_Display').value || selectedDateObj.toLocaleDateString('en-GB');
 
                 const functionPayload = {
                     mobile: finalMobile,
+                    phone: finalMobile,
+                    to: finalMobile,
                     template_name: "vel_fin_welcome_message",
                     components: {
                         body_1: borrowerName,
@@ -700,12 +938,18 @@
 
                 alert("Credit Vault Loan successfully saved and Welcome Message sent!");
                 document.getElementById('creditVaultForm').reset();
-                window.location.reload();
+                document.getElementById('calcSummaryBox').style.display = 'none';
+                setTodayDateDDMMYYYY();
+                applyRetailerAutoLockIfApplicable();
+                populateBorrowersDropdown();
+                generateLoanID();
 
-            } `catch (err) {
+            } catch (err) {
                 console.error("Error in Credit Vault submission:", err);
                 alert("Error saving data: " + err.message);
-                return false;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit Credit Vault Loan & Send Welcome Message";
             }
         }
 
