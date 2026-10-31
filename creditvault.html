@@ -243,6 +243,11 @@
             pointer-events: none;
             z-index: 1;
         }
+        .imei-input {
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--navy);
+        }
         .calc-summary {
             background-color: #f8fafc;
             border: 1px dashed var(--gold);
@@ -412,12 +417,12 @@
 
                 <div class="form-row hidden" id="imeiFieldsGroup">
                     <div class="form-group">
-                        <label>IMEI Number 1 *</label>
-                        <input type="text" id="IMEI_1" placeholder="Enter 15-digit IMEI 1" maxlength="15">
+                        <label>IMEI Number 1 (15 Digits: 5-5-5) *</label>
+                        <input type="text" id="IMEI_1" class="imei-input" placeholder="XXXXX XXXXX XXXXX" maxlength="17" oninput="formatIMEIInput(this)" onblur="validateIMEIOnBlur(this, true)">
                     </div>
                     <div class="form-group">
-                        <label>IMEI Number 2</label>
-                        <input type="text" id="IMEI_2" placeholder="Enter 15-digit IMEI 2 (Optional)" maxlength="15">
+                        <label>IMEI Number 2 (15 Digits: 5-5-5)</label>
+                        <input type="text" id="IMEI_2" class="imei-input" placeholder="XXXXX XXXXX XXXXX (Optional)" maxlength="17" oninput="formatIMEIInput(this)" onblur="validateIMEIOnBlur(this, false)">
                     </div>
                 </div>
 
@@ -484,6 +489,28 @@
         let allBorrowers = [];
         let allLoans = [];
         let lockedRetailerObj = null;
+
+        // IMEI 5-5-5 Digit Formatter (Strictly max 15 digits)
+        function formatIMEIInput(el) {
+            const digits = el.value.replace(/\D/g, '').substring(0, 15);
+            const parts = [];
+            for (let i = 0; i < digits.length; i += 5) {
+                parts.push(digits.substring(i, i + 5));
+            }
+            el.value = parts.join(' ');
+        }
+
+        function validateIMEIOnBlur(el, isRequired) {
+            const digits = el.value.replace(/\D/g, '').substring(0, 15);
+            if (!digits) {
+                el.value = '';
+                return;
+            }
+            formatIMEIInput(el);
+            if (digits.length !== 15 && (isRequired || digits.length > 0)) {
+                alert("IMEI எண் சரியாக 15 இலக்கங்கள் இருக்க வேண்டும்! (தற்போது " + digits.length + " இலக்கங்கள் உள்ளன)");
+            }
+        }
 
         function setTodayDateDDMMYYYY() {
             const now = new Date();
@@ -832,20 +859,32 @@
             event.preventDefault();
             const price = parseFloat(document.getElementById('Product_Price').value) || 0;
             const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
+            const disbursedBalance = Math.round(price - downPayment);
             const loanAmount = Math.round(parseFloat(document.getElementById('Loan_Amount').value) || 0);
             const borrowerSelect = document.getElementById('Borrowers_Details');
             const borrowerName = borrowerSelect.value;
-            const borrowerPhone = (borrowerSelect.selectedIndex >= 0 && borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone) 
+
+            let rawPhone = (borrowerSelect.selectedIndex >= 0 && borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone) 
                 ? borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone 
-                : "8778003840";
+                : "";
+            if (!rawPhone) {
+                const matchedBorrower = allBorrowers.find(b => b.full_name === borrowerName);
+                if (matchedBorrower) {
+                    rawPhone = matchedBorrower.whatsapp_number || matchedBorrower.phone_number || "";
+                }
+            }
+            const borrowerPhone = rawPhone || "8778003840";
+
             const loanId = document.getElementById('Loan_ID').value;
             const issuedBy = document.getElementById('Issued_by').value;
             const retailerCode = document.getElementById('Retailer_Code').value || "";
             const loanDate = document.getElementById('Loan_Date').value || document.getElementById('Loan_Date_Display').value;
             const productCategory = document.getElementById('Product_Category').value;
-            const productName = document.getElementById('Product_Name').value;
-            const imei1 = document.getElementById('IMEI_1').value || "";
-            const imei2 = document.getElementById('IMEI_2').value || "";
+            const productName = document.getElementById('Product_Name').value.trim();
+            const imei1Raw = document.getElementById('IMEI_1').value.replace(/\D/g, '');
+            const imei2Raw = document.getElementById('IMEI_2').value.replace(/\D/g, '');
+            const imei1Formatted = document.getElementById('IMEI_1').value.trim();
+            const imei2Formatted = document.getElementById('IMEI_2').value.trim();
             const weeklyEmi = Math.round(parseFloat(document.getElementById('Weekly_EMI').value) || 0).toString();
             const tenureVal = document.getElementById('Tenure').value;
             const tenureStr = tenureVal + " Weeks";
@@ -853,6 +892,16 @@
 
             if (issuedBy === 'Retailer' && !retailerCode) {
                 alert("தயவுசெய்து ரீடெய்லரைத் தேர்ந்தெடுக்கவும்!");
+                return false;
+            }
+
+            if (productCategory === 'Mobile Phone' && imei1Raw.length !== 15) {
+                alert("IMEI Number 1 சரியாக 15 இலக்கங்கள் இருக்க வேண்டும்!");
+                return false;
+            }
+
+            if (imei2Raw.length > 0 && imei2Raw.length !== 15) {
+                alert("IMEI Number 2 சரியாக 15 இலக்கங்கள் இருக்க வேண்டும்!");
                 return false;
             }
 
@@ -872,6 +921,7 @@
             submitBtn.innerText = "Saving Loan & Sending WhatsApp...";
 
             try {
+                // அனைத்து விவரங்களும் முழுமையாக Live_Loans டேபிளில் சேமிக்கப்படுகின்றன
                 const loanPayload = {
                     loan_id: loanId,
                     issued_by: issuedBy,
@@ -881,10 +931,11 @@
                     phone_number: borrowerPhone,
                     loan_category: productCategory,
                     product_name: productName,
-                    imei_number_1: imei1,
-                    imei_number_2: imei2,
+                    imei_number_1: imei1Formatted,
+                    imei_number_2: imei2Formatted,
                     product_price: Math.round(price).toString(),
                     down_payment: Math.round(downPayment).toString(),
+                    disbursed_amount: disbursedBalance.toString(),
                     loan_amount: loanAmount.toString(),
                     installment_amount: weeklyEmi,
                     tenure: tenureStr,
@@ -906,39 +957,52 @@
                 }
                 const finalMobile = "91" + cleanMobile;
 
-                const selectedDateObj = loanDate ? new Date(loanDate) : new Date();
+                const selectedDateObj = document.getElementById('Loan_Date').value 
+                    ? new Date(document.getElementById('Loan_Date').value) 
+                    : new Date();
                 const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
                 const loanDay = daysOfWeek[selectedDateObj.getDay()] || "திங்கள்";
                 const loanDateStr = document.getElementById('Loan_Date_Display').value || selectedDateObj.toLocaleDateString('en-GB');
+
+                const customComponents = {
+                    body_1: String(borrowerName),
+                    body_2: String(loanId),
+                    body_3: String(productCategory + " (" + productName + ")"),
+                    body_4: String(weeklyEmi),
+                    body_5: String(tenureStr),
+                    body_6: String(loanDay),
+                    body_7: String(loanDateStr)
+                };
 
                 const functionPayload = {
                     mobile: finalMobile,
                     phone: finalMobile,
                     to: finalMobile,
+                    recipient: finalMobile,
                     template_name: "vel_fin_welcome_message",
-                    components: {
-                        body_1: borrowerName,
-                        body_2: loanId,
-                        body_3: productCategory + " (" + productName + ")",
-                        body_4: weeklyEmi,
-                        body_5: tenureStr,
-                        body_6: loanDay,
-                        body_7: loanDateStr
-                    }
+                    templateName: "vel_fin_welcome_message",
+                    components: customComponents,
+                    customComponents: customComponents
                 };
 
                 try {
-                    await window.appwriteFunctions.createExecution(
+                    const execRes = await window.appwriteFunctions.createExecution(
                         '6adb02310009b131da2d',
                         JSON.stringify(functionPayload)
                     );
+                    if (execRes && execRes.status === 'failed') {
+                        alert("Loan Saved! ஆனால் வாட்ஸ்அப் மெசேஜ் அனுப்புவதில் பிழை: " + (execRes.errors || execRes.responseBody));
+                    } else {
+                        alert("Credit Vault Loan successfully saved and Welcome Message sent to " + finalMobile + "!");
+                    }
                 } catch (fnErr) {
                     console.error("WhatsApp Function Error:", fnErr);
+                    alert("Loan saved to database, but WhatsApp dispatch failed: " + fnErr.message);
                 }
 
-                alert("Credit Vault Loan successfully saved and Welcome Message sent!");
                 document.getElementById('creditVaultForm').reset();
                 document.getElementById('calcSummaryBox').style.display = 'none';
+                document.getElementById('imeiFieldsGroup').classList.add('hidden');
                 setTodayDateDDMMYYYY();
                 applyRetailerAutoLockIfApplicable();
                 populateBorrowersDropdown();
