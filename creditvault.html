@@ -260,44 +260,31 @@
         }
         .calc-summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 10px;
+            align-items: center;
         }
         .calc-item span {
             font-weight: bold;
-            color: #2F855A;
-        }
-        .plans-preview-bar {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .plan-pill {
-            background: #fff;
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            padding: 5px 10px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--navy);
-        }
-        .plan-pill b {
             color: #2F855A;
         }
         .btn-copy-quote {
             background-color: var(--gold);
             color: var(--navy);
             border: none;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 5px;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
+            margin-top: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-copy-quote:hover {
+            background-color: var(--navy);
+            color: var(--white);
         }
         .btn-submit {
             background-color: var(--navy);
@@ -443,7 +430,7 @@
                     </div>
                     <div class="form-group">
                         <label>Product Name & Model *</label>
-                        <input type="text" id="Product_Name" placeholder="Enter product details" oninput="calculateCreditVault()" required>
+                        <input type="text" id="Product_Name" placeholder="Enter product details" required>
                     </div>
                 </div>
 
@@ -472,14 +459,12 @@
                 <div id="calcSummaryBox" class="calc-summary">
                     <div class="calc-summary-grid">
                         <div class="calc-item">Payment to Retailer (Balance): <span id="disp_balance">₹0</span></div>
-                        <div class="calc-item">Setup Fee (4% on Price): <span id="disp_setup">₹0</span></div>
-                        <div class="calc-item">Processing Fee (2.5% on Price): <span id="disp_proc">₹0</span></div>
-                        <div class="calc-item">Doc Charge: <span id="disp_doc">₹100</span></div>
+                        <div class="calc-item">Setup Fee (4%): <span id="disp_setup">₹0</span></div>
+                        <div class="calc-item">Processing Fee (2.5%): <span id="disp_proc">₹0</span></div>
                     </div>
-                    <div class="plans-preview-bar">
-                        <div id="allPlansPreview" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
-                        <button type="button" class="btn-copy-quote" onclick="copyWhatsAppQuotation()"><i class="fas fa-copy"></i> Copy EMI Quotation</button>
-                    </div>
+                    <button type="button" class="btn-copy-quote" onclick="copyEmiQuotation()">
+                        <i class="fas fa-copy"></i> Copy EMI Quotation (10 to 30 Weeks)
+                    </button>
                 </div>
 
                 <div class="form-row">
@@ -526,15 +511,65 @@
         let allBorrowers = [];
         let allLoans = [];
         let lockedRetailerObj = null;
-        let latestQuotationText = "";
 
+        // வார வாரியான துல்லியமான வட்டி விகிதங்கள் (Balance மீது Setup 4% + Processing 2.5% + Interest)
         const TENURE_INTEREST_RATES = {
-            10: 0.075,  // 7.5% for 10 weeks
-            15: 0.125,  // 12.5% for 15 weeks
-            20: 0.24,   // 24% for 20 weeks
-            25: 0.30,   // 30% for 25 weeks
-            30: 0.36    // 36% for 30 weeks
+            10: 0.05079,  // 10 வாரங்கள் (₹19,000 -> ₹1,484/வாரம்)
+            15: 0.09778,  // 15 வாரங்கள் (₹19,000 -> ₹1,031/வாரம்)
+            20: 0.20868,  // 20 வாரங்கள் (₹19,000 -> ₹847/வாரம்)
+            25: 0.28086,  // 25 வாரங்கள் (₹19,000 -> ₹716/வாரம்)
+            30: 0.33801   // 30 வாரங்கள் (₹19,000 -> ₹622/வாரம்)
         };
+
+        function computeWeeklyEmiForTenure(balanceAmount, weeks) {
+            const setupFee = balanceAmount * 0.04;
+            const procFee = balanceAmount * 0.025;
+            const interestRate = TENURE_INTEREST_RATES[weeks] || 0;
+            const interestAmount = balanceAmount * interestRate;
+            const totalPayable = balanceAmount + setupFee + procFee + interestAmount;
+            return Math.round(totalPayable / weeks);
+        }
+
+        function copyEmiQuotation() {
+            const productName = document.getElementById('Product_Name').value.trim() || 'Mobile';
+            const price = parseFloat(document.getElementById('Product_Price').value) || 0;
+            const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
+
+            if (price <= 0 || downPayment <= 0 || price < downPayment) {
+                alert("தயவுசெய்து பொருளின் விலை மற்றும் டவுன் பேமெண்ட் தொகையை உள்ளிடவும்!");
+                return;
+            }
+
+            const balanceAmount = price - downPayment;
+            const emi10 = computeWeeklyEmiForTenure(balanceAmount, 10);
+            const emi15 = computeWeeklyEmiForTenure(balanceAmount, 15);
+            const emi20 = computeWeeklyEmiForTenure(balanceAmount, 20);
+            const emi25 = computeWeeklyEmiForTenure(balanceAmount, 25);
+            const emi30 = computeWeeklyEmiForTenure(balanceAmount, 30);
+
+            const quoteText = `✨ *VEL FIN CORP - EMI QUOTATION* ✨
+
+📱 *பொருள்:* ${productName}
+💰 *விலை:* ₹${Math.round(price).toLocaleString('en-IN')}
+💵 *டவுன் பேமெண்ட்:* ₹${Math.round(downPayment).toLocaleString('en-IN')}
+🏪 *Payment to Retailer:* ₹${Math.round(balanceAmount).toLocaleString('en-IN')}
+
+📅 *வாராந்திர தவணைத் திட்டங்கள்:*
+🔹 *10 வாரங்கள்:* வாரம் ₹${emi10.toLocaleString('en-IN')}
+🔹 *15 வாரங்கள்:* வாரம் ₹${emi15.toLocaleString('en-IN')}
+🔹 *20 வாரங்கள்:* வாரம் ₹${emi20.toLocaleString('en-IN')}
+🔹 *25 வாரங்கள்:* வாரம் ₹${emi25.toLocaleString('en-IN')}
+🔹 *30 வாரங்கள்:* வாரம் ₹${emi30.toLocaleString('en-IN')}
+
+நன்றி,
+*Team Vel Fin Corp* 🤝`;
+
+            navigator.clipboard.writeText(quoteText).then(() => {
+                alert("EMI Quotation காப்பி செய்யப்பட்டது! வாட்ஸ்அப்பில் பேஸ்ட் செய்து கொள்ளலாம்.");
+            }).catch(() => {
+                alert(quoteText);
+            });
+        }
 
         function formatIMEIInput(el) {
             const digits = el.value.replace(/\D/g, '').substring(0, 15);
@@ -852,4 +887,224 @@
             const downPaymentInput = document.getElementById('Down_Payment');
 
             if (price > 0) {
-                const standardDownPayment = Math.round(price * 0.
+                const standardDownPayment = Math.round(price * 0.30);
+                downPaymentInput.value = standardDownPayment;
+            } else {
+                downPaymentInput.value = '';
+            }
+            calculateCreditVault();
+        }
+
+        function calculateCreditVault() {
+            const price = parseFloat(document.getElementById('Product_Price').value) || 0;
+            const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
+            const tenureWeeks = parseInt(document.getElementById('Tenure').value) || 0;
+            const summaryBox = document.getElementById('calcSummaryBox');
+
+            if (price > 0 && price >= downPayment) {
+                const minAllowedDownPayment = price * 0.25;
+                if (downPayment < minAllowedDownPayment) {
+                    summaryBox.style.display = 'none';
+                    document.getElementById('Loan_Amount').value = '';
+                    document.getElementById('Weekly_EMI').value = '';
+                    return;
+                }
+
+                const balanceAmount = price - downPayment;
+                const setupFee = balanceAmount * 0.04;
+                const procFee = balanceAmount * 0.025;
+
+                summaryBox.style.display = 'block';
+                document.getElementById('disp_balance').innerText = '₹' + Math.round(balanceAmount);
+                document.getElementById('disp_setup').innerText = '₹' + Math.round(setupFee);
+                document.getElementById('disp_proc').innerText = '₹' + Math.round(procFee);
+
+                if (tenureWeeks > 0) {
+                    const weeklyEmi = computeWeeklyEmiForTenure(balanceAmount, tenureWeeks);
+                    const finalTotalPayable = weeklyEmi * tenureWeeks;
+
+                    document.getElementById('Weekly_EMI').value = weeklyEmi;
+                    document.getElementById('Loan_Amount').value = finalTotalPayable;
+                } else {
+                    document.getElementById('Loan_Amount').value = '';
+                    document.getElementById('Weekly_EMI').value = '';
+                }
+            } else {
+                summaryBox.style.display = 'none';
+                document.getElementById('Loan_Amount').value = '';
+                document.getElementById('Weekly_EMI').value = '';
+            }
+        }
+
+        async function validateCreditVaultLoan(event) {
+            event.preventDefault();
+            const price = parseFloat(document.getElementById('Product_Price').value) || 0;
+            const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
+            const disbursedBalance = Math.round(price - downPayment);
+            const loanAmount = Math.round(parseFloat(document.getElementById('Loan_Amount').value) || 0);
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            const borrowerName = borrowerSelect.value;
+
+            let rawPhone = (borrowerSelect.selectedIndex >= 0 && borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone) 
+                ? borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone 
+                : "";
+            if (!rawPhone) {
+                const matchedBorrower = allBorrowers.find(b => b.full_name === borrowerName);
+                if (matchedBorrower) {
+                    rawPhone = matchedBorrower.whatsapp_number || matchedBorrower.phone_number || "";
+                }
+            }
+            const borrowerPhone = rawPhone || "8778003840";
+
+            const loanId = document.getElementById('Loan_ID').value;
+            const issuedBy = document.getElementById('Issued_by').value;
+            const retailerCode = document.getElementById('Retailer_Code').value || "";
+            const loanDate = document.getElementById('Loan_Date').value || document.getElementById('Loan_Date_Display').value;
+            const productCategory = document.getElementById('Product_Category').value;
+            const productName = document.getElementById('Product_Name').value.trim();
+            const imei1Raw = document.getElementById('IMEI_1').value.replace(/\D/g, '');
+            const imei2Raw = document.getElementById('IMEI_2').value.replace(/\D/g, '');
+            const imei1Formatted = document.getElementById('IMEI_1').value.trim();
+            const imei2Formatted = document.getElementById('IMEI_2').value.trim();
+            const weeklyEmi = Math.round(parseFloat(document.getElementById('Weekly_EMI').value) || 0).toString();
+            const tenureVal = document.getElementById('Tenure').value;
+            const tenureStr = tenureVal + " Weeks";
+            const loanStatus = document.getElementById('Status').value;
+
+            if (issuedBy === 'Retailer' && !retailerCode) {
+                alert("தயவுசெய்து ரீடெய்லரைத் தேர்ந்தெடுக்கவும்!");
+                return false;
+            }
+
+            if (productCategory === 'Mobile Phone' && imei1Raw.length !== 15) {
+                alert("IMEI Number 1 சரியாக 15 இலக்கங்கள் இருக்க வேண்டும்!");
+                return false;
+            }
+
+            if (imei2Raw.length > 0 && imei2Raw.length !== 15) {
+                alert("IMEI Number 2 சரியாக 15 இலக்கங்கள் இருக்க வேண்டும்!");
+                return false;
+            }
+
+            const minAllowedDownPayment = price * 0.25;
+            if (downPayment < minAllowedDownPayment) {
+                alert("எச்சரிக்கை: டவுன் பேமெண்ட் குறைந்தபட்சம் 25% (₹" + Math.round(minAllowedDownPayment) + ") இருக்க வேண்டும்!");
+                return false;
+            }
+
+            if (loanAmount <= 0 || !borrowerName || !productCategory || !tenureVal) {
+                alert("தயவுசெய்து அனைத்து விவரங்களையும் சரியாக நிரப்பவும்!");
+                return false;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Saving Loan & Sending WhatsApp...";
+
+            try {
+                const loanPayload = {
+                    loan_id: loanId,
+                    issued_by: issuedBy,
+                    retailer_code: retailerCode,
+                    loan_date: loanDate,
+                    borrower_name: borrowerName,
+                    phone_number: borrowerPhone,
+                    loan_category: productCategory,
+                    product_name: productName,
+                    imei_number_1: imei1Formatted,
+                    imei_number_2: imei2Formatted,
+                    product_price: Math.round(price).toString(),
+                    down_payment: Math.round(downPayment).toString(),
+                    disbursed_amount: disbursedBalance.toString(),
+                    loan_amount: loanAmount.toString(),
+                    installment_amount: weeklyEmi,
+                    tenure: tenureStr,
+                    loan_type: "Weekly",
+                    status: loanStatus
+                };
+
+                const createdLoan = await window.appwriteDatabases.createDocument(
+                    VFC_DB.DB_ID,
+                    VFC_DB.LOANS_ID,
+                    window.AppwriteID.unique(),
+                    loanPayload
+                );
+                allLoans.push(createdLoan);
+
+                let cleanMobile = String(borrowerPhone).replace(/\D/g, "");
+                if (cleanMobile.length > 10) {
+                    cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
+                }
+                const finalMobile = "91" + cleanMobile;
+
+                const selectedDateObj = document.getElementById('Loan_Date').value 
+                    ? new Date(document.getElementById('Loan_Date').value) 
+                    : new Date();
+                const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
+                const dayIdx = isNaN(selectedDateObj.getDay()) ? 6 : selectedDateObj.getDay();
+                const loanDay = daysOfWeek[dayIdx];
+                const prevDay = daysOfWeek[(dayIdx + 6) % 7] + "க்கிழமை";
+                const loanDateStr = document.getElementById('Loan_Date_Display').value || selectedDateObj.toLocaleDateString('en-GB');
+
+                const customComponents = {
+                    body_1: String(borrowerName),
+                    body_2: String(productCategory + " (" + productName + ")"),
+                    body_3: String(loanId),
+                    body_4: String(weeklyEmi),
+                    body_5: String(tenureVal),
+                    body_6: String(loanDay),
+                    body_7: String(loanDateStr),
+                    body_8: String(prevDay)
+                };
+
+                const functionPayload = {
+                    mobile: finalMobile,
+                    phone: finalMobile,
+                    to: finalMobile,
+                    recipient: finalMobile,
+                    template_name: "vel_fin_welcome_message",
+                    templateName: "vel_fin_welcome_message",
+                    components: customComponents,
+                    customComponents: customComponents
+                };
+
+                try {
+                    const execRes = await window.appwriteFunctions.createExecution(
+                        '6adb02310009b131da2d',
+                        JSON.stringify(functionPayload)
+                    );
+                    if (execRes && execRes.status === 'failed') {
+                        alert("Loan Saved! ஆனால் வாட்ஸ்அப் மெசேஜ் அனுப்புவதில் பிழை: " + (execRes.errors || execRes.responseBody));
+                    } else {
+                        alert("Credit Vault Loan successfully saved and Welcome Message sent to " + finalMobile + "!");
+                    }
+                } catch (fnErr) {
+                    console.error("WhatsApp Function Error:", fnErr);
+                    alert("Loan saved to database, but WhatsApp dispatch failed: " + fnErr.message);
+                }
+
+                document.getElementById('creditVaultForm').reset();
+                document.getElementById('calcSummaryBox').style.display = 'none';
+                document.getElementById('imeiFieldsGroup').classList.add('hidden');
+                setTodayDateDDMMYYYY();
+                applyRetailerAutoLockIfApplicable();
+                populateBorrowersDropdown();
+                generateLoanID();
+
+            } catch (err) {
+                console.error("Error in Credit Vault submission:", err);
+                alert("Error saving data: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit Credit Vault Loan & Send Welcome Message";
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
+        }
+    </script>
+</body>
+</html>
