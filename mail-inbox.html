@@ -7,9 +7,11 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Support Mail Inbox</title>
+    <link rel="icon" type="image/jpeg" href="velfincorp-logo.jpeg">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script>
         // Centralized Authentication & Security Protection Script
         (function() {
@@ -17,11 +19,11 @@
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
             const userRole = sessionStorage.getItem('velfincorp_role');
 
-            window.pageshow = function(event) {
+            window.addEventListener('pageshow', function(event) {
                 if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
                     window.location.replace('login.html');
                 }
-            };
+            });
 
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
@@ -30,12 +32,21 @@
 
             if (userRole === 'borrower') {
                 window.location.replace('borrower-portal.html');
+            } else if (userRole === 'retailer') {
+                window.location.replace('borrowers-details.html');
             } else if (userRole === 'staff') {
-                let staffList = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
-                let currentStaff = staffList.find(s => s.id === loggedUser);
-                if (!currentStaff || !currentStaff.permissions || (!currentStaff.permissions.includes('Support Mail') && !currentStaff.permissions.includes('mail-inbox.html'))) {
-                    alert("You do not have permission to access Support Mail Inbox!");
-                    window.location.replace('dashboard.html');
+                let allowedPerms = [];
+                try {
+                    allowedPerms = JSON.parse(sessionStorage.getItem('velfincorp_permissions') || '[]');
+                } catch (e) {}
+
+                if (!allowedPerms.includes('Support Mail') && !allowedPerms.includes('mail-inbox.html')) {
+                    let staffList = JSON.parse(localStorage.getItem('velfincorp_users') || '[]');
+                    let currentStaff = staffList.find(s => s.id === loggedUser);
+                    if (!currentStaff || !currentStaff.permissions || (!currentStaff.permissions.includes('Support Mail') && !currentStaff.permissions.includes('mail-inbox.html'))) {
+                        alert("You do not have permission to access Support Mail Inbox!");
+                        window.location.replace(allowedPerms[0] || 'borrowers-details.html');
+                    }
                 }
             }
         })();
@@ -205,8 +216,21 @@
             color: var(--text-main);
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: space-between;
             transition: 0.2s;
+        }
+        .folder-list li .folder-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .folder-badge {
+            background: var(--gold);
+            color: var(--navy);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 10px;
         }
         .folder-list li:hover {
             background: #e2e8f0;
@@ -235,6 +259,21 @@
         .mail-view-header h3 {
             margin: 0;
             font-family: 'Cinzel', serif;
+            color: var(--navy);
+        }
+        .btn-refresh {
+            background: #f1f5f9;
+            border: 1px solid var(--gray-light);
+            color: var(--navy);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-right: 12px;
+        }
+        .btn-refresh:hover {
+            background: var(--gold);
             color: var(--navy);
         }
         .mail-list {
@@ -279,6 +318,7 @@
             color: #555;
             line-height: 1.5;
             margin-bottom: 15px;
+            white-space: pre-wrap;
         }
         /* Reply & Attachments Area */
         .mail-actions {
@@ -345,6 +385,7 @@
             padding: 10px;
             border-radius: 6px;
             border-left: 3px solid var(--success);
+            margin-top: 8px;
         }
         .attachment-badge {
             display: inline-block;
@@ -445,9 +486,18 @@
             <div class="mail-folders">
                 <button class="btn-compose" onclick="openCompose()"><i class="fas fa-pen"></i> Compose Mail</button>
                 <ul class="folder-list">
-                    <li id="tab-inbox" class="active" onclick="switchFolder('inbox')"><i class="fas fa-inbox"></i> Inbox</li>
-                    <li id="tab-sent" onclick="switchFolder('sent')"><i class="fas fa-paper-plane"></i> Sent Items</li>
-                    <li id="tab-drafts" onclick="switchFolder('drafts')"><i class="fas fa-file-alt"></i> Drafts</li>
+                    <li id="tab-inbox" class="active" onclick="switchFolder('inbox')">
+                        <span class="folder-label"><i class="fas fa-inbox"></i> Inbox</span>
+                        <span class="folder-badge" id="badge-inbox">0</span>
+                    </li>
+                    <li id="tab-sent" onclick="switchFolder('sent')">
+                        <span class="folder-label"><i class="fas fa-paper-plane"></i> Sent Items</span>
+                        <span class="folder-badge" id="badge-sent">0</span>
+                    </li>
+                    <li id="tab-drafts" onclick="switchFolder('drafts')">
+                        <span class="folder-label"><i class="fas fa-file-alt"></i> Drafts</span>
+                        <span class="folder-badge" id="badge-drafts">0</span>
+                    </li>
                 </ul>
             </div>
 
@@ -455,7 +505,10 @@
             <div class="mail-view-area">
                 <div class="mail-view-header">
                     <h3 id="currentFolderTitle">Inbox</h3>
-                    <span style="font-size: 13px; color: var(--gray-dark);">support@velfincorp.com</span>
+                    <div>
+                        <button class="btn-refresh" onclick="renderMails()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        <span style="font-size: 13px; color: var(--gray-dark); font-weight: 600;">support@velfincorp.com</span>
+                    </div>
                 </div>
                 <div class="mail-list" id="mailContainer">
                     <!-- Mails load dynamically here -->
@@ -473,9 +526,10 @@
                 <i class="fas fa-times" style="cursor:pointer;" onclick="closeCompose()"></i>
             </div>
             <div class="modal-body">
-                <input type="email" id="composeTo" placeholder="To: email@domain.com">
+                <input type="text" id="composeSenderName" placeholder="From Name (e.g., Vel Fin Corp Support / Customer Name)">
+                <input type="email" id="composeTo" placeholder="To: support@velfincorp.com or customer@email.com">
                 <input type="text" id="composeSubject" placeholder="Subject">
-                <textarea id="composeBody" rows="8" placeholder="Type your message here..."></textarea>
+                <textarea id="composeBody" rows="7" placeholder="Type your message here..."></textarea>
                 
                 <!-- Attachment logic -->
                 <div class="attachment-area" style="border:none; margin:0;">
@@ -499,7 +553,13 @@
             switchFolder('inbox');
         });
 
-        // Setup sample mails if empty and standardise data
+        // Storage event listener so messages sent from contact.html in another tab show up immediately
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'velfincorp_support_mails') {
+                renderMails();
+            }
+        });
+
         function initializeMails() {
             let mails = [];
             try {
@@ -525,7 +585,6 @@
             }
         }
 
-        // Switch between Inbox, Sent, Drafts
         function switchFolder(folder) {
             currentFolder = folder;
             document.querySelectorAll('.folder-list li').forEach(li => li.classList.remove('active'));
@@ -537,19 +596,28 @@
             renderMails();
         }
 
+        function updateFolderCounts(allMails) {
+            const inboxCount = allMails.filter(m => m.folder === 'inbox').length;
+            const sentCount = allMails.filter(m => m.folder === 'sent' || (m.folder === 'inbox' && m.reply)).length;
+            const draftsCount = allMails.filter(m => m.folder === 'drafts').length;
+
+            document.getElementById('badge-inbox').innerText = inboxCount;
+            document.getElementById('badge-sent').innerText = sentCount;
+            document.getElementById('badge-drafts').innerText = draftsCount;
+        }
+
         function renderMails() {
             const container = document.getElementById('mailContainer');
             let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
             
-            // Backward compatibility for old incoming mails without folder tag
             allMails.forEach(m => { if(!m.folder) m.folder = 'inbox'; });
+            updateFolderCounts(allMails);
 
             let filteredMails = [];
             
             if (currentFolder === 'inbox') {
                 filteredMails = allMails.filter(m => m.folder === 'inbox');
             } else if (currentFolder === 'sent') {
-                // Sent contains purely sent mails OR inbox mails that have a reply
                 filteredMails = allMails.filter(m => m.folder === 'sent' || (m.folder === 'inbox' && m.reply));
             } else if (currentFolder === 'drafts') {
                 filteredMails = allMails.filter(m => m.folder === 'drafts');
@@ -561,14 +629,14 @@
             }
 
             let html = '';
-            filteredMails.reverse().forEach((msg, index) => {
-                let actualIndex = allMails.findIndex(m => m === msg); // To update original array
+            filteredMails.slice().reverse().forEach((msg) => {
+                let actualIndex = allMails.findIndex(m => m.id === msg.id);
+                if (actualIndex === -1) actualIndex = allMails.indexOf(msg);
                 
-                // Content display logic based on folder
                 if (currentFolder === 'inbox') {
                     html += buildInboxCard(msg, actualIndex);
                 } else if (currentFolder === 'sent') {
-                    html += buildSentCard(msg);
+                    html += buildSentCard(msg, actualIndex);
                 } else if (currentFolder === 'drafts') {
                     html += buildDraftCard(msg, actualIndex);
                 }
@@ -577,16 +645,15 @@
             container.innerHTML = html;
         }
 
-        // --- View Builders ---
-
         function buildInboxCard(msg, actualIndex) {
             let attachHtml = msg.attachment ? `<div class="attachment-badge"><i class="fas fa-paperclip"></i> ${msg.attachment}</div>` : '';
+            let replyAttachHtml = msg.replyAttachment ? `<div class="attachment-badge"><i class="fas fa-paperclip"></i> ${msg.replyAttachment}</div>` : '';
             let replyUI = msg.reply ? 
-                `<div class="reply-status"><i class="fas fa-check"></i> <strong>You Replied:</strong> ${msg.reply}</div>` : 
+                `<div class="reply-status"><i class="fas fa-check-circle"></i> <strong>You Replied (${msg.replyDate || ''}):</strong> ${msg.reply} ${replyAttachHtml}</div>` : 
                 `<div class="mail-actions">
                     <div class="reply-box">
                         <div class="reply-input-wrapper">
-                            <textarea id="replyInput_${actualIndex}" rows="2" placeholder="Type your reply to ${msg.name}..."></textarea>
+                            <textarea id="replyInput_${actualIndex}" rows="2" placeholder="Type your reply to ${msg.name || msg.email || 'Sender'}..."></textarea>
                             <div class="attachment-area">
                                 <input type="file" id="replyFile_${actualIndex}" style="display:none;" onchange="updateReplyFile(${actualIndex})">
                                 <label for="replyFile_${actualIndex}" class="attach-btn"><i class="fas fa-paperclip"></i> Attach</label>
@@ -601,8 +668,8 @@
                 <div class="mail-item">
                     <div class="mail-item-header">
                         <div>
-                            <div class="sender-name">${msg.name || 'Unknown User'}</div>
-                            <div style="font-size:12px; color:var(--gray-dark);">${msg.email || ''} | ${msg.phone || ''}</div>
+                            <div class="sender-name">${msg.name || msg.to || 'Support User'}</div>
+                            <div style="font-size:12px; color:var(--gray-dark);">${msg.email || msg.to || 'support@velfincorp.com'} ${msg.phone ? '| ' + msg.phone : ''}</div>
                         </div>
                         <span class="mail-date">${msg.date || ''}</span>
                     </div>
@@ -614,18 +681,18 @@
         }
 
         function buildSentCard(msg) {
-            // Sent folder shows outgoing composed mails OR replies made to inbox mails
-            let sentTo = msg.folder === 'inbox' ? msg.email : msg.to;
+            let sentTo = msg.folder === 'inbox' ? (msg.email || msg.name) : msg.to;
             let sentMsg = msg.folder === 'inbox' ? msg.reply : msg.message;
-            let attachHtml = msg.replyAttachment || msg.attachment ? `<div class="attachment-badge"><i class="fas fa-paperclip"></i> ${msg.replyAttachment || msg.attachment}</div>` : '';
+            let attachHtml = (msg.replyAttachment || msg.attachment) ? `<div class="attachment-badge"><i class="fas fa-paperclip"></i> ${msg.replyAttachment || msg.attachment}</div>` : '';
             
-            let originalContext = msg.folder === 'inbox' ? `<div style="background:#f1f5f9; padding:10px; margin-bottom:10px; border-left:3px solid var(--gray-dark); font-size:12px;"><strong>Original Query:</strong> ${msg.message}</div>` : '';
+            let originalContext = msg.folder === 'inbox' ? `<div style="background:#f1f5f9; padding:10px; margin-bottom:10px; border-left:3px solid var(--gray-dark); font-size:12px;"><strong>Original Query from ${msg.name || ''}:</strong> ${msg.message}</div>` : '';
 
             return `
                 <div class="mail-item">
                     <div class="mail-item-header">
                         <div>
-                            <div class="sender-name">To: ${sentTo || msg.name}</div>
+                            <div class="sender-name">To: ${sentTo || 'Recipient'}</div>
+                            <div style="font-size:12px; color:var(--gray-dark);">Subject: ${msg.subject || 'Support Response'}</div>
                         </div>
                         <span class="mail-date">${msg.replyDate || msg.date}</span>
                     </div>
@@ -647,8 +714,6 @@
                     <button class="btn-logout" style="width:auto; padding:5px 10px; font-size:12px;" onclick="deleteDraft(${actualIndex})">Delete Draft</button>
                 </div>`;
         }
-
-        // --- Actions ---
 
         function updateReplyFile(index) {
             const input = document.getElementById(`replyFile_${index}`);
@@ -673,7 +738,7 @@
                     allMails[index].replyAttachment = fileInput.files[0].name;
                 }
                 localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
-                alert("Reply sent and saved to Sent Items!");
+                alert("Reply sent and saved to both Inbox & Sent Items!");
                 renderMails();
             }
         }
@@ -690,12 +755,13 @@
         }
 
         function updateComposeAttachName() {
-            const input = document.getElementById(`composeAttachment`);
-            const display = document.getElementById(`composeAttachName`);
+            const input = document.getElementById('composeAttachment');
+            const display = document.getElementById('composeAttachName');
             if(input.files.length > 0) { display.innerText = input.files[0].name; }
         }
 
         function clearComposeForm() {
+            document.getElementById('composeSenderName').value = '';
             document.getElementById('composeTo').value = '';
             document.getElementById('composeSubject').value = '';
             document.getElementById('composeBody').value = '';
@@ -705,30 +771,49 @@
 
         function getComposeData(folderName) {
             const fileInput = document.getElementById('composeAttachment');
+            const senderName = document.getElementById('composeSenderName').value.trim() || 'Vel Fin Corp Support';
+            const toEmail = document.getElementById('composeTo').value.trim();
             return {
-                id: Date.now(),
+                id: Date.now() + Math.floor(Math.random() * 1000),
                 folder: folderName,
-                to: document.getElementById('composeTo').value.trim(),
-                subject: document.getElementById('composeSubject').value.trim(),
+                name: senderName,
+                email: toEmail,
+                to: toEmail,
+                subject: document.getElementById('composeSubject').value.trim() || 'Support Message',
                 message: document.getElementById('composeBody').value.trim(),
                 date: new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true }),
-                attachment: fileInput.files.length > 0 ? fileInput.files[0].name : ''
+                attachment: fileInput.files.length > 0 ? fileInput.files[0].name : '',
+                reply: ''
             };
         }
 
         function sendNewMail() {
-            let mailData = getComposeData('sent');
-            if(!mailData.to || !mailData.message) {
+            let sentMailData = getComposeData('sent');
+            if(!sentMailData.to || !sentMailData.message) {
                 alert("Recipient email and message body are required!");
                 return;
             }
+
             let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
-            allMails.push(mailData);
+            
+            // 1. Save in Sent Items
+            allMails.push(sentMailData);
+
+            // 2. Deliver to Inbox as well so sent/support messages are visible in Inbox immediately
+            let inboxCopy = {
+                ...sentMailData,
+                id: Date.now() + Math.floor(Math.random() * 1000) + 1,
+                folder: 'inbox',
+                name: sentMailData.name || sentMailData.to.split('@')[0],
+                email: sentMailData.to
+            };
+            allMails.push(inboxCopy);
+
             localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
             
-            alert("Mail Sent Successfully!");
+            alert("Mail Sent Successfully & Delivered to Inbox!");
             closeCompose();
-            switchFolder('sent');
+            switchFolder('inbox');
         }
 
         function saveDraft() {
