@@ -13,7 +13,6 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
     <script>
-        // Centralized Authentication & Security Protection Script
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
@@ -72,7 +71,6 @@
             display: flex;
             min-height: 100vh;
         }
-        /* Left Main Sidebar */
         .sidebar {
             width: 260px;
             background-color: var(--navy);
@@ -152,7 +150,6 @@
             font-weight: bold;
             cursor: pointer;
         }
-        /* Main Content */
         .main-content {
             margin-left: 260px;
             flex: 1;
@@ -162,7 +159,6 @@
             display: flex;
             flex-direction: column;
         }
-        /* Mail App Layout */
         .mail-app-container {
             display: flex;
             background: var(--white);
@@ -172,7 +168,6 @@
             flex: 1;
             overflow: hidden;
         }
-        /* Inner Mail Sidebar (Folders) */
         .mail-folders {
             width: 220px;
             background: #f8fafc;
@@ -242,7 +237,6 @@
         .folder-list li i {
             width: 16px;
         }
-        /* Mail List View */
         .mail-view-area {
             flex: 1;
             display: flex;
@@ -320,7 +314,6 @@
             margin-bottom: 15px;
             white-space: pre-wrap;
         }
-        /* Reply & Attachments Area */
         .mail-actions {
             border-top: 1px dashed var(--gray-light);
             padding-top: 12px;
@@ -334,7 +327,7 @@
             flex: 1;
             border: 1px solid var(--gray-light);
             border-radius: 6px;
-            padding: 5px 10px;
+            padding: 8px 10px;
             background: #f8fafc;
         }
         .reply-input-wrapper textarea {
@@ -351,26 +344,51 @@
             align-items: center;
             gap: 10px;
             border-top: 1px solid #e2e8f0;
-            padding-top: 5px;
+            padding-top: 8px;
             margin-top: 5px;
+            flex-wrap: wrap;
         }
         .attach-btn {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 5px;
             cursor: pointer;
-            color: var(--gray-dark);
-            font-size: 14px;
+            color: var(--navy);
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             transition: 0.2s;
         }
-        .attach-btn:hover { color: var(--navy); }
-        .file-name-display {
-            font-size: 11px;
+        .attach-btn:hover {
+            background: var(--gold);
+            color: var(--navy);
+            border-color: var(--gold);
+        }
+        .file-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #e6ffed;
+            border: 1px solid #9ae6b4;
             color: var(--success);
-            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .file-chip i.remove-file {
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 13px;
         }
         .btn-send-reply {
             background-color: var(--navy);
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 10px 18px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
@@ -378,6 +396,7 @@
             height: 40px;
         }
         .btn-send-reply:hover { background-color: var(--gold); color: var(--navy); }
+        .btn-send-reply:disabled { background-color: #94a3b8; cursor: not-allowed; }
         .reply-status {
             font-size: 13px;
             color: var(--success);
@@ -388,14 +407,25 @@
             margin-top: 8px;
         }
         .attachment-badge {
-            display: inline-block;
-            background: #e2e8f0;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #edf2f7;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
             color: var(--navy);
             margin-top: 8px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .attachment-badge:hover {
+            background: var(--gold);
+            color: var(--navy);
+            border-color: var(--gold);
         }
         /* Compose Modal */
         .modal {
@@ -409,7 +439,8 @@
         }
         .modal-content {
             background: var(--white);
-            width: 600px;
+            width: 620px;
+            max-width: 95%;
             border-radius: 8px;
             box-shadow: 0 5px 25px rgba(0,0,0,0.2);
             border-top: 5px solid var(--navy);
@@ -424,20 +455,55 @@
             align-items: center;
             font-weight: bold;
             color: var(--navy);
+            font-size: 16px;
         }
         .modal-body {
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
-        .modal-body input, .modal-body textarea {
-            width: 100%;
-            padding: 10px;
+        .mail-field-row {
+            display: flex;
+            align-items: center;
             border: 1px solid var(--gray-light);
-            border-radius: 4px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .mail-field-row.readonly-row {
+            background: #f1f5f9;
+        }
+        .mail-field-label {
+            width: 75px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--navy);
+            background: #f8fafc;
+            border-right: 1px solid var(--gray-light);
+        }
+        .mail-field-row input {
+            flex: 1;
+            border: none;
+            padding: 10px 12px;
+            font-size: 14px;
             font-family: inherit;
+            outline: none;
+            background: transparent;
+        }
+        .modal-body textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--gray-light);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
             box-sizing: border-box;
+            outline: none;
+        }
+        .modal-body textarea:focus {
+            border-color: var(--gold);
         }
         .modal-footer {
             padding: 15px 20px;
@@ -452,7 +518,6 @@
 </head>
 <body>
 
-    <!-- Main System Sidebar -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -478,11 +543,8 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-        
         <div class="mail-app-container">
-            <!-- Mail Folders Sidebar -->
             <div class="mail-folders">
                 <button class="btn-compose" onclick="openCompose()"><i class="fas fa-pen"></i> Compose Mail</button>
                 <ul class="folder-list">
@@ -501,7 +563,6 @@
                 </ul>
             </div>
 
-            <!-- Mail View Area -->
             <div class="mail-view-area">
                 <div class="mail-view-header">
                     <h3 id="currentFolderTitle">Inbox</h3>
@@ -510,37 +571,55 @@
                         <span style="font-size: 13px; color: var(--gray-dark); font-weight: 600;">support@velfincorp.com</span>
                     </div>
                 </div>
-                <div class="mail-list" id="mailContainer">
-                    <!-- Mails load dynamically here -->
-                </div>
+                <div class="mail-list" id="mailContainer"></div>
             </div>
         </div>
-
     </div>
 
     <!-- Compose Mail Modal -->
     <div class="modal" id="composeModal">
         <div class="modal-content">
             <div class="modal-header">
-                <span>New Message</span>
+                <span><i class="fas fa-envelope-open-text" style="color:var(--gold); margin-right:8px;"></i> New Message</span>
                 <i class="fas fa-times" style="cursor:pointer;" onclick="closeCompose()"></i>
             </div>
             <div class="modal-body">
-                <input type="text" id="composeSenderName" placeholder="From Name (e.g., Vel Fin Corp Support / Customer Name)">
-                <input type="email" id="composeTo" placeholder="To: support@velfincorp.com or customer@email.com">
-                <input type="text" id="composeSubject" placeholder="Subject">
+                <!-- Default Locked From Address -->
+                <div class="mail-field-row readonly-row">
+                    <div class="mail-field-label">From</div>
+                    <input type="text" id="composeFrom" value="Vel Fin Corp Support <support@velfincorp.com>" readonly style="font-weight:700; color:var(--navy);">
+                </div>
+
+                <!-- Editable To Address -->
+                <div class="mail-field-row">
+                    <div class="mail-field-label">To *</div>
+                    <input type="email" id="composeTo" placeholder="Enter recipient email (e.g., customer@gmail.com)" required>
+                </div>
+
+                <!-- Subject -->
+                <div class="mail-field-row">
+                    <div class="mail-field-label">Subject</div>
+                    <input type="text" id="composeSubject" placeholder="Enter mail subject">
+                </div>
+
                 <textarea id="composeBody" rows="7" placeholder="Type your message here..."></textarea>
                 
-                <!-- Attachment logic -->
-                <div class="attachment-area" style="border:none; margin:0;">
-                    <input type="file" id="composeAttachment" style="display:none;" onchange="updateComposeAttachName()">
-                    <label for="composeAttachment" class="attach-btn"><i class="fas fa-paperclip"></i> Attach File</label>
-                    <span id="composeAttachName" class="file-name-display"></span>
+                <!-- File Attachment Area -->
+                <div class="attachment-area" style="border:none; margin:0; padding-top:2px;">
+                    <input type="file" id="composeAttachment" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none;" onchange="updateComposeAttachName()">
+                    <button type="button" class="attach-btn" onclick="document.getElementById('composeAttachment').click()">
+                        <i class="fas fa-paperclip"></i> Attach File (Image / PDF / Doc)
+                    </button>
+                    <div id="composeFileChip" class="file-chip" style="display:none;">
+                        <i class="fas fa-file-alt"></i>
+                        <span id="composeAttachName"></span>
+                        <i class="fas fa-times-circle remove-file" title="Remove attachment" onclick="removeComposeAttachment()"></i>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-logout" style="width:auto; padding:8px 15px; background:var(--gray-dark);" onclick="saveDraft()">Save Draft</button>
-                <button class="btn-send-reply" onclick="sendNewMail()">Send <i class="fas fa-paper-plane" style="margin-left:5px;"></i></button>
+                <button type="button" class="btn-logout" style="width:auto; padding:8px 15px; background:var(--gray-dark);" onclick="saveDraft()">Save Draft</button>
+                <button type="button" id="sendMailBtn" class="btn-send-reply" onclick="sendNewMail()">Send <i class="fas fa-paper-plane" style="margin-left:5px;"></i></button>
             </div>
         </div>
     </div>
@@ -553,7 +632,6 @@
             switchFolder('inbox');
         });
 
-        // Storage event listener so messages sent from contact.html in another tab show up immediately
         window.addEventListener('storage', (e) => {
             if (e.key === 'velfincorp_support_mails') {
                 renderMails();
@@ -578,11 +656,56 @@
                         message: "Hello Vel Fin Corp team, I need clarification regarding my Credit Vault loan EMI schedule.",
                         date: "19-Oct-2026 11:15 AM",
                         reply: "",
-                        attachment: ""
+                        attachment: "",
+                        attachmentUrl: ""
                     }
                 ];
                 localStorage.setItem('velfincorp_support_mails', JSON.stringify(mails));
             }
+        }
+
+        // Upload attached file to Appwrite Cloud Storage (or fallback to Data URL) so it can be viewed/downloaded
+        async function processAndUploadAttachment(fileInput) {
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                return { name: '', url: '' };
+            }
+            const file = fileInput.files[0];
+            const fileName = file.name;
+
+            try {
+                if (window.appwriteStorage && window.VFC_DB && VFC_DB.DOCUMENTS_BUCKET_ID) {
+                    const uploaded = await window.appwriteStorage.createFile(
+                        VFC_DB.DOCUMENTS_BUCKET_ID,
+                        window.AppwriteID.unique(),
+                        file
+                    );
+                    const viewUrl = window.appwriteStorage.getFileView(
+                        VFC_DB.DOCUMENTS_BUCKET_ID,
+                        uploaded.$id
+                    );
+                    return { name: fileName, url: viewUrl.href || String(viewUrl) };
+                }
+            } catch (cloudErr) {
+                console.warn("Appwrite storage upload fallback to local DataURL:", cloudErr);
+            }
+
+            // Fallback to Base64 DataURL for immediate viewing
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve({ name: fileName, url: reader.result });
+                reader.onerror = () => resolve({ name: fileName, url: '' });
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function formatAttachmentBadge(name, url) {
+            if (!name) return '';
+            if (url) {
+                return `<a href="${url}" target="_blank" download="${name}" class="attachment-badge" title="Click to open or download">
+                    <i class="fas fa-paperclip"></i> ${name} <i class="fas fa-external-link-alt" style="font-size:10px; margin-left:4px;"></i>
+                </a>`;
+            }
+            return `<div class="attachment-badge"><i class="fas fa-paperclip"></i> ${name}</div>`;
         }
 
         function switchFolder(folder) {
@@ -636,7 +759,7 @@
                 if (currentFolder === 'inbox') {
                     html += buildInboxCard(msg, actualIndex);
                 } else if (currentFolder === 'sent') {
-                    html += buildSentCard(msg, actualIndex);
+                    html += buildSentCard(msg);
                 } else if (currentFolder === 'drafts') {
                     html += buildDraftCard(msg, actualIndex);
                 }
@@ -646,21 +769,23 @@
         }
 
         function buildInboxCard(msg, actualIndex) {
-            let attachHtml = msg.attachment ? `<div class="attachment-badge"><i class="fas fa-paperclip"></i> ${msg.attachment}</div>` : '';
-            let replyAttachHtml = msg.replyAttachment ? `<div class="attachment-badge"><i class="fas fa-paperclip"></i> ${msg.replyAttachment}</div>` : '';
+            let attachHtml = formatAttachmentBadge(msg.attachment, msg.attachmentUrl);
+            let replyAttachHtml = formatAttachmentBadge(msg.replyAttachment, msg.replyAttachmentUrl);
             let replyUI = msg.reply ? 
-                `<div class="reply-status"><i class="fas fa-check-circle"></i> <strong>You Replied (${msg.replyDate || ''}):</strong> ${msg.reply} ${replyAttachHtml}</div>` : 
+                `<div class="reply-status"><i class="fas fa-check-circle"></i> <strong>You Replied (${msg.replyDate || ''}):</strong> ${msg.reply} <div>${replyAttachHtml}</div></div>` : 
                 `<div class="mail-actions">
                     <div class="reply-box">
                         <div class="reply-input-wrapper">
                             <textarea id="replyInput_${actualIndex}" rows="2" placeholder="Type your reply to ${msg.name || msg.email || 'Sender'}..."></textarea>
                             <div class="attachment-area">
-                                <input type="file" id="replyFile_${actualIndex}" style="display:none;" onchange="updateReplyFile(${actualIndex})">
-                                <label for="replyFile_${actualIndex}" class="attach-btn"><i class="fas fa-paperclip"></i> Attach</label>
-                                <span id="replyFileName_${actualIndex}" class="file-name-display"></span>
+                                <input type="file" id="replyFile_${actualIndex}" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none;" onchange="updateReplyFile(${actualIndex})">
+                                <button type="button" class="attach-btn" onclick="document.getElementById('replyFile_${actualIndex}').click()">
+                                    <i class="fas fa-paperclip"></i> Attach File
+                                </button>
+                                <span id="replyFileName_${actualIndex}" style="font-size:12px; color:var(--success); font-weight:700;"></span>
                             </div>
                         </div>
-                        <button class="btn-send-reply" onclick="sendReply(${actualIndex})">Send <i class="fas fa-paper-plane"></i></button>
+                        <button type="button" id="replyBtn_${actualIndex}" class="btn-send-reply" onclick="sendReply(${actualIndex})">Send <i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>`;
 
@@ -668,14 +793,14 @@
                 <div class="mail-item">
                     <div class="mail-item-header">
                         <div>
-                            <div class="sender-name">${msg.name || msg.to || 'Support User'}</div>
-                            <div style="font-size:12px; color:var(--gray-dark);">${msg.email || msg.to || 'support@velfincorp.com'} ${msg.phone ? '| ' + msg.phone : ''}</div>
+                            <div class="sender-name">From: ${msg.name || 'Support User'}</div>
+                            <div style="font-size:12px; color:var(--gray-dark);">To: ${msg.to || 'support@velfincorp.com'} | Email: ${msg.email || '-'} ${msg.phone ? '| ' + msg.phone : ''}</div>
                         </div>
                         <span class="mail-date">${msg.date || ''}</span>
                     </div>
                     <div class="mail-subject">Subject: ${msg.subject || 'Support Query'}</div>
                     <div class="mail-body-text">${msg.message}</div>
-                    ${attachHtml}
+                    <div>${attachHtml}</div>
                     ${replyUI}
                 </div>`;
         }
@@ -683,7 +808,9 @@
         function buildSentCard(msg) {
             let sentTo = msg.folder === 'inbox' ? (msg.email || msg.name) : msg.to;
             let sentMsg = msg.folder === 'inbox' ? msg.reply : msg.message;
-            let attachHtml = (msg.replyAttachment || msg.attachment) ? `<div class="attachment-badge"><i class="fas fa-paperclip"></i> ${msg.replyAttachment || msg.attachment}</div>` : '';
+            let attachName = msg.folder === 'inbox' ? msg.replyAttachment : msg.attachment;
+            let attachUrl = msg.folder === 'inbox' ? msg.replyAttachmentUrl : msg.attachmentUrl;
+            let attachHtml = formatAttachmentBadge(attachName, attachUrl);
             
             let originalContext = msg.folder === 'inbox' ? `<div style="background:#f1f5f9; padding:10px; margin-bottom:10px; border-left:3px solid var(--gray-dark); font-size:12px;"><strong>Original Query from ${msg.name || ''}:</strong> ${msg.message}</div>` : '';
 
@@ -691,18 +818,20 @@
                 <div class="mail-item">
                     <div class="mail-item-header">
                         <div>
-                            <div class="sender-name">To: ${sentTo || 'Recipient'}</div>
+                            <div class="sender-name">From: Vel Fin Corp Support &lt;support@velfincorp.com&gt;</div>
+                            <div style="font-size:13px; font-weight:700; color:var(--navy); margin-top:2px;">To: ${sentTo || 'Recipient'}</div>
                             <div style="font-size:12px; color:var(--gray-dark);">Subject: ${msg.subject || 'Support Response'}</div>
                         </div>
                         <span class="mail-date">${msg.replyDate || msg.date}</span>
                     </div>
                     ${originalContext}
                     <div class="mail-body-text" style="color:var(--navy); font-weight:500;">${sentMsg}</div>
-                    ${attachHtml}
+                    <div>${attachHtml}</div>
                 </div>`;
         }
 
         function buildDraftCard(msg, actualIndex) {
+            let attachHtml = formatAttachmentBadge(msg.attachment, msg.attachmentUrl);
             return `
                 <div class="mail-item" style="border-left: 4px solid var(--gold);">
                     <div class="mail-item-header">
@@ -711,34 +840,48 @@
                     </div>
                     <div class="mail-subject">Subject: ${msg.subject || '-'}</div>
                     <div class="mail-body-text" style="color:#64748b;">${msg.message || 'No content...'}</div>
-                    <button class="btn-logout" style="width:auto; padding:5px 10px; font-size:12px;" onclick="deleteDraft(${actualIndex})">Delete Draft</button>
+                    <div>${attachHtml}</div>
+                    <button class="btn-logout" style="width:auto; padding:5px 10px; font-size:12px; margin-top:8px;" onclick="deleteDraft(${actualIndex})">Delete Draft</button>
                 </div>`;
         }
 
         function updateReplyFile(index) {
             const input = document.getElementById(`replyFile_${index}`);
             const display = document.getElementById(`replyFileName_${index}`);
-            if(input.files.length > 0) { display.innerText = input.files[0].name; }
+            if (input && input.files.length > 0) {
+                display.innerHTML = `<i class="fas fa-check-circle"></i> ${input.files[0].name}`;
+            } else if (display) {
+                display.innerText = '';
+            }
         }
 
-        function sendReply(index) {
+        async function sendReply(index) {
             const replyText = document.getElementById(`replyInput_${index}`).value.trim();
             const fileInput = document.getElementById(`replyFile_${index}`);
+            const replyBtn = document.getElementById(`replyBtn_${index}`);
             
-            if (!replyText && fileInput.files.length === 0) {
+            if (!replyText && (!fileInput || fileInput.files.length === 0)) {
                 alert("Please type a reply or attach a file!");
                 return;
             }
 
+            if (replyBtn) {
+                replyBtn.disabled = true;
+                replyBtn.innerText = "Sending...";
+            }
+
+            const uploadedFile = await processAndUploadAttachment(fileInput);
+
             let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
             if (allMails[index]) {
-                allMails[index].reply = replyText || "Please find the attached document.";
+                allMails[index].reply = replyText || "Please find the attached file.";
                 allMails[index].replyDate = new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
-                if(fileInput.files.length > 0) {
-                    allMails[index].replyAttachment = fileInput.files[0].name;
+                if (uploadedFile.name) {
+                    allMails[index].replyAttachment = uploadedFile.name;
+                    allMails[index].replyAttachmentUrl = uploadedFile.url;
                 }
                 localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
-                alert("Reply sent and saved to both Inbox & Sent Items!");
+                alert("Reply with attachment sent and saved!");
                 renderMails();
             }
         }
@@ -747,6 +890,7 @@
 
         function openCompose() {
             document.getElementById('composeModal').style.display = 'flex';
+            document.getElementById('composeTo').focus();
         }
 
         function closeCompose() {
@@ -756,68 +900,100 @@
 
         function updateComposeAttachName() {
             const input = document.getElementById('composeAttachment');
+            const chip = document.getElementById('composeFileChip');
             const display = document.getElementById('composeAttachName');
-            if(input.files.length > 0) { display.innerText = input.files[0].name; }
+            if (input.files.length > 0) {
+                display.innerText = input.files[0].name;
+                chip.style.display = 'inline-flex';
+            } else {
+                chip.style.display = 'none';
+                display.innerText = '';
+            }
         }
 
-        function clearComposeForm() {
-            document.getElementById('composeSenderName').value = '';
-            document.getElementById('composeTo').value = '';
-            document.getElementById('composeSubject').value = '';
-            document.getElementById('composeBody').value = '';
+        function removeComposeAttachment() {
             document.getElementById('composeAttachment').value = '';
+            document.getElementById('composeFileChip').style.display = 'none';
             document.getElementById('composeAttachName').innerText = '';
         }
 
-        function getComposeData(folderName) {
+        function clearComposeForm() {
+            document.getElementById('composeTo').value = '';
+            document.getElementById('composeSubject').value = '';
+            document.getElementById('composeBody').value = '';
+            removeComposeAttachment();
+        }
+
+        async function buildComposeMailObject(folderName) {
             const fileInput = document.getElementById('composeAttachment');
-            const senderName = document.getElementById('composeSenderName').value.trim() || 'Vel Fin Corp Support';
+            const uploadedFile = await processAndUploadAttachment(fileInput);
             const toEmail = document.getElementById('composeTo').value.trim();
+
             return {
                 id: Date.now() + Math.floor(Math.random() * 1000),
                 folder: folderName,
-                name: senderName,
-                email: toEmail,
+                name: "Vel Fin Corp Support",
+                email: "support@velfincorp.com",
                 to: toEmail,
                 subject: document.getElementById('composeSubject').value.trim() || 'Support Message',
                 message: document.getElementById('composeBody').value.trim(),
                 date: new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true }),
-                attachment: fileInput.files.length > 0 ? fileInput.files[0].name : '',
+                attachment: uploadedFile.name,
+                attachmentUrl: uploadedFile.url,
                 reply: ''
             };
         }
 
-        function sendNewMail() {
-            let sentMailData = getComposeData('sent');
-            if(!sentMailData.to || !sentMailData.message) {
-                alert("Recipient email and message body are required!");
+        async function sendNewMail() {
+            const toVal = document.getElementById('composeTo').value.trim();
+            const bodyVal = document.getElementById('composeBody').value.trim();
+            const fileInput = document.getElementById('composeAttachment');
+
+            if (!toVal) {
+                alert("தயவுசெய்து 'To' பகுதியில் பெறுநரின் மெயில் ஐடியை உள்ளிடவும்!");
+                return;
+            }
+            if (!bodyVal && (!fileInput || fileInput.files.length === 0)) {
+                alert("தயவுசெய்து மெசேஜை டைப் செய்யவும் அல்லது ஃபைலை அட்டாச் செய்யவும்!");
                 return;
             }
 
-            let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
-            
-            // 1. Save in Sent Items
-            allMails.push(sentMailData);
+            const sendBtn = document.getElementById('sendMailBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerText = "Sending...";
 
-            // 2. Deliver to Inbox as well so sent/support messages are visible in Inbox immediately
-            let inboxCopy = {
-                ...sentMailData,
-                id: Date.now() + Math.floor(Math.random() * 1000) + 1,
-                folder: 'inbox',
-                name: sentMailData.name || sentMailData.to.split('@')[0],
-                email: sentMailData.to
-            };
-            allMails.push(inboxCopy);
+            try {
+                let sentMailData = await buildComposeMailObject('sent');
+                let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
+                
+                // 1. Save in Sent Items
+                allMails.push(sentMailData);
 
-            localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
-            
-            alert("Mail Sent Successfully & Delivered to Inbox!");
-            closeCompose();
-            switchFolder('inbox');
+                // 2. Also deliver to Inbox so it appears in Inbox immediately
+                let inboxCopy = {
+                    ...sentMailData,
+                    id: Date.now() + Math.floor(Math.random() * 1000) + 1,
+                    folder: 'inbox',
+                    name: "Vel Fin Corp Support",
+                    email: "support@velfincorp.com"
+                };
+                allMails.push(inboxCopy);
+
+                localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
+                
+                alert("Mail & Attachment Sent Successfully!");
+                closeCompose();
+                switchFolder('inbox');
+            } catch (err) {
+                alert("Error sending mail: " + err.message);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = 'Send <i class="fas fa-paper-plane" style="margin-left:5px;"></i>';
+            }
         }
 
-        function saveDraft() {
-            let mailData = getComposeData('drafts');
+        async function saveDraft() {
+            let mailData = await buildComposeMailObject('drafts');
             let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
             allMails.push(mailData);
             localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
