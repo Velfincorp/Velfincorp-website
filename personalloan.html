@@ -217,6 +217,10 @@
             background-color: var(--gold);
             color: var(--navy);
         }
+        .btn-submit:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -255,13 +259,13 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Borrowers Details *</label>
-                        <select id="Borrowers_Details" required>
+                        <select id="Borrowers_Details" onchange="checkActiveBorrowerLoan()" required>
                             <option value="">-Loading Borrowers-</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Loan ID *</label>
-                        <input type="text" id="Loan_ID" readonly style="background-color: #f1f5f9;">
+                        <input type="text" id="Loan_ID" readonly style="background-color: #f1f5f9; font-weight: bold; color: var(--navy);">
                     </div>
                 </div>
 
@@ -291,7 +295,7 @@
                     </div>
                     <div class="form-group">
                         <label>Disbursed Amount (₹)</label>
-                        <input type="number" id="Disbursed_Amount" readonly style="background-color: #f1f5f9;">
+                        <input type="number" id="Disbursed_Amount" readonly style="background-color: #f1f5f9; font-weight: bold;">
                     </div>
                 </div>
 
@@ -317,40 +321,35 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-submit">Submit Personal Loan & Send Welcome Message</button>
+                <button type="submit" id="submitBtn" class="btn-submit">Submit Personal Loan & Send Welcome Message</button>
             </form>
         </div>
     </div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', async () => {
-            const year = new Date().getFullYear();
-            
-            try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID
-                );
-                const existingLoans = response.documents;
-                const filteredLoans = existingLoans.filter(l => l.loan_id && l.loan_id.startsWith("VPL"));
-                const nextSeq = filteredLoans.length + 1;
-                const paddedSeq = String(nextSeq).padStart(3, '0');
-                document.getElementById('Loan_ID').value = `VPL/${paddedSeq}/${year}`;
-            } catch (e) {
-                console.error("Error generating sequential Loan ID:", e);
-                document.getElementById('Loan_ID').value = `VPL/001/${year}`;
-            }
+        let allBorrowers = [];
+        let allLoans = [];
 
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadInitialData();
+        });
+
+        async function loadInitialData() {
             const borrowerSelect = document.getElementById('Borrowers_Details');
             try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.BORROWERS_ID
-                );
-                const borrowers = response.documents;
-                if (borrowers && borrowers.length > 0) {
+                const [loansResp, borrowersResp] = await Promise.all([
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID, [window.AppwriteQuery.limit(100)]),
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID, [window.AppwriteQuery.limit(100)])
+                ]);
+
+                allLoans = loansResp.documents || [];
+                allBorrowers = borrowersResp.documents || [];
+
+                generateNextPersonalLoanId();
+
+                if (allBorrowers.length > 0) {
                     borrowerSelect.innerHTML = '<option value="">-Select Borrower-</option>';
-                    borrowers.forEach(b => {
+                    allBorrowers.forEach(b => {
                         const opt = document.createElement('option');
                         opt.value = b.full_name;
                         opt.dataset.phone = b.whatsapp_number || b.phone_number || '';
@@ -361,10 +360,31 @@
                     borrowerSelect.innerHTML = '<option value="">-No Borrowers Found-</option>';
                 }
             } catch (e) {
-                console.error("Error loading borrowers:", e);
+                console.error("Error loading initial data:", e);
+                generateNextPersonalLoanId();
                 borrowerSelect.innerHTML = '<option value="">-Error Loading Borrowers-</option>';
             }
-        });
+        }
+
+        function generateNextPersonalLoanId() {
+            const year = new Date().getFullYear();
+            const filteredLoans = allLoans.filter(l => l.loan_id && l.loan_id.startsWith("VPL"));
+            const nextSeq = filteredLoans.length + 1;
+            const paddedSeq = String(nextSeq).padStart(3, '0');
+            document.getElementById('Loan_ID').value = `VPL/${paddedSeq}/${year}`;
+        }
+
+        function checkActiveBorrowerLoan() {
+            const borrowerSelect = document.getElementById('Borrowers_Details');
+            const borrowerName = borrowerSelect.value;
+            if (!borrowerName) return;
+
+            const hasActive = allLoans.some(l => l.borrower_name === borrowerName && l.status === 'ACTIVE');
+            if (hasActive) {
+                alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
+                borrowerSelect.value = "";
+            }
+        }
 
         function updateTenureOptions() {
             const loanType = document.getElementById('Loan_Type').value;
@@ -415,7 +435,6 @@
                 const deduction = loanAmount * 0.15;
                 const disbursed = loanAmount - deduction;
                 
-                // Fixed rounding to avoid decimal shift
                 document.getElementById('Disbursed_Amount').value = Math.round(disbursed);
                 document.getElementById('Document_Charge').value = 50;
 
@@ -440,10 +459,22 @@
             const loanType = document.getElementById('Loan_Type').value;
             const borrowerSelect = document.getElementById('Borrowers_Details');
             const borrowerName = borrowerSelect.value;
-            const borrowerPhone = borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone || "8778003840";
+
+            let rawPhone = (borrowerSelect.selectedIndex >= 0 && borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone)
+                ? borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone
+                : "";
+            if (!rawPhone) {
+                const matchedBorrower = allBorrowers.find(b => b.full_name === borrowerName);
+                if (matchedBorrower) {
+                    rawPhone = matchedBorrower.whatsapp_number || matchedBorrower.phone_number || "";
+                }
+            }
+            const borrowerPhone = rawPhone || "8778003840";
+
             const loanId = document.getElementById('Loan_ID').value;
             const emiAmount = Math.round(parseFloat(document.getElementById('Installment_Amount').value) || 0).toString();
             const tenure = document.getElementById('Tenure').value;
+            const tenureVal = document.getElementById('Tenure_Select').value;
             const disbursedAmount = Math.round(parseFloat(document.getElementById('Disbursed_Amount').value) || 0).toString();
             const loanStatus = document.getElementById('Status').value;
 
@@ -452,25 +483,24 @@
                 return false;
             }
 
-            try {
-                const activeLoansResponse = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID,
-                    [
-                        window.AppwriteQuery.equal('borrower_name', borrowerName),
-                        window.AppwriteQuery.equal('status', 'ACTIVE')
-                    ]
-                );
-
-                if (activeLoansResponse.total > 0) {
-                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது!");
-                    return false;
-                }
-            } catch (err) {
-                console.error("Error checking active loans:", err);
+            const hasActive = allLoans.some(l => l.borrower_name === borrowerName && l.status === 'ACTIVE');
+            if (hasActive) {
+                alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது!");
+                return false;
             }
 
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Saving Loan & Sending WhatsApp...";
+
             try {
+                const today = new Date();
+                const dd = String(today.getDate()).padStart(2, '0');
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const yyyy = today.getFullYear();
+                const isoDate = `${yyyy}-${mm}-${dd}`;
+                const loanDateStr = `${dd}-${mm}-${yyyy}`;
+
                 const loanPayload = {
                     loan_id: loanId,
                     borrower_name: borrowerName,
@@ -481,61 +511,89 @@
                     installment_amount: emiAmount,
                     tenure: tenure,
                     status: loanStatus,
-                    loan_date: new Date().toISOString().split('T')[0],
+                    loan_date: isoDate,
                     loan_category: "Personal"
                 };
 
-                // 1. Save to Database
-                await window.appwriteDatabases.createDocument(
+                // 1. Save to Appwrite Database
+                const createdLoan = await window.appwriteDatabases.createDocument(
                     VFC_DB.DB_ID,
                     VFC_DB.LOANS_ID,
                     window.AppwriteID.unique(),
                     loanPayload
                 );
+                allLoans.push(createdLoan);
 
-                // 2. Trigger WhatsApp Welcome Message (Exactly 7 Parameters matching template order)
-                let cleanMobile = borrowerPhone.replace(/\D/g, "");
+                // 2. Trigger WhatsApp Welcome Message (8 Parameters matching MSG91 vel_fin_welcome_message template)
+                let cleanMobile = String(borrowerPhone).replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
                 }
                 const finalMobile = "91" + cleanMobile;
 
-                const today = new Date();
                 const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
-                const loanDay = daysOfWeek[today.getDay()];
-                const loanDateStr = today.toLocaleDateString('en-GB');
+                const dayIdx = today.getDay();
+                const loanDay = daysOfWeek[dayIdx];
+                const prevDay = (loanType === "Daily") 
+                    ? "தினமும்" 
+                    : (daysOfWeek[(dayIdx + 6) % 7] + "க்கிழமை");
+
+                // டெம்ப்ளேட்டில் "{{5}} வாரங்கள்" என்று உள்ளதால் Daily/Monthly-க்கும் தெளிவாகப் புரியும்படி அமைத்தல்
+                let displayTenureForMsg = String(tenureVal);
+                if (loanType === "Daily") {
+                    displayTenureForMsg = `${tenureVal} நாட்கள் /`;
+                } else if (loanType === "Monthly") {
+                    displayTenureForMsg = `${tenureVal} மாதங்கள் /`;
+                }
+
+                const customComponents = {
+                    body_1: String(borrowerName),
+                    body_2: String(`Personal Loan (${loanType})`),
+                    body_3: String(loanId),
+                    body_4: String(emiAmount),
+                    body_5: String(displayTenureForMsg),
+                    body_6: String(loanDay),
+                    body_7: String(loanDateStr),
+                    body_8: String(prevDay)
+                };
 
                 const functionPayload = {
                     mobile: finalMobile,
+                    phone: finalMobile,
+                    to: finalMobile,
+                    recipient: finalMobile,
                     template_name: "vel_fin_welcome_message",
-                    components: {
-                        body_1: borrowerName,
-                        body_2: loanId,
-                        body_3: loanType,
-                        body_4: emiAmount,
-                        body_5: tenure,
-                        body_6: loanDay,
-                        body_7: loanDateStr
-                    }
+                    templateName: "vel_fin_welcome_message",
+                    components: customComponents,
+                    customComponents: customComponents
                 };
 
                 try {
-                    await window.appwriteFunctions.createExecution(
+                    const execRes = await window.appwriteFunctions.createExecution(
                         '6adb02310009b131da2d',
                         JSON.stringify(functionPayload)
                     );
+                    if (execRes && execRes.status === 'failed') {
+                        alert("Personal Loan Saved! ஆனால் வாட்ஸ்அப் மெசேஜ் அனுப்புவதில் பிழை: " + (execRes.errors || execRes.responseBody));
+                    } else {
+                        alert("Personal loan successfully saved and Welcome Message sent to " + finalMobile + "!");
+                    }
                 } catch (fnErr) {
                     console.error("WhatsApp Function Error:", fnErr);
+                    alert("Personal Loan saved to database, but WhatsApp dispatch failed: " + fnErr.message);
                 }
 
-                alert("Personal loan successfully saved and Welcome Message sent!");
                 document.getElementById('personalLoanForm').reset();
-                window.location.reload();
+                document.getElementById('Document_Charge').value = 50;
+                generateNextPersonalLoanId();
 
             } catch (err) {
                 console.error("Error in Personal Loan submission:", err);
                 alert("Error saving data: " + err.message);
                 return false;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit Personal Loan & Send Welcome Message";
             }
         }
 
