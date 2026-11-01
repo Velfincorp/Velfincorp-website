@@ -500,7 +500,7 @@
                 const mm = String(today.getMonth() + 1).padStart(2, '0');
                 const yyyy = today.getFullYear();
                 const isoDate = `${yyyy}-${mm}-${dd}`;
-                const loanDateStr = `${dd}/${mm}/${yyyy}`;
+                const loanDateStr = `${dd}-${mm}-${yyyy}`;
 
                 const loanPayload = {
                     loan_id: loanId,
@@ -542,39 +542,42 @@
                 let customComponents = {};
 
                 if (loanType === "Daily") {
-                    // MSG91 Daily Loan Template (6 parameters)
+                    // MSG91 Daily Loan Template: Exactly 7 parameters (includes Loan ID)
                     templateName = "vel_fin_daily_welcome";
                     customComponents = {
                         body_1: String(borrowerName),
-                        body_2: String(loanAmountStr),
-                        body_3: String(emiAmount),
-                        body_4: String(tenureVal),
-                        body_5: String(loanDay),
-                        body_6: String(loanDateStr)
+                        body_2: String(loanId),
+                        body_3: String(loanAmountStr),
+                        body_4: String(emiAmount),
+                        body_5: String(tenureVal),
+                        body_6: String(loanDay),
+                        body_7: String(loanDateStr)
                     };
                 } else if (loanType === "Weekly") {
-                    // MSG91 Weekly Loan Template (7 parameters)
+                    // MSG91 Weekly Loan Template: 8 parameters (includes Loan ID + Previous Day)
                     templateName = "vel_fin_weekly_welcome";
                     customComponents = {
                         body_1: String(borrowerName),
-                        body_2: String(loanAmountStr),
-                        body_3: String(emiAmount),
-                        body_4: String(tenureVal),
-                        body_5: String(loanDay),
-                        body_6: String(loanDateStr),
-                        body_7: String(previousDayText)
+                        body_2: String(loanId),
+                        body_3: String(loanAmountStr),
+                        body_4: String(emiAmount),
+                        body_5: String(tenureVal),
+                        body_6: String(loanDay),
+                        body_7: String(loanDateStr),
+                        body_8: String(previousDayText)
                     };
                 } else if (loanType === "Monthly") {
-                    // MSG91 Monthly Loan Template (7 parameters)
+                    // MSG91 Monthly Loan Template: 8 parameters (includes Loan ID + Monthly Due Day)
                     templateName = "vel_fin_monthly_welcome";
                     customComponents = {
                         body_1: String(borrowerName),
-                        body_2: String(loanAmountStr),
-                        body_3: String(emiAmount),
-                        body_4: String(tenureVal),
-                        body_5: String(loanDateStr),
-                        body_6: String(loanDayNum),
-                        body_7: String(loanDayNum)
+                        body_2: String(loanId),
+                        body_3: String(loanAmountStr),
+                        body_4: String(emiAmount),
+                        body_5: String(tenureVal),
+                        body_6: String(loanDateStr),
+                        body_7: String(loanDayNum),
+                        body_8: String(loanDayNum)
                     };
                 }
 
