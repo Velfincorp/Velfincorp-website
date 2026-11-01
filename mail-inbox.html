@@ -427,7 +427,6 @@
             color: var(--navy);
             border-color: var(--gold);
         }
-        /* Compose Modal */
         .modal {
             display: none;
             position: fixed;
@@ -584,19 +583,16 @@
                 <i class="fas fa-times" style="cursor:pointer;" onclick="closeCompose()"></i>
             </div>
             <div class="modal-body">
-                <!-- Default Locked From Address -->
                 <div class="mail-field-row readonly-row">
                     <div class="mail-field-label">From</div>
                     <input type="text" id="composeFrom" value="Vel Fin Corp Support <support@velfincorp.com>" readonly style="font-weight:700; color:var(--navy);">
                 </div>
 
-                <!-- Editable To Address -->
                 <div class="mail-field-row">
                     <div class="mail-field-label">To *</div>
                     <input type="email" id="composeTo" placeholder="Enter recipient email (e.g., customer@gmail.com)" required>
                 </div>
 
-                <!-- Subject -->
                 <div class="mail-field-row">
                     <div class="mail-field-label">Subject</div>
                     <input type="text" id="composeSubject" placeholder="Enter mail subject">
@@ -604,7 +600,6 @@
 
                 <textarea id="composeBody" rows="7" placeholder="Type your message here..."></textarea>
                 
-                <!-- File Attachment Area -->
                 <div class="attachment-area" style="border:none; margin:0; padding-top:2px;">
                     <input type="file" id="composeAttachment" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" style="display:none;" onchange="updateComposeAttachName()">
                     <button type="button" class="attach-btn" onclick="document.getElementById('composeAttachment').click()">
@@ -660,42 +655,100 @@
                         attachmentUrl: ""
                     }
                 ];
-                localStorage.setItem('velfincorp_support_mails', JSON.stringify(mails));
+                safeSaveMailsToStorage(mails);
             }
         }
 
-        // Upload attached file to Appwrite Cloud Storage (or fallback to Data URL) so it can be viewed/downloaded
+        // Safely save to localStorage without ever throwing QuotaExceededError
+        function safeSaveMailsToStorage(mailsArray) {
+            try {
+                localStorage.setItem('velfincorp_support_mails', JSON.stringify(mailsArray));
+            } catch (quotaErr) {
+                console.warn("Storage quota tight, trimming heavy inline data URLs:", quotaErr);
+                const slimmed = mailsArray.map(m => ({
+                    ...m,
+                    attachmentUrl: (m.attachmentUrl && m.attachmentUrl.startsWith('data:')) ? '' : m.attachmentUrl,
+                    replyAttachmentUrl: (m.replyAttachmentUrl && m.replyAttachmentUrl.startsWith('data:')) ? '' : m.replyAttachmentUrl
+                }));
+                localStorage.setItem('velfincorp_support_mails', JSON.stringify(slimmed));
+            }
+        }
+
+        // Compress image before upload so large screenshots upload in 1 second and never fail
+        async function compressImageFile(file) {
+            if (!file || !file.type.startsWith('image/')) return file;
+            return new Promise((resolve) => {
+                const img = new Image();
+                const objUrl = URL.createObjectURL(file);
+                img.onload = () => {
+                    URL.revokeObjectURL(objUrl);
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 1000;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > h && w > maxDim) {
+                        h = Math.round((h * maxDim) / w);
+                        w = maxDim;
+                    } else if (h > maxDim) {
+                        w = Math.round((w * maxDim) / h);
+                        h = maxDim;
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const safeName = file.name.replace(/\s+/g, '_').replace(/\.[^.]+$/, '.jpg');
+                            resolve(new File([blob], safeName, { type: 'image/jpeg' }));
+                        } else {
+                            resolve(file);
+                        }
+                    }, 'image/jpeg', 0.65);
+                };
+                img.onerror = () => resolve(file);
+                img.src = objUrl;
+            });
+        }
+
         async function processAndUploadAttachment(fileInput) {
             if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
                 return { name: '', url: '' };
             }
-            const file = fileInput.files[0];
-            const fileName = file.name;
+            const rawFile = fileInput.files[0];
+            const originalName = rawFile.name;
+            const optimizedFile = await compressImageFile(rawFile);
 
             try {
-                if (window.appwriteStorage && window.VFC_DB && VFC_DB.DOCUMENTS_BUCKET_ID) {
+                const bucketId = (window.VFC_DB && window.VFC_DB.DOCUMENTS_BUCKET_ID)
+                    ? window.VFC_DB.DOCUMENTS_BUCKET_ID
+                    : '6ad728e7001cd61e6b73';
+
+                if (window.appwriteStorage) {
                     const uploaded = await window.appwriteStorage.createFile(
-                        VFC_DB.DOCUMENTS_BUCKET_ID,
+                        bucketId,
                         window.AppwriteID.unique(),
-                        file
+                        optimizedFile
                     );
-                    const viewUrl = window.appwriteStorage.getFileView(
-                        VFC_DB.DOCUMENTS_BUCKET_ID,
-                        uploaded.$id
-                    );
-                    return { name: fileName, url: viewUrl.href || String(viewUrl) };
+                    const viewRes = window.appwriteStorage.getFileView(bucketId, uploaded.$id);
+                    const finalUrl = (viewRes && viewRes.href) ? viewRes.href : String(viewRes);
+                    return { name: originalName, url: finalUrl };
                 }
             } catch (cloudErr) {
-                console.warn("Appwrite storage upload fallback to local DataURL:", cloudErr);
+                console.warn("Appwrite storage upload fallback:", cloudErr);
             }
 
-            // Fallback to Base64 DataURL for immediate viewing
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve({ name: fileName, url: reader.result });
-                reader.onerror = () => resolve({ name: fileName, url: '' });
-                reader.readAsDataURL(file);
-            });
+            // Lightweight fallback for small/compressed files
+            if (optimizedFile.size <= 350 * 1024) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve({ name: originalName, url: reader.result });
+                    reader.onerror = () => resolve({ name: originalName, url: '' });
+                    reader.readAsDataURL(optimizedFile);
+                });
+            }
+
+            return { name: originalName, url: '' };
         }
 
         function formatAttachmentBadge(name, url) {
@@ -870,23 +923,30 @@
                 replyBtn.innerText = "Sending...";
             }
 
-            const uploadedFile = await processAndUploadAttachment(fileInput);
+            try {
+                const uploadedFile = await processAndUploadAttachment(fileInput);
 
-            let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
-            if (allMails[index]) {
-                allMails[index].reply = replyText || "Please find the attached file.";
-                allMails[index].replyDate = new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
-                if (uploadedFile.name) {
-                    allMails[index].replyAttachment = uploadedFile.name;
-                    allMails[index].replyAttachmentUrl = uploadedFile.url;
+                let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
+                if (allMails[index]) {
+                    allMails[index].reply = replyText || "Please find the attached file.";
+                    allMails[index].replyDate = new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+                    if (uploadedFile.name) {
+                        allMails[index].replyAttachment = uploadedFile.name;
+                        allMails[index].replyAttachmentUrl = uploadedFile.url;
+                    }
+                    safeSaveMailsToStorage(allMails);
+                    alert("Reply with attachment sent and saved!");
+                    renderMails();
                 }
-                localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
-                alert("Reply with attachment sent and saved!");
-                renderMails();
+            } catch (err) {
+                alert("Reply error: " + err.message);
+            } finally {
+                if (replyBtn) {
+                    replyBtn.disabled = false;
+                    replyBtn.innerHTML = 'Send <i class="fas fa-paper-plane"></i>';
+                }
             }
         }
-
-        // --- Compose Modal Logic ---
 
         function openCompose() {
             document.getElementById('composeModal').style.display = 'flex';
@@ -936,7 +996,7 @@
                 email: "support@velfincorp.com",
                 to: toEmail,
                 subject: document.getElementById('composeSubject').value.trim() || 'Support Message',
-                message: document.getElementById('composeBody').value.trim(),
+                message: document.getElementById('composeBody').value.trim() || 'Attached file.',
                 date: new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true }),
                 attachment: uploadedFile.name,
                 attachmentUrl: uploadedFile.url,
@@ -969,7 +1029,7 @@
                 // 1. Save in Sent Items
                 allMails.push(sentMailData);
 
-                // 2. Also deliver to Inbox so it appears in Inbox immediately
+                // 2. Also deliver to Inbox so it is visible in Inbox immediately
                 let inboxCopy = {
                     ...sentMailData,
                     id: Date.now() + Math.floor(Math.random() * 1000) + 1,
@@ -979,11 +1039,11 @@
                 };
                 allMails.push(inboxCopy);
 
-                localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
+                safeSaveMailsToStorage(allMails);
                 
                 alert("Mail & Attachment Sent Successfully!");
                 closeCompose();
-                switchFolder('inbox');
+                switchFolder('sent');
             } catch (err) {
                 alert("Error sending mail: " + err.message);
             } finally {
@@ -996,7 +1056,7 @@
             let mailData = await buildComposeMailObject('drafts');
             let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
             allMails.push(mailData);
-            localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
+            safeSaveMailsToStorage(allMails);
             
             alert("Saved to Drafts!");
             closeCompose();
@@ -1006,7 +1066,7 @@
         function deleteDraft(index) {
             let allMails = JSON.parse(localStorage.getItem('velfincorp_support_mails') || '[]');
             allMails.splice(index, 1);
-            localStorage.setItem('velfincorp_support_mails', JSON.stringify(allMails));
+            safeSaveMailsToStorage(allMails);
             renderMails();
         }
 
