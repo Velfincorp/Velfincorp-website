@@ -472,6 +472,7 @@
             const borrowerPhone = rawPhone || "8778003840";
 
             const loanId = document.getElementById('Loan_ID').value;
+            const loanAmountStr = Math.round(loanAmount).toString();
             const emiAmount = Math.round(parseFloat(document.getElementById('Installment_Amount').value) || 0).toString();
             const tenure = document.getElementById('Tenure').value;
             const tenureVal = document.getElementById('Tenure_Select').value;
@@ -499,14 +500,14 @@
                 const mm = String(today.getMonth() + 1).padStart(2, '0');
                 const yyyy = today.getFullYear();
                 const isoDate = `${yyyy}-${mm}-${dd}`;
-                const loanDateStr = `${dd}-${mm}-${yyyy}`;
+                const loanDateStr = `${dd}/${mm}/${yyyy}`;
 
                 const loanPayload = {
                     loan_id: loanId,
                     borrower_name: borrowerName,
                     phone_number: borrowerPhone,
                     loan_type: loanType,
-                    loan_amount: Math.round(loanAmount).toString(),
+                    loan_amount: loanAmountStr,
                     disbursed_amount: disbursedAmount,
                     installment_amount: emiAmount,
                     tenure: tenure,
@@ -524,7 +525,7 @@
                 );
                 allLoans.push(createdLoan);
 
-                // 2. Trigger WhatsApp Welcome Message (8 Parameters matching MSG91 vel_fin_welcome_message template)
+                // 2. Trigger Specific WhatsApp Welcome Template based on Loan Type (Daily / Weekly / Monthly)
                 let cleanMobile = String(borrowerPhone).replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
@@ -534,36 +535,56 @@
                 const daysOfWeek = ["ஞாயிறு", "திங்கள்", "செவ்வாய்", "புதன்", "வியாழன்", "வெள்ளி", "சனி"];
                 const dayIdx = today.getDay();
                 const loanDay = daysOfWeek[dayIdx];
-                const prevDay = (loanType === "Daily") 
-                    ? "தினமும்" 
-                    : (daysOfWeek[(dayIdx + 6) % 7] + "க்கிழமை");
+                const previousDayText = daysOfWeek[(dayIdx + 6) % 7] + "க்கிழமை";
+                const loanDayNum = dd;
 
-                // டெம்ப்ளேட்டில் "{{5}} வாரங்கள்" என்று உள்ளதால் Daily/Monthly-க்கும் தெளிவாகப் புரியும்படி அமைத்தல்
-                let displayTenureForMsg = String(tenureVal);
+                let templateName = "";
+                let customComponents = {};
+
                 if (loanType === "Daily") {
-                    displayTenureForMsg = `${tenureVal} நாட்கள் /`;
+                    // MSG91 Daily Loan Template (6 parameters)
+                    templateName = "vel_fin_daily_welcome";
+                    customComponents = {
+                        body_1: String(borrowerName),
+                        body_2: String(loanAmountStr),
+                        body_3: String(emiAmount),
+                        body_4: String(tenureVal),
+                        body_5: String(loanDay),
+                        body_6: String(loanDateStr)
+                    };
+                } else if (loanType === "Weekly") {
+                    // MSG91 Weekly Loan Template (7 parameters)
+                    templateName = "vel_fin_weekly_welcome";
+                    customComponents = {
+                        body_1: String(borrowerName),
+                        body_2: String(loanAmountStr),
+                        body_3: String(emiAmount),
+                        body_4: String(tenureVal),
+                        body_5: String(loanDay),
+                        body_6: String(loanDateStr),
+                        body_7: String(previousDayText)
+                    };
                 } else if (loanType === "Monthly") {
-                    displayTenureForMsg = `${tenureVal} மாதங்கள் /`;
+                    // MSG91 Monthly Loan Template (7 parameters)
+                    templateName = "vel_fin_monthly_welcome";
+                    customComponents = {
+                        body_1: String(borrowerName),
+                        body_2: String(loanAmountStr),
+                        body_3: String(emiAmount),
+                        body_4: String(tenureVal),
+                        body_5: String(loanDateStr),
+                        body_6: String(loanDayNum),
+                        body_7: String(loanDayNum)
+                    };
                 }
-
-                const customComponents = {
-                    body_1: String(borrowerName),
-                    body_2: String(`Personal Loan (${loanType})`),
-                    body_3: String(loanId),
-                    body_4: String(emiAmount),
-                    body_5: String(displayTenureForMsg),
-                    body_6: String(loanDay),
-                    body_7: String(loanDateStr),
-                    body_8: String(prevDay)
-                };
 
                 const functionPayload = {
                     mobile: finalMobile,
                     phone: finalMobile,
                     to: finalMobile,
                     recipient: finalMobile,
-                    template_name: "vel_fin_welcome_message",
-                    templateName: "vel_fin_welcome_message",
+                    template_name: templateName,
+                    templateName: templateName,
                     components: customComponents,
                     customComponents: customComponents
                 };
@@ -576,7 +597,7 @@
                     if (execRes && execRes.status === 'failed') {
                         alert("Personal Loan Saved! ஆனால் வாட்ஸ்அப் மெசேஜ் அனுப்புவதில் பிழை: " + (execRes.errors || execRes.responseBody));
                     } else {
-                        alert("Personal loan successfully saved and Welcome Message sent to " + finalMobile + "!");
+                        alert(`Personal Loan (${loanType}) saved and WhatsApp message (${templateName}) sent to ${finalMobile}!`);
                     }
                 } catch (fnErr) {
                     console.error("WhatsApp Function Error:", fnErr);
