@@ -252,27 +252,44 @@
             const tenureVal = parseInt(document.getElementById('Tenure_Select').value) || 0;
 
             if (loanAmount > 0) {
+                // 15% முன்கழிவு போக கையில் கொடுக்கும் தொகை (Disbursed Amount)
                 const deduction = loanAmount * 0.15;
                 const disbursed = loanAmount - deduction;
                 document.getElementById('Disbursed_Amount').value = Math.round(disbursed);
                 document.getElementById('Document_Charge').value = 50;
 
                 if (tenureVal > 0) {
-                    const installment = Math.round(loanAmount / tenureVal);
+                    // 10 வாரம் & 100 நாட்களுக்கு 15% முன்கழிவே வட்டி என்பதால் கூடுதல் வட்டி இல்லை (1.0)
+                    // 15 வாரத்திற்கு +12.5% (1.125), 20 வாரத்திற்கு +24% (1.24), மாதத் தவணைக்கு +15% (1.15)
+                    let interestMultiplier = 1.0;
+                    if (loanType === "Weekly") {
+                        if (tenureVal === 10) interestMultiplier = 1.0;
+                        else if (tenureVal === 15) interestMultiplier = 1.125;
+                        else if (tenureVal === 20) interestMultiplier = 1.24;
+                    } else if (loanType === "Monthly") {
+                        interestMultiplier = 1.15;
+                    }
+
+                    const totalPayable = loanAmount * interestMultiplier;
+                    const installment = Math.round(totalPayable / tenureVal);
+
                     let tenureUnit = " Days";
                     if (loanType === "Weekly") tenureUnit = " Weeks";
                     else if (loanType === "Monthly") tenureUnit = " Months";
 
                     document.getElementById('Tenure').value = tenureVal + tenureUnit;
                     document.getElementById('Installment_Amount').value = installment;
+                    document.getElementById('Installment_Amount').dataset.totalPayable = Math.round(installment * tenureVal);
                 } else {
                     document.getElementById('Tenure').value = '';
                     document.getElementById('Installment_Amount').value = '';
+                    document.getElementById('Installment_Amount').dataset.totalPayable = '';
                 }
             } else {
                 document.getElementById('Disbursed_Amount').value = '';
                 document.getElementById('Tenure').value = '';
                 document.getElementById('Installment_Amount').value = '';
+                document.getElementById('Installment_Amount').dataset.totalPayable = '';
             }
         }
 
@@ -292,10 +309,12 @@
             const borrowerPhone = rawPhone || "8778003840";
 
             const loanId = document.getElementById('Loan_ID').value;
-            const loanAmountStr = Math.round(loanAmount).toString();
-            const emiAmount = Math.round(parseFloat(document.getElementById('Installment_Amount').value) || 0).toString();
+            const emiAmountNum = Math.round(parseFloat(document.getElementById('Installment_Amount').value) || 0);
+            const emiAmount = emiAmountNum.toString();
             const tenure = document.getElementById('Tenure').value;
-            const tenureVal = document.getElementById('Tenure_Select').value;
+            const tenureVal = parseInt(document.getElementById('Tenure_Select').value) || 0;
+            const totalPayableAmount = Math.round(parseFloat(document.getElementById('Installment_Amount').dataset.totalPayable) || (emiAmountNum * tenureVal) || loanAmount);
+            const loanAmountStr = totalPayableAmount.toString();
             const disbursedAmount = Math.round(parseFloat(document.getElementById('Disbursed_Amount').value) || 0).toString();
             const loanStatus = document.getElementById('Status').value;
 
