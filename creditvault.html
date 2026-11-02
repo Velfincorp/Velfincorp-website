@@ -7,6 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Credit Vault Loan Application</title>
+    <link rel="icon" type="image/jpeg" href="velfincorp-logo.jpeg">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
@@ -17,11 +18,11 @@
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
             const userRole = sessionStorage.getItem('velfincorp_role');
 
-            window.pageshow = function(event) {
+            window.addEventListener('pageshow', function(event) {
                 if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
                     window.location.replace('login.html');
                 }
-            };
+            });
 
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
             if (publicPages.includes(currentPage)) { return; }
@@ -512,13 +513,12 @@
         let allLoans = [];
         let lockedRetailerObj = null;
 
-        // வார வாரியான துல்லியமான வட்டி விகிதங்கள் (Balance மீது Setup 4% + Processing 2.5% + Interest)
         const TENURE_INTEREST_RATES = {
-            10: 0.05079,  // 10 வாரங்கள் (₹19,000 -> ₹1,484/வாரம்)
-            15: 0.09778,  // 15 வாரங்கள் (₹19,000 -> ₹1,031/வாரம்)
-            20: 0.20868,  // 20 வாரங்கள் (₹19,000 -> ₹847/வாரம்)
-            25: 0.28086,  // 25 வாரங்கள் (₹19,000 -> ₹716/வாரம்)
-            30: 0.33801   // 30 வாரங்கள் (₹19,000 -> ₹622/வாரம்)
+            10: 0.05079,
+            15: 0.09778,
+            20: 0.20868,
+            25: 0.28086,
+            30: 0.33801
         };
 
         function computeWeeklyEmiForTenure(balanceAmount, weeks) {
