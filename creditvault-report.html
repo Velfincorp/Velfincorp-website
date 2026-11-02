@@ -7,227 +7,77 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Credit Vault Report</title>
+    <link rel="icon" type="image/jpeg" href="velfincorp-logo.jpeg">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         (function() {
             const currentPage = window.location.pathname.split("/").pop() || "index.html";
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
             const userRole = sessionStorage.getItem('velfincorp_role');
-
-            window.pageshow = function(event) {
+            window.addEventListener('pageshow', function(event) {
                 if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
                     window.location.replace('login.html');
                 }
-            };
-
+            });
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) { return; }
-
-            if (!loggedUser || !userRole) {
-                window.location.replace('login.html');
-                return;
-            }
-
-            if (userRole === 'borrower') {
-                if (currentPage !== 'borrower-portal.html') {
-                    window.location.replace('borrower-portal.html');
-                }
-            } else {
-                if (currentPage === 'borrower-portal.html') {
-                    window.location.replace('dashboard.html');
-                }
+            if (publicPages.includes(currentPage)) return;
+            if (!loggedUser || !userRole) { window.location.replace('login.html'); return; }
+            if (userRole === 'borrower' && currentPage !== 'borrower-portal.html') {
+                window.location.replace('borrower-portal.html');
+            } else if (userRole !== 'borrower' && currentPage === 'borrower-portal.html') {
+                window.location.replace('dashboard.html');
             }
         })();
     </script>
     <style>
-        :root {
-            --navy: #0F1D36;
-            --gold: #C5A059;
-            --bg-color: #F8F9FB;
-            --text-main: #2D3748;
-            --white: #FFFFFF;
-            --danger: #C53030;
-            --success: #2F855A;
+        :root { --navy: #0F1D36; --gold: #C5A059; --bg-color: #F8F9FB; --text-main: #2D3748; --white: #FFFFFF; --danger: #C53030; --success: #2F855A; }
+        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background-color: var(--navy); color: var(--white); display: flex; flex-direction: column; border-right: 3px solid var(--gold); position: fixed; height: 100vh; left: 0; top: 0; box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1); overflow-y: auto; }
+        .sidebar-brand { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0,0,0,0.1); }
+        .sidebar-logo { height: 40px; width: 40px; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold); background: var(--white); padding: 2px; }
+        .sidebar-title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: bold; color: var(--gold); letter-spacing: 1px; }
+        .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; flex: 1; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 15px; padding: 12px 25px; color: #cbd5e1; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active { background-color: rgba(197, 160, 89, 0.15); color: var(--gold); border-left-color: var(--gold); }
+        .sidebar-menu li a i { width: 20px; text-align: center; color: var(--gold); }
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
+        .btn-logout { background-color: var(--danger); color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; display: block; text-align: center; box-sizing: border-box; }
+        .main-content { margin-left: 260px; flex: 1; padding: 40px; box-sizing: border-box; }
+        .container { max-width: 1200px; margin: 0 auto; background: var(--white); padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05); border-top: 5px solid var(--navy); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+        h2 { font-family: 'Cinzel', serif; color: var(--navy); margin: 0; }
+        .btn-back { background-color: var(--gold); color: var(--navy); padding: 10px 18px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+        .filters-row { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+        .filters-row input, .filters-row select { flex: 1; min-width: 200px; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: var(--white); box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { padding: 12px 14px; border: 1px solid #e2e8f0; text-align: left; }
+        th { background-color: var(--navy); color: var(--white); font-family: 'Cinzel', serif; }
+        tbody tr:hover { background-color: #f1f5f9; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--white); width: 850px; max-width: 95%; max-height: 90vh; overflow-y: auto; padding: 30px; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); border-top: 5px solid var(--navy); }
+        .modal-header { font-family: 'Cinzel', serif; font-size: 18px; color: var(--navy); margin-bottom: 20px; border-bottom: 2px solid var(--gold); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-actions { display: flex; gap: 10px; }
+        .btn-print { background-color: var(--navy); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-pdf { background-color: var(--gold); color: var(--navy); border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .close-btn { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .profile-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .profile-table td { padding: 10px 15px; border: 1px solid #cbd5e1; font-size: 14px; }
+        .profile-table td:first-child { font-weight: bold; color: var(--navy); width: 38%; background: #f1f5f9; }
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .history-table th, .history-table td { border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 13px; text-align: center; }
+        .history-table th { background: var(--navy); color: white; }
+        @media print {
+            .sidebar, .main-content, .modal-actions { display: none !important; }
+            .modal { position: static !important; display: block !important; background: none !important; }
+            .modal-content { width: 100% !important; max-height: none !important; box-shadow: none !important; padding: 0 !important; border: none !important; }
         }
-        body {
-            font-family: 'Manrope', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            min-height: 100vh;
-        }
-        .sidebar {
-            width: 260px;
-            background-color: var(--navy);
-            color: var(--white);
-            display: flex;
-            flex-direction: column;
-            border-right: 3px solid var(--gold);
-            position: fixed;
-            height: 100vh;
-            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
-            overflow-y: auto;
-        }
-        .sidebar-brand {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0,0,0,0.1);
-        }
-        .sidebar-logo {
-            height: 40px;
-            width: 40px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 2px solid var(--gold);
-            background: var(--white);
-            padding: 2px;
-        }
-        .sidebar-title {
-            font-family: 'Cinzel', serif;
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--gold);
-            letter-spacing: 1px;
-        }
-        .sidebar-menu {
-            list-style: none;
-            padding: 15px 0;
-            margin: 0;
-            flex: 1;
-        }
-        .sidebar-menu li a {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px 25px;
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: 0.3s;
-            border-left: 4px solid transparent;
-        }
-        .sidebar-menu li a:hover, .sidebar-menu li a.active {
-            background-color: rgba(197, 160, 89, 0.15);
-            color: var(--gold);
-            border-left-color: var(--gold);
-        }
-        .sidebar-menu li a i {
-            width: 20px;
-            text-align: center;
-            color: var(--gold);
-        }
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-        .btn-logout {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 10px;
-            width: 100%;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: 40px;
-            box-sizing: border-box;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: var(--white);
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05);
-            border-top: 5px solid var(--navy);
-        }
-        .header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-        h2 {
-            font-family: 'Cinzel', serif;
-            color: var(--navy);
-            margin: 0;
-        }
-        .btn-back {
-            background-color: var(--gold);
-            color: var(--navy);
-            padding: 10px 18px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            transition: 0.3s;
-        }
-        .btn-back:hover {
-            opacity: 0.9;
-        }
-        .filters-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-        .filters-row input, .filters-row select {
-            flex: 1;
-            min-width: 200px;
-            padding: 10px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 13px;
-        }
-        th, td {
-            padding: 12px 14px;
-            border: 1px solid #cbd5e1;
-            text-align: left;
-        }
-        th {
-            background-color: var(--navy);
-            color: var(--white);
-            font-family: 'Cinzel', serif;
-        }
-        tr:nth-child(even) {
-            background-color: #f8fafc;
-        }
-        .status-active { color: var(--success); font-weight: bold; }
-        .status-closed { color: var(--danger); font-weight: bold; }
-        .status-pending { color: #d69e2e; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <!-- Left Sidebar Navigation Menu -->
     <div class="sidebar">
         <div class="sidebar-brand">
             <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
@@ -253,7 +103,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <div class="header-row">
@@ -261,10 +110,9 @@
                 <a href="dashboard.html" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
             </div>
 
-            <!-- Filters Section -->
             <div class="filters-row">
-                <input type="text" id="searchInput" placeholder="Search by Borrower Name, Phone or Loan ID..." oninput="filterTable()">
-                <input type="date" id="dateFilter" onchange="filterTable()">
+                <input type="text" id="searchInput" placeholder="Search by Borrower Name, Phone, Product or Loan ID..." oninput="filterTable()">
+                <input type="date" id="dateFilter" onchange="filterTable()" title="Filter by Loan Date">
                 <select id="categoryFilter" onchange="filterTable()">
                     <option value="">-All Categories-</option>
                     <option value="Jewel Loan">Jewel Loan</option>
@@ -277,10 +125,11 @@
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="PENDING">PENDING</option>
                     <option value="CLOSED">CLOSED</option>
+                    <option value="PAID">PAID (On Time)</option>
+                    <option value="OVERDUE">OVERDUE</option>
                 </select>
             </div>
 
-            <!-- Report Table -->
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -294,36 +143,98 @@
                             <th>Loan Amount (₹)</th>
                             <th>EMI (₹)</th>
                             <th>Tenure</th>
-                            <th>Status</th>
+                            <th>Payment Status & Delay</th>
                         </tr>
                     </thead>
                     <tbody id="reportTableBody">
-                        <tr>
-                            <td colspan="10" style="text-align: center; color: #64748b;">Loading Credit Vault Reports...</td>
-                        </tr>
+                        <tr><td colspan="10" style="text-align: center; color: #64748b;">Loading Credit Vault Reports...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
+    <!-- Modal Popup for Full Credit Vault Loan, Payment History & Borrower Profile -->
+    <div class="modal" id="loanModal">
+        <div class="modal-content" id="printableArea">
+            <div class="modal-header">
+                <span>Credit Vault Loan & Borrower Full Profile</span>
+                <div class="modal-actions">
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                    <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="close-btn" onclick="closeModal()">X</button>
+                </div>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
     <script>
         let allCreditVaultLoans = [];
+        let allPayments = [];
+        let allBorrowers = [];
+        let currentLoan = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
             await loadCreditVaultReports();
         });
 
+        function parseFlexibleDate(dateInput) {
+            if (!dateInput) return new Date();
+            if (dateInput instanceof Date) return new Date(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate());
+            const str = String(dateInput).trim().split('T')[0];
+            if (str.includes('/')) {
+                const parts = str.split('/');
+                if (parts.length === 3) {
+                    if (parts[0].length === 4) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                }
+            }
+            if (str.includes('-')) {
+                const parts = str.split('-');
+                if (parts.length === 3) {
+                    if (parts[0].length === 4) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                }
+            }
+            const fallback = new Date(dateInput);
+            if (!isNaN(fallback.getTime())) return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate());
+            const now = new Date();
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        }
+
+        function formatIndianDate(dateInput) {
+            if (!dateInput) return '-';
+            const d = parseFlexibleDate(dateInput);
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        }
+
+        function computeWeeklyDueDate(loanStartDateStr, installmentNumber) {
+            const d = parseFlexibleDate(loanStartDateStr);
+            d.setDate(d.getDate() + (installmentNumber * 7));
+            return d;
+        }
+
         async function loadCreditVaultReports() {
             const tbody = document.getElementById('reportTableBody');
             try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID
-                );
-                const loans = response.documents;
-                // Filter only Credit Vault loans (Exclude Personal Loans starting with VPL)
-                allCreditVaultLoans = loans.filter(l => l.loan_id && !l.loan_id.startsWith("VPL"));
+                const [loansRes, paymentsRes, borrowersRes] = await Promise.all([
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID, [window.AppwriteQuery.limit(100)]),
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, [window.AppwriteQuery.limit(100)]).catch(() => ({ documents: [] })),
+                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID, [window.AppwriteQuery.limit(100)]).catch(() => ({ documents: [] }))
+                ]);
+
+                allPayments = paymentsRes.documents || [];
+                allBorrowers = borrowersRes.documents || [];
+                const loans = loansRes.documents || [];
+
+                allCreditVaultLoans = loans.filter(l => {
+                    const id = (l.loan_id || '').toUpperCase();
+                    const cat = (l.loan_category || '').trim();
+                    return id && !id.startsWith("VPL") && cat !== "Personal";
+                });
+
+                allCreditVaultLoans.sort((a, b) => parseFlexibleDate(b.loan_date || b.$createdAt) - parseFlexibleDate(a.loan_date || a.$createdAt));
                 renderTable(allCreditVaultLoans);
             } catch (err) {
                 console.error("Error loading Credit Vault reports:", err);
@@ -331,24 +242,67 @@
             }
         }
 
+        function getPaymentStatusInfo(loan) {
+            const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id);
+            let totalPaidAmt = 0;
+            loanPayments.forEach(p => { totalPaidAmt += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0); });
+
+            let totalTenure = 10;
+            if (loan.tenure) {
+                const numMatch = String(loan.tenure).match(/\d+/);
+                if (numMatch) totalTenure = parseInt(numMatch[0]);
+            }
+
+            const installmentAmt = parseFloat(loan.installment_amount || 0);
+            const totalLoanAmt = parseFloat(loan.loan_amount || 0);
+            const paidInstallments = installmentAmt > 0 ? Math.floor((totalPaidAmt + 0.01) / installmentAmt) : loanPayments.length;
+
+            if (loan.status === 'CLOSED') {
+                return { baseLabel: 'CLOSED', displayText: 'CLOSED', delayDays: 0, nextDueDateStr: 'Loan Closed', color: '#C53030' };
+            }
+            if (totalPaidAmt >= totalLoanAmt || paidInstallments >= totalTenure) {
+                return { baseLabel: 'PAID', displayText: 'PAID (Completed)', delayDays: 0, nextDueDateStr: 'Completed', color: '#2F855A' };
+            }
+
+            const nextUnpaidInstNumber = paidInstallments + 1;
+            const loanStartDate = loan.loan_date || loan.$createdAt;
+            const nextDueDateObj = computeWeeklyDueDate(loanStartDate, nextUnpaidInstNumber);
+            const todayMidnight = parseFlexibleDate(new Date());
+
+            const delayDays = Math.round((todayMidnight - nextDueDateObj) / (1000 * 60 * 60 * 24));
+            const nextDueDateStr = formatIndianDate(nextDueDateObj);
+
+            if (delayDays <= 0) {
+                return { baseLabel: 'PAID', displayText: 'PAID (On Time)', delayDays: 0, nextDueDateStr: nextDueDateStr, color: '#2F855A' };
+            }
+            return {
+                baseLabel: 'OVERDUE',
+                displayText: `OVERDUE (${delayDays} ${delayDays === 1 ? 'Day' : 'Days'} Delay)`,
+                delayDays: delayDays,
+                nextDueDateStr: nextDueDateStr,
+                color: '#C53030'
+            };
+        }
+
         function renderTable(loans) {
             const tbody = document.getElementById('reportTableBody');
             if (loans && loans.length > 0) {
                 tbody.innerHTML = '';
                 loans.forEach(loan => {
-                    const statusClass = loan.status === 'ACTIVE' ? 'status-active' : (loan.status === 'CLOSED' ? 'status-closed' : 'status-pending');
+                    const payStatus = getPaymentStatusInfo(loan);
                     const tr = document.createElement('tr');
+                    tr.onclick = () => showLoanDetails(loan);
                     tr.innerHTML = `
-                        <td>${loan.loan_id || '-'}</td>
+                        <td><strong>${loan.loan_id || '-'}</strong></td>
                         <td>${loan.borrower_name || '-'}</td>
                         <td>${loan.phone_number || '-'}</td>
                         <td>${loan.loan_category || '-'}</td>
                         <td>${loan.product_name || '-'}</td>
-                        <td>${loan.loan_date || '-'}</td>
+                        <td>${formatIndianDate(loan.loan_date || loan.$createdAt)}</td>
                         <td>₹${parseFloat(loan.loan_amount || 0).toLocaleString('en-IN')}</td>
                         <td>₹${parseFloat(loan.installment_amount || 0).toLocaleString('en-IN')}</td>
                         <td>${loan.tenure || '-'}</td>
-                        <td><span class="${statusClass}">${loan.status || 'ACTIVE'}</span></td>
+                        <td><span style="color: ${payStatus.color}; font-weight: bold;">${payStatus.displayText}</span></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -367,11 +321,14 @@
                 const name = (loan.borrower_name || '').toLowerCase();
                 const phone = (loan.phone_number || '').toLowerCase();
                 const loanId = (loan.loan_id || '').toLowerCase();
-                
-                const matchesSearch = name.includes(searchQuery) || phone.includes(searchQuery) || loanId.includes(searchQuery);
-                const matchesDate = !dateQuery || loan.loan_date === dateQuery;
+                const prod = (loan.product_name || '').toLowerCase();
+                const payStatus = getPaymentStatusInfo(loan).baseLabel;
+                const loanDateVal = (loan.loan_date || '').split('T')[0];
+
+                const matchesSearch = name.includes(searchQuery) || phone.includes(searchQuery) || loanId.includes(searchQuery) || prod.includes(searchQuery);
+                const matchesDate = !dateQuery || loanDateVal === dateQuery || loan.loan_date === dateQuery;
                 const matchesCategory = !categoryQuery || loan.loan_category === categoryQuery;
-                const matchesStatus = !statusQuery || loan.status === statusQuery;
+                const matchesStatus = !statusQuery || loan.status === statusQuery || payStatus === statusQuery;
 
                 return matchesSearch && matchesDate && matchesCategory && matchesStatus;
             });
@@ -379,6 +336,131 @@
             renderTable(filtered);
         }
 
+        function showLoanDetails(loan) {
+            currentLoan = loan;
+            const modal = document.getElementById('loanModal');
+            const modalBody = document.getElementById('modalBody');
+
+            const matchedBorrower = allBorrowers.find(b => b.full_name === loan.borrower_name || b.phone_number === loan.phone_number) || {};
+            const borrowerIdStr = matchedBorrower.borrower_id ? ` (${matchedBorrower.borrower_id})` : '';
+            const customerDisplayName = (loan.borrower_name || '-') + borrowerIdStr;
+            const formattedDate = formatIndianDate(loan.loan_date || loan.$createdAt);
+
+            const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id);
+            let paidAmount = 0;
+            loanPayments.forEach(p => { paidAmount += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0); });
+
+            const installmentAmt = parseFloat(loan.installment_amount || 0);
+            const paidInstallments = installmentAmt > 0 ? Math.floor((paidAmount + 0.01) / installmentAmt) : loanPayments.length;
+            let totalTenure = 10;
+            if (loan.tenure) {
+                const numMatch = String(loan.tenure).match(/\d+/);
+                if (numMatch) totalTenure = parseInt(numMatch[0]);
+            }
+
+            const remainingInstallments = Math.max(0, totalTenure - paidInstallments);
+            const totalLoanAmtNum = parseFloat(loan.loan_amount || 0);
+            const remainingAmount = Math.max(0, totalLoanAmtNum - paidAmount);
+            const payStatus = getPaymentStatusInfo(loan);
+
+            const delayDisplayText = payStatus.delayDays > 0 
+                ? `<span style="color:#C53030; font-weight:bold;">${payStatus.delayDays} ${payStatus.delayDays === 1 ? 'Day' : 'Days'} Delayed</span>`
+                : `<span style="color:#2F855A; font-weight:bold;">On Time (0 Days Delay)</span>`;
+
+            const productPriceNum = parseFloat(loan.product_price || 0);
+            const downPaymentNum = parseFloat(loan.down_payment || 0);
+            const retailerBalanceNum = parseFloat(loan.disbursed_amount || (productPriceNum > downPaymentNum ? productPriceNum - downPaymentNum : 0));
+
+            let imeiRowsHtml = '';
+            if (loan.loan_category === 'Mobile Phone' || loan.imei_number_1 || loan.imei_number_2) {
+                imeiRowsHtml = `
+                    <tr><td>IMEI Number 1</td><td><strong>${loan.imei_number_1 || '-'}</strong></td></tr>
+                    <tr><td>IMEI Number 2</td><td><strong>${loan.imei_number_2 || '-'}</strong></td></tr>
+                `;
+            }
+
+            let paymentsRowsHtml = '';
+            if (loanPayments.length > 0) {
+                loanPayments.forEach((p, idx) => {
+                    paymentsRowsHtml += `
+                        <tr>
+                            <td>${p.paid_installment || (idx + 1)}</td>
+                            <td>${p.payment_id || '-'}</td>
+                            <td>${formatIndianDate(p.payment_date || p.$createdAt)}</td>
+                            <td style="font-weight:bold; color:#2F855A;">₹${parseFloat(p.amount_paid || 0).toFixed(2)}</td>
+                            <td>${p.payment_mode || '-'}</td>
+                            <td style="font-weight:bold; color:${(p.delayed_details && p.delayed_details !== 'On Time') ? '#C53030' : '#2F855A'};">${p.delayed_details || 'On Time'}</td>
+                        </tr>`;
+                });
+            } else {
+                paymentsRowsHtml = `<tr><td colspan="6" style="color:#64748b;">No payments recorded yet.</td></tr>`;
+            }
+
+            modalBody.innerHTML = `
+                <table class="profile-table">
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Credit Vault Loan & Product Details</th></tr>
+                    <tr><td>Loan ID</td><td><strong>${loan.loan_id || '-'}</strong></td></tr>
+                    <tr><td>Issued By & Retailer Code</td><td>${loan.issued_by || 'Admin'} ${loan.retailer_code ? '(' + loan.retailer_code + ')' : ''}</td></tr>
+                    <tr><td>Loan Started Date</td><td><strong>${formattedDate}</strong></td></tr>
+                    <tr><td>Product Category</td><td>${loan.loan_category || '-'}</td></tr>
+                    <tr><td>Product Name & Model</td><td><strong>${loan.product_name || '-'}</strong></td></tr>
+                    ${imeiRowsHtml}
+                    <tr><td>Product Price</td><td>₹${productPriceNum.toLocaleString('en-IN')}</td></tr>
+                    <tr><td>Down Payment</td><td>₹${downPaymentNum.toLocaleString('en-IN')}</td></tr>
+                    <tr><td>Payment to Retailer (Balance)</td><td>₹${retailerBalanceNum.toLocaleString('en-IN')}</td></tr>
+                    <tr><td>Total Loan Amount (Payable)</td><td><strong>₹${totalLoanAmtNum.toFixed(2)}</strong></td></tr>
+                    <tr><td>Weekly EMI Amount</td><td style="color:#2F855A; font-weight:bold;">₹${installmentAmt.toFixed(2)}</td></tr>
+                    <tr><td>Tenure</td><td>${loan.tenure || totalTenure + ' Weeks'}</td></tr>
+                    <tr><td>Paid Installments</td><td><strong>${paidInstallments} / ${totalTenure}</strong></td></tr>
+                    <tr><td>Remaining Installments</td><td><strong>${remainingInstallments}</strong></td></tr>
+                    <tr><td>Total Paid Amount</td><td style="color:#2F855A; font-weight:bold;">₹${paidAmount.toFixed(2)}</td></tr>
+                    <tr><td>Remaining Balance Amount</td><td style="color:#C53030; font-weight:bold;">₹${remainingAmount.toFixed(2)}</td></tr>
+                    <tr><td>Next Installment Due Date</td><td><strong>${payStatus.nextDueDateStr}</strong></td></tr>
+                    <tr><td>Delayed Days Status</td><td>${delayDisplayText}</td></tr>
+                    <tr><td>Payment Status</td><td><span style="font-weight: bold; color: ${payStatus.color};">${payStatus.displayText}</span></td></tr>
+                    <tr><td>Loan Status</td><td><span style="font-weight: bold; color: ${loan.status === 'CLOSED' ? '#C53030' : '#2F855A'}">${loan.status || 'ACTIVE'}</span></td></tr>
+
+                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Full Borrower Profile</th></tr>
+                    <tr><td>Customer Name & ID</td><td><strong>${customerDisplayName}</strong></td></tr>
+                    <tr><td>Phone / WhatsApp Number</td><td>${loan.phone_number || matchedBorrower.whatsapp_number || '-'}</td></tr>
+                    <tr><td>Father / Spouse Name</td><td>${matchedBorrower.relative_name || '-'}</td></tr>
+                    <tr><td>Date of Birth</td><td>${matchedBorrower.dob ? formatIndianDate(matchedBorrower.dob) : '-'}</td></tr>
+                    <tr><td>PAN Number</td><td>${matchedBorrower.pan_number || '-'}</td></tr>
+                    <tr><td>Address & City</td><td>${matchedBorrower.address || '-'}, ${matchedBorrower.city || ''} ${matchedBorrower.pincode || ''}</td></tr>
+                    <tr><td>Occupation</td><td>${matchedBorrower.occupation || '-'} (${matchedBorrower.job_nature || '-'})</td></tr>
+                    <tr><td>Nominee Name & Contact</td><td>${matchedBorrower.nominee_name || '-'} (${matchedBorrower.nominee_contact || '-'})</td></tr>
+                    <tr><td>Payment Method</td><td>${matchedBorrower.payment_method || '-'} ${matchedBorrower.upi_id ? '(' + matchedBorrower.upi_id + ')' : ''}</td></tr>
+                </table>
+
+                <div style="font-family:'Cinzel',serif; font-weight:bold; color:var(--navy); margin:15px 0 8px 0;">Payment Collection History (${loanPayments.length} Payments)</div>
+                <table class="history-table">
+                    <thead>
+                        <tr><th>Inst #</th><th>Receipt ID</th><th>Paid Date</th><th>Amount Paid</th><th>Mode</th><th>Delay / Status</th></tr>
+                    </thead>
+                    <tbody>${paymentsRowsHtml}</tbody>
+                </table>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('printableArea');
+            const actions = element.querySelector('.modal-actions');
+            actions.style.display = 'none';
+            let fileName = "Credit_Vault_Loan_Profile.pdf";
+            if (currentLoan) {
+                const cleanName = (currentLoan.borrower_name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanId = (currentLoan.loan_id || 'Loan').replace(/[^a-zA-Z0-9]/g, '_');
+                fileName = `${cleanName}_${cleanId}.pdf`;
+            }
+            const opt = {
+                margin: 10, filename: fileName, image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save().then(() => { actions.style.display = 'flex'; });
+        }
+
+        function closeModal() { document.getElementById('loanModal').style.display = 'none'; }
         function handleLogout() {
             sessionStorage.clear();
             localStorage.removeItem('velfincorp_logged_user');
