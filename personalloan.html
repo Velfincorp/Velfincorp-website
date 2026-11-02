@@ -7,6 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Personal Loan Application</title>
+    <link rel="icon" type="image/jpeg" href="velfincorp-logo.jpeg">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
@@ -17,11 +18,11 @@
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
             const userRole = sessionStorage.getItem('velfincorp_role');
 
-            window.pageshow = function(event) {
+            window.addEventListener('pageshow', function(event) {
                 if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
                     window.location.replace('login.html');
                 }
-            };
+            });
 
             const publicPages = ['index.html', 'login.html', 'contact.html', ''];
             if (publicPages.includes(currentPage)) { return; }
@@ -421,31 +422,27 @@
             const loanType = document.getElementById('Loan_Type').value;
             const tenureVal = parseInt(document.getElementById('Tenure_Select').value) || 0;
 
-            if (loanAmount > 0 && tenureVal > 0) {
-                let interestMultiplier = 1.0;
-                if (loanType === "Weekly") {
-                    if (tenureVal === 10) interestMultiplier = 1.075;   
-                    else if (tenureVal === 15) interestMultiplier = 1.125; 
-                    else if (tenureVal === 20) interestMultiplier = 1.24;  
-                } else if (loanType === "Monthly") {
-                    interestMultiplier = 1.15;
-                }
-
-                const totalPayable = loanAmount * interestMultiplier;
+            if (loanAmount > 0) {
+                // 15% ಮುன்கழிவு (Upfront Deduction) போக கையில் கொடுக்கும் தொகை (Disbursed Amount)
                 const deduction = loanAmount * 0.15;
                 const disbursed = loanAmount - deduction;
-                
                 document.getElementById('Disbursed_Amount').value = Math.round(disbursed);
                 document.getElementById('Document_Charge').value = 50;
 
-                const installment = totalPayable / tenureVal;
-                
-                let tenureUnit = " Days";
-                if (loanType === "Weekly") tenureUnit = " Weeks";
-                else if (loanType === "Monthly") tenureUnit = " Months";
+                if (tenureVal > 0) {
+                    // கடன் தொகையை நேராக தவணைக் காலத்தால் வகுத்தல் (எ.கா: 25000 / 10 = 2500)
+                    const installment = Math.round(loanAmount / tenureVal);
 
-                document.getElementById('Tenure').value = tenureVal + tenureUnit;
-                document.getElementById('Installment_Amount').value = Math.round(installment);
+                    let tenureUnit = " Days";
+                    if (loanType === "Weekly") tenureUnit = " Weeks";
+                    else if (loanType === "Monthly") tenureUnit = " Months";
+
+                    document.getElementById('Tenure').value = tenureVal + tenureUnit;
+                    document.getElementById('Installment_Amount').value = installment;
+                } else {
+                    document.getElementById('Tenure').value = '';
+                    document.getElementById('Installment_Amount').value = '';
+                }
             } else {
                 document.getElementById('Disbursed_Amount').value = '';
                 document.getElementById('Tenure').value = '';
@@ -525,7 +522,7 @@
                 );
                 allLoans.push(createdLoan);
 
-                // 2. Trigger Specific WhatsApp Welcome Template based on Loan Type (Daily / Weekly / Monthly)
+                // 2. Trigger Specific WhatsApp Welcome Template based on Loan Type
                 let cleanMobile = String(borrowerPhone).replace(/\D/g, "");
                 if (cleanMobile.length > 10) {
                     cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
@@ -542,7 +539,6 @@
                 let customComponents = {};
 
                 if (loanType === "Daily") {
-                    // MSG91 Daily Loan Template: Exactly 7 parameters (includes Loan ID)
                     templateName = "vel_fin_daily_welcome";
                     customComponents = {
                         body_1: String(borrowerName),
@@ -554,7 +550,6 @@
                         body_7: String(loanDateStr)
                     };
                 } else if (loanType === "Weekly") {
-                    // MSG91 Weekly Loan Template: 8 parameters (includes Loan ID + Previous Day)
                     templateName = "vel_fin_weekly_welcome";
                     customComponents = {
                         body_1: String(borrowerName),
@@ -567,7 +562,6 @@
                         body_8: String(previousDayText)
                     };
                 } else if (loanType === "Monthly") {
-                    // MSG91 Monthly Loan Template: 8 parameters (includes Loan ID + Monthly Due Day)
                     templateName = "vel_fin_monthly_welcome";
                     customComponents = {
                         body_1: String(borrowerName),
