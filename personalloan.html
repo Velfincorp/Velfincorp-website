@@ -165,6 +165,37 @@
         let allBorrowers = [];
         let allLoans = [];
 
+        /* ===== Helpers: fetch ALL records (not just the first 100) ===== */
+        async function fetchAllDocs(dbId, collectionId) {
+            const all = [];
+            const hasOffset = window.AppwriteQuery && typeof window.AppwriteQuery.offset === 'function';
+            let offset = 0;
+            while (true) {
+                const queries = [window.AppwriteQuery.limit(100)];
+                if (hasOffset) queries.push(window.AppwriteQuery.offset(offset));
+                const res = await window.appwriteDatabases.listDocuments(dbId, collectionId, queries);
+                const docs = res.documents || [];
+                all.push(...docs);
+                if (!hasOffset || docs.length < 100) break;
+                offset += 100;
+            }
+            return { documents: all };
+        }
+
+        function last10Digits(v) {
+            const d = String(v || '').replace(/\D/g, '');
+            return d.length > 10 ? d.slice(-10) : d;
+        }
+
+        /* Same borrower = same name AND (if both phones known) same phone */
+        function isSameBorrowerLoan(loan, borrowerName, borrowerPhone) {
+            if (String(loan.borrower_name || '').trim().toLowerCase() !== String(borrowerName || '').trim().toLowerCase()) return false;
+            const lp = last10Digits(loan.phone_number);
+            const bp = last10Digits(borrowerPhone);
+            if (lp && bp) return lp === bp;
+            return true;
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             await loadInitialData();
         });
@@ -173,8 +204,8 @@
             const borrowerSelect = document.getElementById('Borrowers_Details');
             try {
                 const [loansResp, borrowersResp] = await Promise.all([
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID, [window.AppwriteQuery.limit(100)]),
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID, [window.AppwriteQuery.limit(100)])
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID),
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID)
                 ]);
                 allLoans = loansResp.documents || [];
                 allBorrowers = borrowersResp.documents || [];
@@ -199,10 +230,13 @@
             }
         }
 
+        /* FIX: use the HIGHEST existing number + 1 (never count + 1) */
         function generateNextPersonalLoanId() {
             const year = new Date().getFullYear();
-            const filteredLoans = allLoans.filter(l => l.loan_id && l.loan_id.startsWith("VPL"));
-            const nextSeq = filteredLoans.length + 1;
+            const usedSeqs = allLoans
+                .filter(l => l.loan_id && String(l.loan_id).startsWith("VPL"))
+                .map(l => parseInt(String(l.loan_id).split(/[-\/]/)[1], 10) || 0);
+            const nextSeq = (usedSeqs.length ? Math.max(...usedSeqs) : 0) + 1;
             document.getElementById('Loan_ID').value = `VPL/${String(nextSeq).padStart(3, '0')}/${year}`;
         }
 
@@ -210,7 +244,8 @@
             const borrowerSelect = document.getElementById('Borrowers_Details');
             const borrowerName = borrowerSelect.value;
             if (!borrowerName) return;
-            const hasActive = allLoans.some(l => l.borrower_name === borrowerName && l.status === 'ACTIVE');
+            const phone = (borrowerSelect.selectedIndex >= 0 && borrowerSelect.options[borrowerSelect.selectedIndex].dataset.phone) || '';
+            const hasActive = allLoans.some(l => isSameBorrowerLoan(l, borrowerName, phone) && l.status === 'ACTIVE');
             if (hasActive) {
                 alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது. பழைய லோனை முழுமையாக மூடாமல் புதிய லோன் வழங்க முடியாது!");
                 borrowerSelect.value = "";
@@ -308,7 +343,7 @@
             }
             const borrowerPhone = rawPhone || "8778003840";
 
-            const loanId = document.getElementById('Loan_ID').value;
+            let loanId = document.getElementById('Loan_ID').value;
             const emiAmountNum = Math.round(parseFloat(document.getElementById('Installment_Amount').value) || 0);
             const emiAmount = emiAmountNum.toString();
             const tenure = document.getElementById('Tenure').value;
@@ -323,16 +358,22 @@
                 return false;
             }
 
-            if (allLoans.some(l => l.borrower_name === borrowerName && l.status === 'ACTIVE')) {
-                alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது!");
-                return false;
-            }
-
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerText = "Saving Loan & Sending WhatsApp...";
 
             try {
+                // Refresh the latest loans from the database BEFORE saving (so the Loan ID and ACTIVE check are never stale)
+                try {
+                    const freshCheck = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID);
+                    allLoans = freshCheck.documents || allLoans;
+                } catch (e) { console.warn("Could not refresh loans:", e); }
+
+                if (allLoans.some(l => isSameBorrowerLoan(l, borrowerName, borrowerPhone) && l.status === 'ACTIVE')) {
+                    alert("எச்சரிக்கை: இந்த வாடிக்கையாளருக்கு ஏற்கனவே நடைமுறையில் (ACTIVE) லோன் உள்ளது!");
+                    return false;
+                }
+
                 const today = new Date();
                 const dd = String(today.getDate()).padStart(2, '0');
                 const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -354,9 +395,27 @@
                     loan_category: "Personal"
                 };
 
-                const createdLoan = await window.appwriteDatabases.createDocument(
-                    VFC_DB.DB_ID, VFC_DB.LOANS_ID, window.AppwriteID.unique(), loanPayload
-                );
+                // Save with a fresh Loan ID; if the ID is already taken (conflict), refresh and try again
+                let createdLoan = null;
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    try {
+                        if (attempt > 0) {
+                            const again = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID);
+                            allLoans = again.documents || allLoans;
+                        }
+                        generateNextPersonalLoanId();
+                        loanId = document.getElementById('Loan_ID').value;
+                        loanPayload.loan_id = loanId;
+
+                        createdLoan = await window.appwriteDatabases.createDocument(
+                            VFC_DB.DB_ID, VFC_DB.LOANS_ID, window.AppwriteID.unique(), loanPayload
+                        );
+                        break;
+                    } catch (saveErr) {
+                        const isConflict = saveErr && (saveErr.code === 409 || /already exist|unique/i.test(String(saveErr.message || '')));
+                        if (!isConflict || attempt === 2) throw saveErr;
+                    }
+                }
                 allLoans.push(createdLoan);
 
                 let cleanMobile = String(borrowerPhone).replace(/\D/g, "");
@@ -404,7 +463,7 @@
                     if (execRes && execRes.status === 'failed') {
                         alert("Personal Loan Saved! ஆனால் வாட்ஸ்அப் மெசேஜ் அனுப்புவதில் பிழை: " + (execRes.errors || execRes.responseBody));
                     } else {
-                        alert(`Personal Loan (${loanType}) saved and WhatsApp message (${templateName}) sent to ${finalMobile}!`);
+                        alert(`Personal Loan (${loanType}) saved as ${loanId} and WhatsApp message (${templateName}) sent to ${finalMobile}!`);
                     }
                 } catch (fnErr) {
                     console.error("WhatsApp Function Error:", fnErr);
