@@ -72,7 +72,8 @@
         .history-table th { background: var(--navy); color: white; }
         @media print {
             .sidebar, .main-content, .modal-actions { display: none !important; }
-            .modal { position: static !important; display: block !important; background: none !important; }
+            .modal { display: none !important; }
+            .modal.open { position: static !important; display: block !important; background: none !important; }
             .modal-content { width: 100% !important; max-height: none !important; box-shadow: none !important; padding: 0 !important; border: none !important; }
         }
     </style>
@@ -111,7 +112,7 @@
             </div>
 
             <div class="filters-row">
-                <input type="text" id="searchInput" placeholder="Search by Borrower Name, Phone, Product or Loan ID..." oninput="filterTable()">
+                <input type="text" id="searchInput" placeholder="Search Name, Phone, Product, Loan ID..." oninput="filterTable()">
                 <input type="date" id="dateFilter" onchange="filterTable()" title="Filter by Loan Date">
                 <select id="categoryFilter" onchange="filterTable()">
                     <option value="">-All Categories-</option>
@@ -174,6 +175,24 @@
         let allPayments = [];
         let allBorrowers = [];
         let currentLoan = null;
+        let duplicateLoanIds = new Set();
+
+        /* ===== Helper: fetch ALL records (not just the first 100) ===== */
+        async function fetchAllDocs(dbId, collectionId) {
+            const all = [];
+            const hasOffset = window.AppwriteQuery && typeof window.AppwriteQuery.offset === 'function';
+            let offset = 0;
+            while (true) {
+                const queries = [window.AppwriteQuery.limit(100)];
+                if (hasOffset) queries.push(window.AppwriteQuery.offset(offset));
+                const res = await window.appwriteDatabases.listDocuments(dbId, collectionId, queries);
+                const docs = res.documents || [];
+                all.push(...docs);
+                if (!hasOffset || docs.length < 100) break;
+                offset += 100;
+            }
+            return { documents: all };
+        }
 
         window.addEventListener('DOMContentLoaded', async () => {
             await loadCreditVaultReports();
@@ -209,24 +228,71 @@
             return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
         }
 
+        function toISODate(dateInput) {
+            if (!dateInput) return '';
+            const d = parseFlexibleDate(dateInput);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
         function computeWeeklyDueDate(loanStartDateStr, installmentNumber) {
             const d = parseFlexibleDate(loanStartDateStr);
             d.setDate(d.getDate() + (installmentNumber * 7));
             return d;
         }
 
+        /* ===== Matching helpers: each loan gets ONLY its own payments / borrower ===== */
+        function last10Digits(v) {
+            const d = String(v || '').replace(/\D/g, '');
+            return d.length > 10 ? d.slice(-10) : d;
+        }
+        function normText(v) { return String(v || '').trim().toLowerCase(); }
+
+        function paymentBelongsToLoan(p, loan) {
+            if (!p.loan_id || p.loan_id !== loan.loan_id) return false;
+
+            const pName = normText(p.borrower_name || p.customer_name || p.full_name);
+            if (pName) return pName === normText(loan.borrower_name);
+
+            const pPhone = last10Digits(p.phone_number || p.mobile || p.whatsapp_number || p.borrower_phone);
+            if (pPhone) return pPhone === last10Digits(loan.phone_number);
+
+            // Fallback only when this Loan ID is duplicated: a payment cannot be older than the loan
+            if (duplicateLoanIds.has(loan.loan_id)) {
+                return parseFlexibleDate(p.payment_date || p.$createdAt) >= parseFlexibleDate(loan.loan_date || loan.$createdAt);
+            }
+            return true;
+        }
+
+        function getLoanPayments(loan) {
+            return allPayments.filter(p => paymentBelongsToLoan(p, loan));
+        }
+
+        function findBorrowerForLoan(loan) {
+            const loanName = normText(loan.borrower_name);
+            const loanPhone = last10Digits(loan.phone_number);
+            const phoneMatch = b => loanPhone && (last10Digits(b.whatsapp_number) === loanPhone || last10Digits(b.phone_number) === loanPhone);
+            return allBorrowers.find(b => normText(b.full_name) === loanName && phoneMatch(b))
+                || allBorrowers.find(b => normText(b.full_name) === loanName)
+                || allBorrowers.find(b => phoneMatch(b))
+                || {};
+        }
+
         async function loadCreditVaultReports() {
             const tbody = document.getElementById('reportTableBody');
             try {
                 const [loansRes, paymentsRes, borrowersRes] = await Promise.all([
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID, [window.AppwriteQuery.limit(100)]),
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, [window.AppwriteQuery.limit(100)]).catch(() => ({ documents: [] })),
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID, [window.AppwriteQuery.limit(100)]).catch(() => ({ documents: [] }))
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID),
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID).catch(() => ({ documents: [] })),
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID).catch(() => ({ documents: [] }))
                 ]);
 
                 allPayments = paymentsRes.documents || [];
                 allBorrowers = borrowersRes.documents || [];
                 const loans = loansRes.documents || [];
+
+                const idCounts = {};
+                loans.forEach(l => { if (l.loan_id) idCounts[l.loan_id] = (idCounts[l.loan_id] || 0) + 1; });
+                duplicateLoanIds = new Set(Object.keys(idCounts).filter(id => idCounts[id] > 1));
 
                 allCreditVaultLoans = loans.filter(l => {
                     const id = (l.loan_id || '').toUpperCase();
@@ -243,7 +309,7 @@
         }
 
         function getPaymentStatusInfo(loan) {
-            const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id);
+            const loanPayments = getLoanPayments(loan);
             let totalPaidAmt = 0;
             loanPayments.forEach(p => { totalPaidAmt += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0); });
 
@@ -260,7 +326,7 @@
             if (loan.status === 'CLOSED') {
                 return { baseLabel: 'CLOSED', displayText: 'CLOSED', delayDays: 0, nextDueDateStr: 'Loan Closed', color: '#C53030' };
             }
-            if (totalPaidAmt >= totalLoanAmt || paidInstallments >= totalTenure) {
+            if ((totalLoanAmt > 0 && totalPaidAmt >= totalLoanAmt) || paidInstallments >= totalTenure) {
                 return { baseLabel: 'PAID', displayText: 'PAID (Completed)', delayDays: 0, nextDueDateStr: 'Completed', color: '#2F855A' };
             }
 
@@ -323,10 +389,9 @@
                 const loanId = (loan.loan_id || '').toLowerCase();
                 const prod = (loan.product_name || '').toLowerCase();
                 const payStatus = getPaymentStatusInfo(loan).baseLabel;
-                const loanDateVal = (loan.loan_date || '').split('T')[0];
 
                 const matchesSearch = name.includes(searchQuery) || phone.includes(searchQuery) || loanId.includes(searchQuery) || prod.includes(searchQuery);
-                const matchesDate = !dateQuery || loanDateVal === dateQuery || loan.loan_date === dateQuery;
+                const matchesDate = !dateQuery || toISODate(loan.loan_date || loan.$createdAt) === dateQuery;
                 const matchesCategory = !categoryQuery || loan.loan_category === categoryQuery;
                 const matchesStatus = !statusQuery || loan.status === statusQuery || payStatus === statusQuery;
 
@@ -341,12 +406,12 @@
             const modal = document.getElementById('loanModal');
             const modalBody = document.getElementById('modalBody');
 
-            const matchedBorrower = allBorrowers.find(b => b.full_name === loan.borrower_name || b.phone_number === loan.phone_number) || {};
+            const matchedBorrower = findBorrowerForLoan(loan);
             const borrowerIdStr = matchedBorrower.borrower_id ? ` (${matchedBorrower.borrower_id})` : '';
             const customerDisplayName = (loan.borrower_name || '-') + borrowerIdStr;
             const formattedDate = formatIndianDate(loan.loan_date || loan.$createdAt);
 
-            const loanPayments = allPayments.filter(p => p.loan_id === loan.loan_id);
+            const loanPayments = getLoanPayments(loan);
             let paidAmount = 0;
             loanPayments.forEach(p => { paidAmount += parseFloat(p.amount_paid || p.paid_amount || p.amount || 0); });
 
@@ -441,6 +506,7 @@
                 </table>
             `;
             modal.style.display = 'flex';
+            modal.classList.add('open');
         }
 
         function downloadPDF() {
@@ -460,7 +526,11 @@
             html2pdf().from(element).set(opt).save().then(() => { actions.style.display = 'flex'; });
         }
 
-        function closeModal() { document.getElementById('loanModal').style.display = 'none'; }
+        function closeModal() {
+            const modal = document.getElementById('loanModal');
+            modal.style.display = 'none';
+            modal.classList.remove('open');
+        }
         function handleLogout() {
             sessionStorage.clear();
             localStorage.removeItem('velfincorp_logged_user');
