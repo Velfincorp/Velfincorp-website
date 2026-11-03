@@ -249,6 +249,31 @@
             letter-spacing: 1px;
             color: var(--navy);
         }
+
+        /* ---------- Down payment message ---------- */
+        .dp-msg {
+            display: none;
+            margin-top: 8px;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+        .dp-msg.info {
+            display: block;
+            background: #f0fdf4;
+            color: #2F855A;
+            border: 1px solid #bbf7d0;
+        }
+        .dp-msg.error {
+            display: block;
+            background: #fef2f2;
+            color: var(--danger);
+            border: 1px solid #fecaca;
+        }
+
+        /* ---------- Calc summary + plan cards ---------- */
         .calc-summary {
             background-color: #f8fafc;
             border: 1px dashed var(--gold);
@@ -269,24 +294,95 @@
             font-weight: bold;
             color: #2F855A;
         }
-        .btn-copy-quote {
+        .plan-title {
+            margin: 16px 0 10px 0;
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--navy);
+        }
+        .plan-title small {
+            color: #64748b;
+            font-weight: 500;
+        }
+        .plan-cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        .plan-card {
+            background: var(--white);
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            user-select: none;
+        }
+        .plan-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(197, 160, 89, 0.25);
+        }
+        .plan-card .pc-weeks {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+        }
+        .plan-card .pc-emi {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--navy);
+            margin: 4px 0 2px 0;
+        }
+        .plan-card .pc-sub {
+            font-size: 10.5px;
+            color: #94a3b8;
+        }
+        .plan-card.selected {
+            background: var(--navy);
+            border-color: var(--gold);
+        }
+        .plan-card.selected .pc-weeks { color: var(--gold); }
+        .plan-card.selected .pc-emi { color: var(--white); }
+        .plan-card.selected .pc-sub { color: #cbd5e1; }
+
+        .quote-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .btn-copy-quote, .btn-image {
             background-color: var(--gold);
             color: var(--navy);
             border: none;
-            padding: 8px 14px;
+            padding: 9px 14px;
             border-radius: 5px;
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 12px;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+        }
+        .btn-image {
+            background-color: var(--navy);
+            color: var(--white);
         }
         .btn-copy-quote:hover {
             background-color: var(--navy);
             color: var(--white);
         }
+        .btn-image:hover {
+            background-color: var(--gold);
+            color: var(--navy);
+        }
+        .btn-copy-quote:disabled, .btn-image:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .btn-submit {
             background-color: var(--navy);
             color: white;
@@ -334,6 +430,13 @@
             background-color: rgba(197, 160, 89, 0.15);
             font-weight: bold;
             color: var(--navy);
+        }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 15px; }
+            .container { padding: 20px; }
+            .plan-cards { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -454,6 +557,7 @@
                     <div class="form-group">
                         <label>Down Payment (₹) * <small style="color:var(--gold);">(Min 25% allowed, Default 30%)</small></label>
                         <input type="number" id="Down_Payment" oninput="calculateCreditVault()" placeholder="0.00" required>
+                        <div id="dpMsg" class="dp-msg"></div>
                     </div>
                 </div>
 
@@ -463,9 +567,27 @@
                         <div class="calc-item">Setup Fee (4%): <span id="disp_setup">₹0</span></div>
                         <div class="calc-item">Processing Fee (2.5%): <span id="disp_proc">₹0</span></div>
                     </div>
-                    <button type="button" class="btn-copy-quote" onclick="copyEmiQuotation()">
-                        <i class="fas fa-copy"></i> Copy EMI Quotation (10 to 30 Weeks)
-                    </button>
+
+                    <div class="plan-title">
+                        <i class="fas fa-calendar-check"></i> வாராந்திர EMI திட்டங்கள்
+                        <small>(தேவையான வாரத்தைக் கிளிக் செய்யவும் - கீழே Tenure, Loan Amount, EMI தானாக நிரம்பும்)</small>
+                    </div>
+                    <div id="planCards" class="plan-cards"></div>
+
+                    <div class="quote-actions">
+                        <button type="button" class="btn-copy-quote" onclick="copyEmiQuotation()">
+                            <i class="fas fa-copy"></i> Copy EMI Quotation (Text)
+                        </button>
+                        <button type="button" class="btn-image" onclick="downloadQuoteImage()">
+                            <i class="fas fa-download"></i> Download Quotation Image
+                        </button>
+                        <button type="button" class="btn-image" onclick="copyQuoteImage()">
+                            <i class="fas fa-image"></i> Copy Image
+                        </button>
+                        <button type="button" class="btn-image" id="btnShareImage" onclick="shareQuoteImage()">
+                            <i class="fab fa-whatsapp"></i> Share Image
+                        </button>
+                    </div>
                 </div>
 
                 <div class="form-row">
@@ -513,6 +635,7 @@
         let allLoans = [];
         let lockedRetailerObj = null;
 
+        const TENURE_OPTIONS = [10, 15, 20, 25, 30];
         const TENURE_INTEREST_RATES = {
             10: 0.05079,
             15: 0.09778,
@@ -520,6 +643,10 @@
             25: 0.28086,
             30: 0.33801
         };
+
+        function inr(n) {
+            return '₹' + Math.round(n).toLocaleString('en-IN');
+        }
 
         function computeWeeklyEmiForTenure(balanceAmount, weeks) {
             const setupFee = balanceAmount * 0.04;
@@ -530,36 +657,69 @@
             return Math.round(totalPayable / weeks);
         }
 
-        function copyEmiQuotation() {
-            const productName = document.getElementById('Product_Name').value.trim() || 'Mobile';
+        /* ================= EMI PLAN CARDS ================= */
+        function renderPlanCards(balanceAmount) {
+            const box = document.getElementById('planCards');
+            const selectedWeeks = parseInt(document.getElementById('Tenure').value) || 0;
+            box.innerHTML = '';
+            TENURE_OPTIONS.forEach(w => {
+                const emi = computeWeeklyEmiForTenure(balanceAmount, w);
+                const card = document.createElement('div');
+                card.className = 'plan-card' + (w === selectedWeeks ? ' selected' : '');
+                card.innerHTML =
+                    '<div class="pc-weeks">' + w + ' வாரங்கள்</div>' +
+                    '<div class="pc-emi">' + inr(emi) + '</div>' +
+                    '<div class="pc-sub">வாரம் / Total ' + inr(emi * w) + '</div>';
+                card.onclick = () => selectPlan(w);
+                box.appendChild(card);
+            });
+        }
+
+        function selectPlan(weeks) {
+            document.getElementById('Tenure').value = String(weeks);
+            calculateCreditVault();
+        }
+
+        /* ================= QUOTATION DATA ================= */
+        function getQuoteData() {
+            const productName = document.getElementById('Product_Name').value.trim() || 'Product';
             const price = parseFloat(document.getElementById('Product_Price').value) || 0;
             const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
 
             if (price <= 0 || downPayment <= 0 || price < downPayment) {
                 alert("தயவுசெய்து பொருளின் விலை மற்றும் டவுன் பேமெண்ட் தொகையை உள்ளிடவும்!");
-                return;
+                return null;
             }
+            if (downPayment < price * 0.25) {
+                alert("டவுன் பேமெண்ட் குறைந்தபட்சம் 25% (" + inr(price * 0.25) + ") இருக்க வேண்டும்!");
+                return null;
+            }
+            const balance = price - downPayment;
+            const plans = TENURE_OPTIONS.map(w => ({ weeks: w, emi: computeWeeklyEmiForTenure(balance, w) }));
+            const selectedWeeks = parseInt(document.getElementById('Tenure').value) || 0;
+            return { productName, price, downPayment, balance, plans, selectedWeeks };
+        }
 
-            const balanceAmount = price - downPayment;
-            const emi10 = computeWeeklyEmiForTenure(balanceAmount, 10);
-            const emi15 = computeWeeklyEmiForTenure(balanceAmount, 15);
-            const emi20 = computeWeeklyEmiForTenure(balanceAmount, 20);
-            const emi25 = computeWeeklyEmiForTenure(balanceAmount, 25);
-            const emi30 = computeWeeklyEmiForTenure(balanceAmount, 30);
+        /* ================= COPY TEXT QUOTATION ================= */
+        function copyEmiQuotation() {
+            const d = getQuoteData();
+            if (!d) return;
+            const p = {};
+            d.plans.forEach(x => p[x.weeks] = x.emi);
 
             const quoteText = `✨ *VEL FIN CORP - EMI QUOTATION* ✨
 
-📱 *பொருள்:* ${productName}
-💰 *விலை:* ₹${Math.round(price).toLocaleString('en-IN')}
-💵 *டவுன் பேமெண்ட்:* ₹${Math.round(downPayment).toLocaleString('en-IN')}
-🏪 *Payment to Retailer:* ₹${Math.round(balanceAmount).toLocaleString('en-IN')}
+📱 *பொருள்:* ${d.productName}
+💰 *விலை:* ${inr(d.price)}
+💵 *டவுன் பேமெண்ட்:* ${inr(d.downPayment)}
+🏪 *Payment to Retailer:* ${inr(d.balance)}
 
 📅 *வாராந்திர தவணைத் திட்டங்கள்:*
-🔹 *10 வாரங்கள்:* வாரம் ₹${emi10.toLocaleString('en-IN')}
-🔹 *15 வாரங்கள்:* வாரம் ₹${emi15.toLocaleString('en-IN')}
-🔹 *20 வாரங்கள்:* வாரம் ₹${emi20.toLocaleString('en-IN')}
-🔹 *25 வாரங்கள்:* வாரம் ₹${emi25.toLocaleString('en-IN')}
-🔹 *30 வாரங்கள்:* வாரம் ₹${emi30.toLocaleString('en-IN')}
+🔹 *10 வாரங்கள்:* வாரம் ₹${p[10].toLocaleString('en-IN')}
+🔹 *15 வாரங்கள்:* வாரம் ₹${p[15].toLocaleString('en-IN')}
+🔹 *20 வாரங்கள்:* வாரம் ₹${p[20].toLocaleString('en-IN')}
+🔹 *25 வாரங்கள்:* வாரம் ₹${p[25].toLocaleString('en-IN')}
+🔹 *30 வாரங்கள்:* வாரம் ₹${p[30].toLocaleString('en-IN')}
 
 நன்றி,
 *Team Vel Fin Corp* 🤝`;
@@ -571,6 +731,239 @@
             });
         }
 
+        /* ================= QUOTATION IMAGE (CANVAS) ================= */
+        function loadLogoImage() {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = 'velfincorp-logo.jpeg';
+            });
+        }
+
+        function canvasRoundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function fitText(ctx, text, maxWidth) {
+            if (ctx.measureText(text).width <= maxWidth) return text;
+            let t = text;
+            while (t.length > 1 && ctx.measureText(t + '…').width > maxWidth) {
+                t = t.slice(0, -1);
+            }
+            return t + '…';
+        }
+
+        async function buildQuoteCanvas() {
+            const d = getQuoteData();
+            if (!d) return null;
+
+            const NAVY = '#0F1D36', GOLD = '#C5A059';
+            const TAMIL_FONT = '"Noto Sans Tamil","Nirmala UI","Latha",Manrope,Arial,sans-serif';
+            const W = 1080, H = 1380;
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            const ctx = canvas.getContext('2d');
+
+            // Borders
+            ctx.fillStyle = NAVY;
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = GOLD;
+            ctx.fillRect(18, 18, W - 36, H - 36);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(24, 24, W - 48, H - 48);
+
+            // Header band
+            ctx.fillStyle = NAVY;
+            ctx.fillRect(24, 24, W - 48, 230);
+
+            // Logo
+            const logo = await loadLogoImage();
+            const cx = 140, cy = 139, r = 78;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            if (logo) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(cx, cy, r - 4, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.drawImage(logo, cx - r + 4, cy - r + 4, (r - 4) * 2, (r - 4) * 2);
+                ctx.restore();
+            }
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = GOLD;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            // Title
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = GOLD;
+            ctx.font = '700 58px Cinzel, serif';
+            ctx.fillText('VEL FIN CORP', 250, 138);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '600 32px ' + TAMIL_FONT;
+            ctx.fillText('EMI QUOTATION', 252, 192);
+
+            // Info panel
+            ctx.fillStyle = '#F8F9FB';
+            canvasRoundRect(ctx, 60, 285, W - 120, 330, 18);
+            ctx.fill();
+            ctx.strokeStyle = '#E2E8F0';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = NAVY;
+            ctx.font = '700 42px ' + TAMIL_FONT;
+            ctx.fillText(fitText(ctx, d.productName, W - 200), 90, 350);
+
+            ctx.strokeStyle = GOLD;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(90, 375);
+            ctx.lineTo(W - 90, 375);
+            ctx.stroke();
+
+            const infoRows = [
+                ['பொருளின் விலை', inr(d.price)],
+                ['டவுன் பேமெண்ட்', inr(d.downPayment)],
+                ['நிதி தொகை (Finance Amount)', inr(d.balance)]
+            ];
+            infoRows.forEach((row, i) => {
+                const y = 440 + i * 70;
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#475569';
+                ctx.font = '600 32px ' + TAMIL_FONT;
+                ctx.fillText(row[0], 90, y);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = NAVY;
+                ctx.font = '800 38px Manrope, Arial, sans-serif';
+                ctx.fillText(row[1], W - 90, y);
+            });
+
+            // Section title
+            ctx.textAlign = 'center';
+            ctx.fillStyle = NAVY;
+            ctx.font = '700 38px ' + TAMIL_FONT;
+            ctx.fillText('வாராந்திர தவணைத் திட்டங்கள்', W / 2, 690);
+            ctx.strokeStyle = GOLD;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(W / 2 - 220, 712);
+            ctx.lineTo(W / 2 + 220, 712);
+            ctx.stroke();
+
+            // Plan rows
+            d.plans.forEach((pl, i) => {
+                const y = 740 + i * 112;
+                const isSel = pl.weeks === d.selectedWeeks;
+                ctx.fillStyle = isSel ? NAVY : '#F1F5F9';
+                canvasRoundRect(ctx, 60, y, W - 120, 98, 16);
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = isSel ? GOLD : '#E2E8F0';
+                ctx.stroke();
+
+                ctx.textAlign = 'left';
+                ctx.fillStyle = isSel ? GOLD : NAVY;
+                ctx.font = '700 38px ' + TAMIL_FONT;
+                ctx.fillText(pl.weeks + ' வாரங்கள்', 95, y + 64);
+
+                ctx.textAlign = 'right';
+                ctx.fillStyle = isSel ? '#FFFFFF' : NAVY;
+                ctx.font = '800 44px Manrope, Arial, sans-serif';
+                ctx.fillText(inr(pl.emi) + ' / வாரம்', W - 95, y + 66);
+            });
+
+            // Footer
+            ctx.textAlign = 'center';
+            ctx.fillStyle = NAVY;
+            ctx.font = '700 32px ' + TAMIL_FONT;
+            ctx.fillText('நன்றி!  Team Vel Fin Corp', W / 2, 1322);
+            ctx.fillStyle = '#94A3B8';
+            ctx.font = '500 22px Manrope, Arial, sans-serif';
+            ctx.fillText(new Date().toLocaleDateString('en-GB'), W / 2, 1350);
+
+            return canvas;
+        }
+
+        function canvasToBlob(canvas) {
+            return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        }
+
+        function safeFileName() {
+            const n = (document.getElementById('Product_Name').value.trim() || 'Quotation')
+                .replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            return 'VelFinCorp_EMI_' + (n || 'Quotation') + '.png';
+        }
+
+        async function downloadQuoteImage() {
+            const canvas = await buildQuoteCanvas();
+            if (!canvas) return;
+            const blob = await canvasToBlob(canvas);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = safeFileName();
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+
+        async function copyQuoteImage() {
+            const canvas = await buildQuoteCanvas();
+            if (!canvas) return;
+            const blob = await canvasToBlob(canvas);
+            try {
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                alert("Quotation Image காப்பி செய்யப்பட்டது! வாட்ஸ்அப்பில் Ctrl + V செய்து அனுப்பலாம்.");
+            } catch (e) {
+                alert("இந்த பிரவுசரில் Image Copy ஆகவில்லை. 'Download Quotation Image' பட்டனைப் பயன்படுத்தவும்.");
+            }
+        }
+
+        async function shareQuoteImage() {
+            const canvas = await buildQuoteCanvas();
+            if (!canvas) return;
+            const blob = await canvasToBlob(canvas);
+            const file = new File([blob], safeFileName(), { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: 'Vel Fin Corp - EMI Quotation' });
+                } catch (e) { /* user cancelled */ }
+            } else {
+                // Desktop fallback: download the image
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = safeFileName();
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 2000);
+                alert("இந்த சாதனத்தில் நேரடி Share இல்லை. Image டவுன்லோட் ஆகிவிட்டது; வாட்ஸ்அப்பில் அட்டாச் செய்து அனுப்பவும்.");
+            }
+        }
+
+        /* ================= IMEI / DATE HELPERS ================= */
         function formatIMEIInput(el) {
             const digits = el.value.replace(/\D/g, '').substring(0, 15);
             const parts = [];
@@ -895,42 +1288,69 @@
             calculateCreditVault();
         }
 
+        function clearCalcOutputs(hideSummary) {
+            if (hideSummary) document.getElementById('calcSummaryBox').style.display = 'none';
+            document.getElementById('Loan_Amount').value = '';
+            document.getElementById('Weekly_EMI').value = '';
+        }
+
         function calculateCreditVault() {
             const price = parseFloat(document.getElementById('Product_Price').value) || 0;
             const downPayment = parseFloat(document.getElementById('Down_Payment').value) || 0;
             const tenureWeeks = parseInt(document.getElementById('Tenure').value) || 0;
             const summaryBox = document.getElementById('calcSummaryBox');
+            const dpMsg = document.getElementById('dpMsg');
 
-            if (price > 0 && price >= downPayment) {
-                const minAllowedDownPayment = price * 0.25;
-                if (downPayment < minAllowedDownPayment) {
-                    summaryBox.style.display = 'none';
-                    document.getElementById('Loan_Amount').value = '';
-                    document.getElementById('Weekly_EMI').value = '';
-                    return;
-                }
+            // No price yet
+            if (price <= 0) {
+                dpMsg.className = 'dp-msg';
+                dpMsg.innerHTML = '';
+                clearCalcOutputs(true);
+                return;
+            }
 
-                const balanceAmount = price - downPayment;
-                const setupFee = balanceAmount * 0.04;
-                const procFee = balanceAmount * 0.025;
+            const minDP = Math.ceil(price * 0.25);
+            const defaultDP = Math.round(price * 0.30);
 
-                summaryBox.style.display = 'block';
-                document.getElementById('disp_balance').innerText = '₹' + Math.round(balanceAmount);
-                document.getElementById('disp_setup').innerText = '₹' + Math.round(setupFee);
-                document.getElementById('disp_proc').innerText = '₹' + Math.round(procFee);
+            // Down payment greater than price
+            if (downPayment > price) {
+                dpMsg.className = 'dp-msg error';
+                dpMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> டவுன் பேமெண்ட் பொருளின் விலையை (' + inr(price) + ') விட அதிகமாக இருக்கக் கூடாது!';
+                clearCalcOutputs(true);
+                return;
+            }
 
-                if (tenureWeeks > 0) {
-                    const weeklyEmi = computeWeeklyEmiForTenure(balanceAmount, tenureWeeks);
-                    const finalTotalPayable = weeklyEmi * tenureWeeks;
+            // Below 25% minimum
+            if (downPayment < minDP) {
+                dpMsg.className = 'dp-msg error';
+                dpMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> குறைந்தபட்ச டவுன் பேமெண்ட் (25%): <b>' + inr(minDP) + '</b>. இதை விடக் குறைவாக அனுமதி இல்லை! (Default 30% = ' + inr(defaultDP) + ')';
+                clearCalcOutputs(true);
+                return;
+            }
 
-                    document.getElementById('Weekly_EMI').value = weeklyEmi;
-                    document.getElementById('Loan_Amount').value = finalTotalPayable;
-                } else {
-                    document.getElementById('Loan_Amount').value = '';
-                    document.getElementById('Weekly_EMI').value = '';
-                }
+            // Valid down payment
+            dpMsg.className = 'dp-msg info';
+            dpMsg.innerHTML = 'குறைந்தபட்சம் (25%): <b>' + inr(minDP) + '</b> &nbsp;|&nbsp; Default (30%): <b>' + inr(defaultDP) + '</b>';
+
+            const balanceAmount = price - downPayment;
+            const setupFee = balanceAmount * 0.04;
+            const procFee = balanceAmount * 0.025;
+
+            summaryBox.style.display = 'block';
+            document.getElementById('disp_balance').innerText = '₹' + Math.round(balanceAmount);
+            document.getElementById('disp_setup').innerText = '₹' + Math.round(setupFee);
+            document.getElementById('disp_proc').innerText = '₹' + Math.round(procFee);
+
+            // Cards (also highlights selected tenure)
+            renderPlanCards(balanceAmount);
+
+            if (tenureWeeks > 0) {
+                const weeklyEmi = computeWeeklyEmiForTenure(balanceAmount, tenureWeeks);
+                const finalTotalPayable = weeklyEmi * tenureWeeks;
+
+                document.getElementById('Weekly_EMI').value = weeklyEmi;
+                document.getElementById('Loan_Amount').value = finalTotalPayable;
             } else {
-                summaryBox.style.display = 'none';
                 document.getElementById('Loan_Amount').value = '';
                 document.getElementById('Weekly_EMI').value = '';
             }
@@ -1085,6 +1505,7 @@
 
                 document.getElementById('creditVaultForm').reset();
                 document.getElementById('calcSummaryBox').style.display = 'none';
+                document.getElementById('dpMsg').className = 'dp-msg';
                 document.getElementById('imeiFieldsGroup').classList.add('hidden');
                 setTodayDateDDMMYYYY();
                 applyRetailerAutoLockIfApplicable();
