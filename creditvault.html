@@ -1036,12 +1036,30 @@
             generateLoanID();
         });
 
+
+        /* ===== Helper: fetch ALL records (not just the first 100) ===== */
+        async function fetchAllDocs(dbId, collectionId) {
+            const all = [];
+            const hasOffset = window.AppwriteQuery && typeof window.AppwriteQuery.offset === 'function';
+            let offset = 0;
+            while (true) {
+                const queries = [window.AppwriteQuery.limit(100)];
+                if (hasOffset) queries.push(window.AppwriteQuery.offset(offset));
+                const res = await window.appwriteDatabases.listDocuments(dbId, collectionId, queries);
+                const docs = res.documents || [];
+                all.push(...docs);
+                if (!hasOffset || docs.length < 100) break;
+                offset += 100;
+            }
+            return { documents: all };
+        }
+
         async function preloadAllCloudData() {
             try {
                 const [retResp, borResp, loanResp] = await Promise.all([
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, RETAILERS_COLLECTION_ID, [window.AppwriteQuery.limit(100)]),
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID, [window.AppwriteQuery.limit(100)]),
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID, [window.AppwriteQuery.limit(100)])
+                    fetchAllDocs(VFC_DB.DB_ID, RETAILERS_COLLECTION_ID),
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID),
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID)
                 ]);
 
                 allRetailers = (retResp.documents || [])
@@ -1378,7 +1396,7 @@
             }
             const borrowerPhone = rawPhone || "8778003840";
 
-            const loanId = document.getElementById('Loan_ID').value;
+            let loanId = document.getElementById('Loan_ID').value;
             const issuedBy = document.getElementById('Issued_by').value;
             const retailerCode = document.getElementById('Retailer_Code').value || "";
             const loanDate = document.getElementById('Loan_Date').value || document.getElementById('Loan_Date_Display').value;
@@ -1424,6 +1442,14 @@
             submitBtn.innerText = "Saving Loan & Sending WhatsApp...";
 
             try {
+                // Refresh the latest loans BEFORE saving so the Loan ID is never a duplicate
+                try {
+                    const freshLoans = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID);
+                    allLoans = freshLoans.documents || allLoans;
+                    generateLoanID();
+                    loanId = document.getElementById('Loan_ID').value;
+                } catch (e) { console.warn("Could not refresh loans:", e); }
+
                 const loanPayload = {
                     loan_id: loanId,
                     issued_by: issuedBy,
