@@ -266,13 +266,31 @@
             }
         }
 
+
+        /* ===== Helper: fetch ALL records (not just the first 100) ===== */
+        async function fetchAllDocs(dbId, collectionId) {
+            const all = [];
+            const hasOffset = window.AppwriteQuery && typeof window.AppwriteQuery.offset === 'function';
+            let offset = 0;
+            while (true) {
+                const queries = [window.AppwriteQuery.limit(100)];
+                if (hasOffset) queries.push(window.AppwriteQuery.offset(offset));
+                const res = await window.appwriteDatabases.listDocuments(dbId, collectionId, queries);
+                const docs = res.documents || [];
+                all.push(...docs);
+                if (!hasOffset || docs.length < 100) break;
+                offset += 100;
+            }
+            return { documents: all };
+        }
+
         async function loadReportData() {
             const tbody = document.getElementById('reportTableBody');
             try {
                 const [loansRes, paymentsRes, borrowersRes] = await Promise.all([
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.LOANS_ID, [window.AppwriteQuery.limit(100)]),
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, [window.AppwriteQuery.limit(100)]).catch(() => ({ documents: [] })),
-                    window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID, [window.AppwriteQuery.limit(100)]).catch(() => ({ documents: [] }))
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID),
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID).catch(() => ({ documents: [] })),
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID).catch(() => ({ documents: [] }))
                 ]);
 
                 allPayments = paymentsRes.documents || [];
