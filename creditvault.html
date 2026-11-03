@@ -1253,7 +1253,9 @@
             else if (category === "Furniture") prefix = "VFL";
 
             const filteredLoans = allLoans.filter(l => l.loan_id && (l.loan_id.startsWith(prefix + "-") || l.loan_id.startsWith(prefix + "/")));
-            const nextSeq = filteredLoans.length + 1;
+            // Use the HIGHEST existing number + 1 (count + 1 creates duplicates if any loan was deleted)
+            const usedSeqs = filteredLoans.map(l => parseInt(String(l.loan_id).split(/[-\/]/)[1], 10) || 0);
+            const nextSeq = (usedSeqs.length ? Math.max(...usedSeqs) : 0) + 1;
             const paddedSeq = String(nextSeq).padStart(3, '0');
             document.getElementById('Loan_ID').value = `${prefix}/${paddedSeq}/${year}`;
         }
