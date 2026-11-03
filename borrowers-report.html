@@ -44,263 +44,44 @@
         })();
     </script>
     <style>
-        :root {
-            --navy: #0F1D36;
-            --gold: #C5A059;
-            --bg-color: #F8F9FB;
-            --text-main: #2D3748;
-            --white: #FFFFFF;
-            --danger: #C53030;
-        }
-        body {
-            font-family: 'Manrope', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            min-height: 100vh;
-        }
-        .sidebar {
-            width: 260px;
-            background-color: var(--navy);
-            color: var(--white);
-            display: flex;
-            flex-direction: column;
-            border-right: 3px solid var(--gold);
-            position: fixed;
-            height: 100vh;
-            left: 0;
-            top: 0;
-            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
-            overflow-y: auto;
-        }
-        .sidebar-brand {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0,0,0,0.1);
-        }
-        .sidebar-logo {
-            height: 40px;
-            width: 40px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 2px solid var(--gold);
-            background: var(--white);
-            padding: 2px;
-        }
-        .sidebar-title {
-            font-family: 'Cinzel', serif;
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--gold);
-            letter-spacing: 1px;
-        }
-        .sidebar-menu {
-            list-style: none;
-            padding: 15px 0;
-            margin: 0;
-            flex: 1;
-        }
-        .sidebar-menu li a {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px 25px;
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: 0.3s;
-            border-left: 4px solid transparent;
-        }
-        .sidebar-menu li a:hover, .sidebar-menu li a.active {
-            background-color: rgba(197, 160, 89, 0.15);
-            color: var(--gold);
-            border-left-color: var(--gold);
-        }
-        .sidebar-menu li a i {
-            width: 20px;
-            text-align: center;
-            color: var(--gold);
-        }
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-        .btn-logout {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 10px;
-            width: 100%;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: 40px;
-            box-sizing: border-box;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            background: var(--white);
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(15, 29, 54, 0.08);
-            border-top: 5px solid var(--navy);
-        }
-        .header-flex {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        h2 {
-            font-family: 'Cinzel', serif;
-            color: var(--navy);
-            margin: 0;
-            font-size: 24px;
-        }
-        .back-btn {
-            background: var(--gold);
-            color: var(--navy);
-            padding: 8px 15px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 13px;
-        }
-        .search-box {
-            width: 100%;
-            padding: 12px 15px;
-            margin-bottom: 20px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #e2e8f0;
-            padding: 12px 15px;
-            text-align: left;
-            font-size: 14px;
-        }
-        th {
-            background-color: var(--navy);
-            color: white;
-            font-family: 'Cinzel', serif;
-        }
-        tr:hover {
-            background-color: #f8fafc;
-            cursor: pointer;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: var(--white);
-            width: 850px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
-            border-top: 5px solid var(--navy);
-        }
-        .modal-header {
-            font-family: 'Cinzel', serif;
-            font-size: 18px;
-            color: var(--navy);
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--gold);
-            padding-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .btn-print, .btn-pdf, .btn-edit, .close-btn, .btn-save {
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-        }
+        :root { --navy: #0F1D36; --gold: #C5A059; --bg-color: #F8F9FB; --text-main: #2D3748; --white: #FFFFFF; --danger: #C53030; }
+        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background-color: var(--navy); color: var(--white); display: flex; flex-direction: column; border-right: 3px solid var(--gold); position: fixed; height: 100vh; left: 0; top: 0; box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1); overflow-y: auto; }
+        .sidebar-brand { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0,0,0,0.1); }
+        .sidebar-logo { height: 40px; width: 40px; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold); background: var(--white); padding: 2px; }
+        .sidebar-title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: bold; color: var(--gold); letter-spacing: 1px; }
+        .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; flex: 1; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 15px; padding: 12px 25px; color: #cbd5e1; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active { background-color: rgba(197, 160, 89, 0.15); color: var(--gold); border-left-color: var(--gold); }
+        .sidebar-menu li a i { width: 20px; text-align: center; color: var(--gold); }
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
+        .btn-logout { background-color: var(--danger); color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
+        .main-content { margin-left: 260px; flex: 1; padding: 40px; box-sizing: border-box; }
+        .container { max-width: 1100px; margin: 0 auto; background: var(--white); padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(15, 29, 54, 0.08); border-top: 5px solid var(--navy); }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        h2 { font-family: 'Cinzel', serif; color: var(--navy); margin: 0; font-size: 24px; }
+        .back-btn { background: var(--gold); color: var(--navy); padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 13px; }
+        .search-box { width: 100%; padding: 12px 15px; margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px 15px; text-align: left; font-size: 14px; }
+        th { background-color: var(--navy); color: white; font-family: 'Cinzel', serif; }
+        tr:hover { background-color: #f8fafc; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--white); width: 850px; max-width: 95%; max-height: 90vh; overflow-y: auto; padding: 30px; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); border-top: 5px solid var(--navy); }
+        .modal-header { font-family: 'Cinzel', serif; font-size: 18px; color: var(--navy); margin-bottom: 20px; border-bottom: 2px solid var(--gold); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .modal-actions { display: flex; gap: 10px; }
+        .btn-print, .btn-pdf, .btn-edit, .close-btn, .btn-save { border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
         .btn-print { background-color: var(--navy); color: white; }
         .btn-pdf { background-color: var(--gold); color: var(--navy); }
         .btn-edit { background-color: #2b6cb0; color: white; }
         .btn-save { background-color: #2f855a; color: white; width: 100%; margin-top: 20px; padding: 12px; font-size: 15px; }
         .close-btn { background: var(--danger); color: white; }
-        
-        .profile-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        .profile-table td {
-            padding: 10px 15px;
-            border: 1px solid #cbd5e1;
-            font-size: 14px;
-        }
-        .profile-table td:first-child {
-            font-weight: bold;
-            color: var(--navy);
-            width: 35%;
-            background: #f1f5f9;
-        }
-        .doc-link {
-            display: inline-block;
-            background: var(--navy);
-            color: var(--gold);
-            padding: 5px 12px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: bold;
-            margin: 2px;
-        }
-        .doc-link:hover {
-            background: var(--gold);
-            color: var(--navy);
-        }
-        .edit-input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
+        .profile-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .profile-table td { padding: 10px 15px; border: 1px solid #cbd5e1; font-size: 14px; }
+        .profile-table td:first-child { font-weight: bold; color: var(--navy); width: 35%; background: #f1f5f9; }
+        .doc-link { display: inline-block; background: var(--navy); color: var(--gold); padding: 5px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; margin: 2px; border: none; cursor: pointer; }
+        .doc-link:hover { background: var(--gold); color: var(--navy); }
+        .edit-input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -380,6 +161,65 @@
         let currentBorrower = null;
         let appwriteStorageInstance = null;
 
+        /* ===== Helper: fetch ALL records (the old code only got the first 25) ===== */
+        async function fetchAllDocs(dbId, collectionId) {
+            const all = [];
+            const hasOffset = window.AppwriteQuery && typeof window.AppwriteQuery.offset === 'function';
+            let offset = 0;
+            while (true) {
+                const queries = [window.AppwriteQuery.limit(100)];
+                if (hasOffset) queries.push(window.AppwriteQuery.offset(offset));
+                const res = await window.appwriteDatabases.listDocuments(dbId, collectionId, queries);
+                const docs = res.documents || [];
+                all.push(...docs);
+                if (!hasOffset || docs.length < 100) break;
+                offset += 100;
+            }
+            return { documents: all };
+        }
+
+        /* ===== Matching helpers (so one borrower never sees another borrower's loans / payments) ===== */
+        function last10Digits(v) {
+            const d = String(v || '').replace(/\D/g, '');
+            return d.length > 10 ? d.slice(-10) : d;
+        }
+        function normText(v) { return String(v || '').trim().toLowerCase(); }
+
+        function parseFlexibleDate(dateInput) {
+            if (!dateInput) return new Date();
+            const str = String(dateInput).trim().split('T')[0];
+            const parts = str.split(/[-\/]/);
+            if (parts.length === 3) {
+                if (parts[0].length === 4) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            }
+            const fb = new Date(dateInput);
+            return isNaN(fb.getTime()) ? new Date() : new Date(fb.getFullYear(), fb.getMonth(), fb.getDate());
+        }
+
+        function loanBelongsToBorrower(loan, borrower) {
+            if (loan.borrower_id && borrower.borrower_id) {
+                return loan.borrower_id === borrower.borrower_id;
+            }
+            if (normText(loan.borrower_name) !== normText(borrower.full_name)) return false;
+            const loanPhone = last10Digits(loan.phone_number);
+            const phones = [last10Digits(borrower.whatsapp_number), last10Digits(borrower.phone_number)].filter(Boolean);
+            if (loanPhone && phones.length) return phones.includes(loanPhone);
+            return true;
+        }
+
+        function paymentBelongsToLoan(p, loan, duplicateLoanIds) {
+            if (!p.loan_id || p.loan_id !== loan.loan_id) return false;
+            const pName = normText(p.borrower_name || p.customer_name || p.full_name);
+            if (pName) return pName === normText(loan.borrower_name);
+            const pPhone = last10Digits(p.phone_number || p.mobile || p.whatsapp_number || p.borrower_phone);
+            if (pPhone) return pPhone === last10Digits(loan.phone_number);
+            if (duplicateLoanIds.has(loan.loan_id)) {
+                return parseFlexibleDate(p.payment_date || p.$createdAt) >= parseFlexibleDate(loan.loan_date || loan.$createdAt);
+            }
+            return true;
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             try {
                 if (window.appwriteClient) {
@@ -399,10 +239,7 @@
         async function loadBorrowersReport() {
             const tbody = document.getElementById('reportTableBody');
             try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.BORROWERS_ID
-                );
+                const response = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID);
                 const borrowers = response.documents;
 
                 if (!borrowers || borrowers.length === 0) {
@@ -473,18 +310,20 @@
 
             let loansList = [];
             let paymentsList = [];
+            let duplicateLoanIds = new Set();
             try {
-                const loansRes = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID
-                );
-                loansList = loansRes.documents.filter(l => l.borrower_id === borrower.borrower_id || l.borrower_name === borrower.full_name);
+                const [loansRes, paymentsRes] = await Promise.all([
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID),
+                    fetchAllDocs(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID)
+                ]);
+                const allLoans = loansRes.documents || [];
 
-                const paymentsRes = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.PAYMENTS_ID
-                );
-                paymentsList = paymentsRes.documents;
+                const counts = {};
+                allLoans.forEach(l => { if (l.loan_id) counts[l.loan_id] = (counts[l.loan_id] || 0) + 1; });
+                duplicateLoanIds = new Set(Object.keys(counts).filter(id => counts[id] > 1));
+
+                loansList = allLoans.filter(l => loanBelongsToBorrower(l, borrower));
+                paymentsList = paymentsRes.documents || [];
             } catch(err) {
                 console.warn("Could not fetch loans/payments for borrower:", err);
             }
@@ -492,7 +331,7 @@
             let loansHtml = '';
             if (loansList.length > 0) {
                 loansList.forEach((loan, idx) => {
-                    const loanPayments = paymentsList.filter(p => p.loan_id === loan.loan_id);
+                    const loanPayments = paymentsList.filter(p => paymentBelongsToLoan(p, loan, duplicateLoanIds));
                     const totalPaidAmount = loanPayments.reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
                     
                     let paymentHistoryRows = '';
@@ -523,10 +362,10 @@
                             <div style="margin-top: 10px; font-weight: bold; color: var(--navy);">Payment & Delay History:</div>
                             <table style="width: 100%; margin-top: 5px; border-collapse: collapse; background: white;">
                                 <tr style="background: #e2e8f0; font-size: 12px;">
-                                    <th style="padding: 6px;">Installment</th>
-                                    <th style="padding: 6px;">Amount</th>
-                                    <th style="padding: 6px;">Date</th>
-                                    <th style="padding: 6px;">Status / Delay Details</th>
+                                    <th style="padding: 6px; color: var(--navy); background: #e2e8f0;">Installment</th>
+                                    <th style="padding: 6px; color: var(--navy); background: #e2e8f0;">Amount</th>
+                                    <th style="padding: 6px; color: var(--navy); background: #e2e8f0;">Date</th>
+                                    <th style="padding: 6px; color: var(--navy); background: #e2e8f0;">Status / Delay Details</th>
                                 </tr>
                                 ${paymentHistoryRows}
                             </table>
@@ -756,7 +595,7 @@
                 const phoneCol = rows[i].getElementsByTagName('td')[2];
                 const idCol = rows[i].getElementsByTagName('td')[0];
 
-                if (nameCol || phoneCol || idCol) {
+                if (nameCol && phoneCol && idCol) {
                     const nameText = nameCol.textContent.toLowerCase();
                     const phoneText = phoneCol.textContent.toLowerCase();
                     const idText = idCol.textContent.toLowerCase();
