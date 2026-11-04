@@ -7,154 +7,52 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Borrower Portal</title>
+    <link rel="icon" type="image/jpeg" href="velfincorp-logo.jpeg">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root {
-            --navy: #0F1D36;
-            --gold: #C5A059;
-            --bg-color: #F8F9FB;
-            --text-main: #2D3748;
-            --white: #FFFFFF;
-            --danger: #C53030;
-            --success: #2F855A;
-        }
-        body {
-            font-family: 'Manrope', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 30px;
-        }
-        .container {
-            max-width: 850px;
-            margin: 0 auto;
-            background: var(--white);
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08);
-            border-top: 5px solid var(--navy);
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--gold);
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-        }
-        .header h2 {
-            font-family: 'Cinzel', serif;
-            color: var(--navy);
-            margin: 0;
-            font-size: 22px;
-        }
-        .btn-logout {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            text-decoration: none;
-            font-size: 13px;
-        }
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .summary-card {
-            background: #f1f5f9;
-            padding: 20px;
-            border-radius: 6px;
-            border-left: 4px solid var(--gold);
-            text-align: center;
-        }
-        .summary-card h4 {
-            margin: 0 0 8px 0;
-            font-size: 12px;
-            color: #64748b;
-            text-transform: uppercase;
-        }
-        .summary-card .value {
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--navy);
-        }
-        .payment-box {
-            background: #fffbeb;
-            border: 1px solid #f59e0b;
-            padding: 25px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-        .btn-pay {
-            background-color: var(--success);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 15px;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 15px;
-        }
-        .btn-pay:hover {
-            background-color: #276749;
-        }
-        .profile-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 25px;
-        }
-        .profile-table td {
-            padding: 12px 15px;
-            border: 1px solid #cbd5e1;
-            font-size: 14px;
-        }
-        .profile-table td:first-child {
-            font-weight: bold;
-            color: var(--navy);
-            width: 35%;
-            background: #f1f5f9;
-        }
-        .action-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: flex-end;
-        }
-        .btn-print {
-            background-color: var(--navy);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .btn-pdf {
-            background-color: var(--gold);
-            color: var(--navy);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: var(--danger);
-            font-weight: bold;
-            font-size: 16px;
-        }
+        :root { --navy: #0F1D36; --gold: #C5A059; --bg-color: #F8F9FB; --text-main: #2D3748; --white: #FFFFFF; --danger: #C53030; --success: #2F855A; }
+        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; }
+        .container { max-width: 850px; margin: 0 auto; background: var(--white); padding: 32px; border-radius: 8px; box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08); border-top: 5px solid var(--navy); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); padding-bottom: 15px; margin-bottom: 20px; gap: 10px; flex-wrap: wrap; }
+        .header h2 { font-family: 'Cinzel', serif; color: var(--navy); margin: 0; font-size: 20px; }
+        .btn-logout { background-color: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .welcome { margin-bottom: 20px; }
+        .welcome .name { font-size: 20px; font-weight: 800; color: var(--navy); }
+        .welcome .sub { font-size: 13px; color: #64748b; margin-top: 3px; }
+        .loan-card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; margin-bottom: 25px; background: #fff; }
+        .loan-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .loan-title .id { font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700; color: var(--navy); }
+        .loan-title .prod { font-size: 13px; color: #64748b; margin-top: 3px; }
+        .badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; color: #fff; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 15px; }
+        .summary-card { background: #f1f5f9; padding: 14px; border-radius: 6px; border-left: 4px solid var(--gold); text-align: center; }
+        .summary-card h4 { margin: 0 0 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase; }
+        .summary-card .value { font-size: 17px; font-weight: 800; color: var(--navy); }
+        .progress-wrap { margin: 5px 0 18px 0; }
+        .progress-label { font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .progress-bar { background: #e2e8f0; height: 10px; border-radius: 6px; overflow: hidden; }
+        .progress-fill { background: var(--success); height: 100%; }
+        .payment-box { background: #fffbeb; border: 1px solid #f59e0b; padding: 18px; border-radius: 8px; margin-bottom: 18px; text-align: center; }
+        .payment-box.late { background: #fef2f2; border-color: #fca5a5; }
+        .payment-box h4 { margin: 0 0 6px 0; color: var(--navy); font-family: 'Cinzel', serif; }
+        .payment-box p { font-size: 13px; color: #475569; margin: 5px 0; }
+        .btn-pay { background-color: var(--success); color: white; border: none; padding: 11px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px; text-decoration: none; display: inline-block; margin-top: 8px; }
+        .btn-pay:hover { background-color: #276749; }
+        .hist-title { font-family: 'Cinzel', serif; font-weight: 700; color: var(--navy); margin: 5px 0 8px 0; font-size: 14px; }
+        table.hist { width: 100%; border-collapse: collapse; font-size: 13px; }
+        table.hist th { background: var(--navy); color: #fff; padding: 8px; text-align: center; }
+        table.hist td { border: 1px solid #cbd5e1; padding: 8px; text-align: center; }
+        .action-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 10px; flex-wrap: wrap; }
+        .btn-print { background-color: var(--navy); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-pdf { background-color: var(--gold); color: var(--navy); border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .no-data { text-align: center; padding: 40px 10px; color: #475569; font-size: 15px; line-height: 1.7; }
+        .no-data.error { color: var(--danger); font-weight: bold; }
+        .loading { text-align: center; padding: 40px; color: #64748b; }
+        @media print { .btn-logout, .action-actions, .btn-pay { display: none !important; } body { padding: 0; } .container { box-shadow: none; } }
     </style>
 </head>
 <body>
@@ -165,118 +63,230 @@
             <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
 
-        <div id="portalContent">
-            <!-- Dynamic Data -->
-        </div>
+        <div id="portalContent"><div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading your account...</div></div>
 
         <div class="action-actions" id="actionButtons" style="display:none;">
-            <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print Details</button>
+            <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
             <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
         </div>
     </div>
 
     <script>
-        window.pageshow = function(event) {
+        /* >>> Confirm this is your real UPI ID <<< */
+        const UPI_ID = 'velfincorp@sbi';
+        const PAYEE_NAME = 'VEL FIN CORP';
+
+        window.addEventListener('pageshow', function(event) {
             if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
                 window.location.replace('login.html');
             }
-        };
+        });
 
-        window.addEventListener('DOMContentLoaded', () => {
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        function rupees(n) {
+            return '₹' + (Number(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function normText(v) { return String(v || '').trim().toLowerCase(); }
+
+        function parseFlexibleDate(dateInput) {
+            if (!dateInput) return new Date();
+            if (dateInput instanceof Date) return new Date(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate());
+            const str = String(dateInput).trim().split('T')[0];
+            const parts = str.split(/[-\/]/);
+            if (parts.length === 3) {
+                if (parts[0].length === 4) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            }
+            const fb = new Date(dateInput);
+            return isNaN(fb.getTime()) ? new Date() : new Date(fb.getFullYear(), fb.getMonth(), fb.getDate());
+        }
+        function formatIndianDate(dateInput) {
+            if (!dateInput) return '-';
+            const d = parseFlexibleDate(dateInput);
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        }
+        function computeInstallmentDueDate(loanStart, loanType, n) {
+            const d = parseFlexibleDate(loanStart);
+            const t = String(loanType || 'Weekly').toLowerCase();
+            if (t.includes('daily')) d.setDate(d.getDate() + n);
+            else if (t.includes('monthly')) d.setMonth(d.getMonth() + n);
+            else d.setDate(d.getDate() + (n * 7));
+            return d;
+        }
+
+        // A payment belongs to a loan only if the Loan ID AND the borrower match
+        function paymentBelongsToLoan(p, loan) {
+            if (!p.loan_id || p.loan_id !== loan.loan_id) return false;
+            const pName = normText(p.borrower_name || p.customer_name || p.full_name);
+            if (pName) return pName === normText(loan.borrower_name);
+            return true;
+        }
+
+        function summarizeLoan(loan, loanPayments) {
+            const emi = parseFloat(loan.installment_amount || 0);
+            let tenure = 10;
+            const m = String(loan.tenure || '').match(/\d+/);
+            if (m) tenure = parseInt(m[0]);
+            const total = parseFloat(loan.loan_amount || 0);
+            const paid = loanPayments.reduce((s, p) => s + parseFloat(p.amount_paid || p.paid_amount || p.amount || 0), 0);
+            const remaining = Math.max(0, total - paid);
+            const paidInst = emi > 0 ? Math.min(tenure, Math.floor((paid + 0.01) / emi)) : loanPayments.length;
+
+            let state = 'ACTIVE', label = 'ACTIVE', color = '#2B6CB0', dueDate = null, delayDays = 0;
+            if (loan.status === 'CLOSED') {
+                state = 'CLOSED'; label = 'CLOSED'; color = '#64748b';
+            } else if ((total > 0 && paid >= total) || paidInst >= tenure) {
+                state = 'COMPLETED'; label = 'FULLY PAID'; color = '#2F855A';
+            } else {
+                dueDate = computeInstallmentDueDate(loan.loan_date || loan.$createdAt, loan.loan_type, paidInst + 1);
+                const today = parseFlexibleDate(new Date());
+                delayDays = Math.round((today - dueDate) / 86400000);
+                if (delayDays > 0) { label = 'OVERDUE'; color = '#C53030'; }
+                else { label = 'ON TIME'; color = '#2F855A'; }
+            }
+            const payNow = Math.round(Math.min(emi > 0 ? emi : remaining, remaining) * 100) / 100;
+            return { emi, tenure, total, paid, remaining, paidInst, state, label, color, dueDate, delayDays, payNow };
+        }
+
+        function renderLoanCard(loan, loanPayments, multiNames) {
+            const s = summarizeLoan(loan, loanPayments);
+            const sorted = loanPayments.slice().sort((a, b) => parseFlexibleDate(a.payment_date || a.$createdAt) - parseFlexibleDate(b.payment_date || b.$createdAt));
+            const percent = s.tenure > 0 ? Math.min(100, Math.round((s.paidInst / s.tenure) * 100)) : 0;
+            const product = [loan.loan_category, loan.product_name].filter(Boolean).join(' - ');
+            const typeText = (loan.loan_type || 'Weekly') + ' | ' + (loan.tenure || (s.tenure + ' installments'));
+
+            let payBox = '';
+            if (s.state === 'ACTIVE' && loan.status === 'ACTIVE' && s.remaining > 0 && s.payNow > 0) {
+                const note = encodeURIComponent('EMI ' + loan.loan_id);
+                const url = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${s.payNow.toFixed(2)}&cu=INR&tn=${note}`;
+                const late = s.delayDays > 0;
+                payBox = `
+                    <div class="payment-box ${late ? 'late' : ''}">
+                        <h4><i class="fas fa-shield-alt"></i> ${late ? 'Overdue EMI' : 'Next EMI'}</h4>
+                        <p>Installment ${s.paidInst + 1} of ${s.tenure} &nbsp;|&nbsp; Due date: <strong>${formatIndianDate(s.dueDate)}</strong>
+                           ${late ? `<br><span style="color:#C53030; font-weight:800;">${s.delayDays} day${s.delayDays === 1 ? '' : 's'} overdue</span>` : ''}</p>
+                        <a href="${esc(url)}" class="btn-pay"><i class="fas fa-rupee-sign"></i> Pay ${rupees(s.payNow)} via UPI</a>
+                        <p style="font-size:12px;">Open this page on your mobile to pay with GPay / PhonePe / Paytm. After you pay, the payment appears below once Vel Fin Corp records it.</p>
+                    </div>`;
+            }
+
+            let rows = '';
+            if (sorted.length) {
+                sorted.forEach((p, i) => {
+                    const late = p.delayed_details && p.delayed_details !== 'On Time';
+                    rows += `<tr>
+                        <td>${esc(p.paid_installment || (i + 1))}</td>
+                        <td>${esc(p.payment_id || '-')}</td>
+                        <td>${formatIndianDate(p.payment_date || p.$createdAt)}</td>
+                        <td style="font-weight:700; color:#2F855A;">${rupees(p.amount_paid)}</td>
+                        <td>${esc(p.payment_mode || '-')}</td>
+                        <td style="font-weight:700; color:${late ? '#C53030' : '#2F855A'};">${esc(p.delayed_details || 'On Time')}</td>
+                    </tr>`;
+                });
+            } else {
+                rows = `<tr><td colspan="6" style="color:#64748b;">No payments recorded yet.</td></tr>`;
+            }
+
+            return `
+                <div class="loan-card">
+                    <div class="loan-title">
+                        <div>
+                            <div class="id">${esc(loan.loan_id || '-')}</div>
+                            <div class="prod">${esc(product || 'Loan')} &nbsp;|&nbsp; ${esc(typeText)}${multiNames ? ' &nbsp;|&nbsp; ' + esc(loan.borrower_name) : ''}</div>
+                            <div class="prod">Started on ${formatIndianDate(loan.loan_date || loan.$createdAt)}</div>
+                        </div>
+                        <span class="badge" style="background:${s.color};">${s.label}</span>
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-card"><h4>Total Payable</h4><div class="value">${rupees(s.total)}</div></div>
+                        <div class="summary-card"><h4>EMI</h4><div class="value" style="color:#2F855A;">${rupees(s.emi)}</div></div>
+                        <div class="summary-card"><h4>Paid So Far</h4><div class="value" style="color:#2F855A;">${rupees(s.paid)}</div></div>
+                        <div class="summary-card"><h4>Balance</h4><div class="value" style="color:#C53030;">${rupees(s.remaining)}</div></div>
+                    </div>
+                    <div class="progress-wrap">
+                        <div class="progress-label"><span>Installments paid: ${s.paidInst} / ${s.tenure}</span><span>${percent}%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${percent}%;"></div></div>
+                    </div>
+                    ${payBox}
+                    <div class="hist-title">Payment History</div>
+                    <div style="overflow-x:auto;">
+                        <table class="hist">
+                            <thead><tr><th>Inst #</th><th>Receipt ID</th><th>Date</th><th>Amount</th><th>Mode</th><th>Status</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
             const loggedInUser = sessionStorage.getItem('velfincorp_logged_user');
             const userRole = sessionStorage.getItem('velfincorp_role');
-
             if (!loggedInUser || userRole !== 'borrower') {
                 window.location.replace('login.html');
                 return;
             }
 
             const portalContent = document.getElementById('portalContent');
-            const actionButtons = document.getElementById('actionButtons');
-
-            let borrowers = [];
-            let personalLoans = [];
-            let creditVaultLoans = [];
-            
             try {
-                borrowers = JSON.parse(localStorage.getItem('velfincorp_borrowers') || '[]');
-                personalLoans = JSON.parse(localStorage.getItem('velfincorp_personalloan') || '[]');
-                creditVaultLoans = JSON.parse(localStorage.getItem('velfincorp_creditvault') || '[]');
-            } catch(e) {
-                borrowers = [];
+                const borrowers = await window.vfcFindBorrowersByMobile(loggedInUser);
+                if (!borrowers.length) {
+                    portalContent.innerHTML = `<div class="no-data error">No borrower account found for this mobile number.<br><span style="font-weight:500; color:#475569;">Please contact Vel Fin Corp support.</span></div>`;
+                    return;
+                }
+
+                // every number this customer is registered with
+                const numbers = Array.from(new Set(
+                    [loggedInUser]
+                        .concat(borrowers.flatMap(b => [b.phone_number, b.whatsapp_number]))
+                        .map(n => window.vfcLast10(n))
+                        .filter(Boolean)
+                ));
+
+                let loans = [], payments = [];
+                for (const n of numbers) {
+                    const l = await window.vfcQueryEqualOrAll(VFC_DB.LOANS_ID, 'phone_number', n, x => window.vfcLast10(x.phone_number) === n);
+                    const p = await window.vfcQueryEqualOrAll(VFC_DB.PAYMENTS_ID, 'phone_number', n, x => window.vfcLast10(x.phone_number) === n);
+                    loans = loans.concat(l);
+                    payments = payments.concat(p);
+                }
+                const uniq = arr => { const seen = new Set(); return arr.filter(d => seen.has(d.$id) ? false : (seen.add(d.$id), true)); };
+                loans = uniq(loans);
+                payments = uniq(payments);
+
+                // ACTIVE first, then newest first
+                loans.sort((a, b) => {
+                    const aa = a.status === 'ACTIVE' ? 0 : 1, bb = b.status === 'ACTIVE' ? 0 : 1;
+                    if (aa !== bb) return aa - bb;
+                    return parseFlexibleDate(b.loan_date || b.$createdAt) - parseFlexibleDate(a.loan_date || a.$createdAt);
+                });
+
+                const names = Array.from(new Set(borrowers.map(b => b.full_name).filter(Boolean)));
+                const ids = Array.from(new Set(borrowers.map(b => b.borrower_id).filter(Boolean)));
+                const multiNames = names.length > 1;
+
+                let html = `
+                    <div class="welcome">
+                        <div class="name">Welcome, ${esc(names.join(' / '))}</div>
+                        <div class="sub">Borrower ID: ${esc(ids.join(', ') || '-')} &nbsp;|&nbsp; Mobile: ${esc(loggedInUser)}</div>
+                    </div>`;
+
+                if (!loans.length) {
+                    html += `<div class="no-data">You do not have any loan on this account yet.</div>`;
+                } else {
+                    loans.forEach(loan => {
+                        const lp = payments.filter(p => paymentBelongsToLoan(p, loan));
+                        html += renderLoanCard(loan, lp, multiNames);
+                    });
+                }
+
+                portalContent.innerHTML = html;
+                document.getElementById('actionButtons').style.display = 'flex';
+            } catch (err) {
+                console.error("Borrower portal error:", err);
+                portalContent.innerHTML = `<div class="no-data error">Could not load your account right now.<br><span style="font-weight:500;">${esc(err.message)}</span></div>`;
             }
-
-            let borrower = borrowers.find(b => b.phone === loggedInUser || b.borrowerId === loggedInUser || b.whatsapp === loggedInUser);
-
-            if (!borrower && loggedInUser) {
-                borrower = {
-                    borrowerId: "VFC/001/2026",
-                    name: "Ravichandran C",
-                    phone: loggedInUser,
-                    whatsapp: loggedInUser,
-                    aadhar: "[Aadhaar Redacted]",
-                    pan: "HPHPR****H",
-                    occupation: "Business",
-                    city: "Sengam, Tamil Nadu",
-                    address: "117, Elagunni, Mariayman koil Street"
-                };
-            }
-
-            if (!borrower) {
-                portalContent.innerHTML = `<div class="no-data">No borrower records found for this account! Please login with your registered mobile number.</div>`;
-                return;
-            }
-
-            actionButtons.style.display = 'flex';
-
-            let matchedLoan = personalLoans.concat(creditVaultLoans).find(l => l.borrowerName && l.borrowerName.includes(borrower.name)) || {
-                loanAmount: "10000",
-                installment: "1000",
-                weeklyEmi: "1000"
-            };
-
-            let emiAmt = parseFloat(matchedLoan.installment || matchedLoan.weeklyEmi || 1000);
-            let totalLoanAmt = parseFloat(matchedLoan.loanAmount || matchedLoan.productValue || 10000);
-
-            const upiId = "velfincorp@sbi";
-            const payeeName = "VEL FIN CORP";
-            const upiPaymentUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${emiAmt}&cu=INR&tn=EMI_Payment`;
-
-            portalContent.innerHTML = `
-                <!-- Financial Summary Cards -->
-                <div class="summary-grid">
-                    <div class="summary-card">
-                        <h4>Total Loan Amount</h4>
-                        <div class="value">₹${totalLoanAmt.toFixed(2)}</div>
-                    </div>
-                    <div class="summary-card">
-                        <h4>Current Due / EMI</h4>
-                        <div class="value" style="color: #2F855A;">₹${emiAmt.toFixed(2)}</div>
-                    </div>
-                    <div class="summary-card">
-                        <h4>Account Status</h4>
-                        <div class="value" style="color: #2B6CB0;">ACTIVE</div>
-                    </div>
-                </div>
-
-                <!-- Secure Online Payment Gateway Box -->
-                <div class="payment-box">
-                    <h3 style="margin-top:0; color: var(--navy); font-family: 'Cinzel', serif;"><i class="fas fa-shield-alt"></i> Secure Online EMI Payment</h3>
-                    <p style="font-size: 13px; color: #475569; margin-bottom: 10px;">Pay your active installment securely using your preferred UPI app (GPay, PhonePe, Paytm, etc.).</p>
-                    <a href="${upiPaymentUrl}" class="btn-pay"><i class="fas fa-rupee-sign"></i> Pay ₹${emiAmt.toFixed(2)} Securely</a>
-                </div>
-
-                <!-- Borrower Personal Profile -->
-                <table class="profile-table">
-                    <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Profile Information</th></tr>
-                    <tr><td>Borrower ID</td><td>${borrower.borrowerId || '-'}</td></tr>
-                    <tr><td>Customer Name</td><td>${borrower.name || '-'}</td></tr>
-                    <tr><td>Phone Number</td><td>${borrower.phone || borrower.whatsapp || '-'}</td></tr>
-                    <tr><td>Aadhar Number</td><td>[Aadhaar Redacted]</td></tr>
-                    <tr><td>PAN Number</td><td>${borrower.pan || '-'}</td></tr>
-                    <tr><td>Address & City</td><td>${borrower.address || '-'}, ${borrower.city || '-'}</td></tr>
-                </table>
-            `;
         });
 
         function handleLogout() {
@@ -291,11 +301,11 @@
             actions.style.display = 'none';
 
             const opt = {
-                margin:       10,
-                filename:     'Borrower_Secure_Profile.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin: 10,
+                filename: 'Vel_Fin_Corp_Account_Statement.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             html2pdf().from(element).set(opt).save().then(() => {
