@@ -56,6 +56,7 @@
         input:focus, select:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15); }
         .btn-submit { background-color: var(--navy); color: white; padding: 14px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 30px; transition: 0.3s; }
         .btn-submit:hover { background-color: var(--gold); color: var(--navy); }
+        .btn-submit:disabled { background-color: #94a3b8; cursor: not-allowed; }
         .readonly-field { background-color: #f1f5f9; color: #475569; font-weight: bold; }
         #borrowerSearchResults { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; z-index: 99; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .search-result-item { padding: 10px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
@@ -151,18 +152,50 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Submit Payment & Send WhatsApp Receipt</button>
+                <button type="submit" id="submitBtn" class="btn-submit"><i class="fas fa-paper-plane"></i> Submit Payment & Send WhatsApp Receipt</button>
             </form>
         </div>
     </div>
 
     <script>
+        let allLoansList = [];
         let allActiveLoans = [];
         let selectedLoanData = null;
+        let duplicateLoanIds = new Set();
+        const SUBMIT_LABEL = '<i class="fas fa-paper-plane"></i> Submit Payment & Send WhatsApp Receipt';
+
+        /* ===== Helper: fetch ALL records (not just the first 100) ===== */
+        async function fetchAllDocs(dbId, collectionId) {
+            const all = [];
+            const hasOffset = window.AppwriteQuery && typeof window.AppwriteQuery.offset === 'function';
+            let offset = 0;
+            while (true) {
+                const queries = [window.AppwriteQuery.limit(100)];
+                if (hasOffset) queries.push(window.AppwriteQuery.offset(offset));
+                const res = await window.appwriteDatabases.listDocuments(dbId, collectionId, queries);
+                const docs = res.documents || [];
+                all.push(...docs);
+                if (!hasOffset || docs.length < 100) break;
+                offset += 100;
+            }
+            return { documents: all };
+        }
+
+        /* Today's date in LOCAL time as yyyy-mm-dd (valueAsDate uses UTC and can show yesterday early in the morning) */
+        function todayLocalISO() {
+            const n = new Date();
+            return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+        }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('Date_field').valueAsDate = new Date();
+            document.getElementById('Date_field').value = todayLocalISO();
             await loadActiveLoansFromAppwrite();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.form-group')) {
+                document.getElementById('borrowerSearchResults').style.display = 'none';
+            }
         });
 
         function handleLogout() {
@@ -214,12 +247,56 @@
             return d;
         }
 
+        /* ===== Matching helpers: a payment is counted only for its OWN loan ===== */
+        function last10Digits(v) {
+            const d = String(v || '').replace(/\D/g, '');
+            return d.length > 10 ? d.slice(-10) : d;
+        }
+        function normText(v) { return String(v || '').trim().toLowerCase(); }
+
+        function paymentBelongsToLoan(p, loan) {
+            if (!p.loan_id || p.loan_id !== loan.loan_id) return false;
+            const pName = normText(p.borrower_name || p.customer_name || p.full_name);
+            if (pName) return pName === normText(loan.borrower_name);
+            const pPhone = last10Digits(p.phone_number || p.mobile || p.whatsapp_number);
+            if (pPhone) return pPhone === last10Digits(loan.phone_number);
+            if (duplicateLoanIds.has(loan.loan_id)) {
+                return parseFlexibleDate(p.payment_date || p.$createdAt) >= parseFlexibleDate(loan.loan_date || loan.$createdAt);
+            }
+            return true;
+        }
+
+        function isPersonalLoan(loan) {
+            const category = String(loan.loan_category || '').trim();
+            const id = String(loan.loan_id || '').toUpperCase();
+            return category === 'Personal' || id.startsWith('VPL');
+        }
+
+        /* Installments / balance after a payment — same formula the reports use (cumulative) */
+        function computeAfterPayment(loan, totalPaidSoFar, paidAmount) {
+            const emi = parseFloat(loan.installment_amount || 0);
+            let tenure = 10;
+            if (loan.tenure) {
+                const m = String(loan.tenure).match(/\d+/);
+                if (m) tenure = parseInt(m[0]);
+            }
+            const totalAmount = parseFloat(loan.loan_amount || 0);
+            const newPaidTotal = totalPaidSoFar + paidAmount;
+            const balance = Math.max(0, totalAmount - newPaidTotal);
+            const paidInst = emi > 0 ? Math.min(tenure, Math.floor((newPaidTotal + 0.01) / emi)) : 0;
+            const remInst = Math.max(0, tenure - paidInst);
+            return { emi, tenure, totalAmount, balance, paidInst, remInst };
+        }
+
         async function loadActiveLoansFromAppwrite() {
             try {
-                const response = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID, VFC_DB.LOANS_ID, [window.AppwriteQuery.limit(100)]
-                );
-                allActiveLoans = (response.documents || []).filter(loan => loan.status === 'ACTIVE');
+                const response = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID);
+                allLoansList = response.documents || [];
+                allActiveLoans = allLoansList.filter(loan => loan.status === 'ACTIVE');
+
+                const counts = {};
+                allLoansList.forEach(l => { if (l.loan_id) counts[l.loan_id] = (counts[l.loan_id] || 0) + 1; });
+                duplicateLoanIds = new Set(Object.keys(counts).filter(id => counts[id] > 1));
             } catch (e) {
                 console.error("Error loading loans for payment:", e);
                 allActiveLoans = [];
@@ -273,10 +350,8 @@
             let paidCount = 0;
             let totalPaidSoFar = 0;
             try {
-                const paymentsResp = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, [window.AppwriteQuery.limit(100)]
-                );
-                const loanPayments = paymentsResp.documents.filter(p => p.loan_id === loan.loan_id);
+                const paymentsResp = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID);
+                const loanPayments = (paymentsResp.documents || []).filter(p => paymentBelongsToLoan(p, loan));
                 loanPayments.forEach(p => { totalPaidSoFar += parseFloat(p.amount_paid || 0); });
                 paidCount = emiAmount > 0 ? Math.floor((totalPaidSoFar + 0.01) / emiAmount) : loanPayments.length;
             } catch (err) {
@@ -296,22 +371,15 @@
         function updateCalculations() {
             if (!selectedLoanData) return;
 
-            let paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
-            let totalAmount = parseFloat(document.getElementById('Paid_Amount').dataset.totalAmount) || 0;
-            let totalPaidSoFar = parseFloat(document.getElementById('Paid_Amount').dataset.totalPaidSoFar) || 0;
-            let emiAmount = parseFloat(document.getElementById('Paid_Amount').dataset.emiAmount) || 1;
-            let totalTenure = parseInt(document.getElementById('Paid_Amount').dataset.totalTenure) || 10;
-            let paidCount = parseInt(document.getElementById('Paid_Amount').dataset.paidCount) || 0;
+            const paidAmountEl = document.getElementById('Paid_Amount');
+            let paidAmount = parseFloat(paidAmountEl.value) || 0;
+            let totalPaidSoFar = parseFloat(paidAmountEl.dataset.totalPaidSoFar) || 0;
+            let paidCount = parseInt(paidAmountEl.dataset.paidCount) || 0;
 
-            let newBalance = Math.max(0, totalAmount - totalPaidSoFar - paidAmount);
-            document.getElementById('Balance_Amount').value = newBalance.toFixed(2);
-
-            let extraInstallmentsCovered = Math.max(1, Math.floor((paidAmount + 0.01) / emiAmount));
-            let currentPaidInst = Math.min(totalTenure, paidCount + extraInstallmentsCovered);
-            let remainingInst = Math.max(0, totalTenure - currentPaidInst);
-
-            document.getElementById('Paid_Installment').value = currentPaidInst;
-            document.getElementById('Remaining_Installment').value = remainingInst;
+            const calc = computeAfterPayment(selectedLoanData, totalPaidSoFar, paidAmount);
+            document.getElementById('Balance_Amount').value = calc.balance.toFixed(2);
+            document.getElementById('Paid_Installment').value = calc.paidInst;
+            document.getElementById('Remaining_Installment').value = calc.remInst;
 
             const nextUnpaidInstNumber = paidCount + 1;
             const loanType = selectedLoanData.loan_type || 'Weekly';
@@ -337,114 +405,190 @@
             }
         }
 
+        function resetFormAfterSubmit() {
+            document.getElementById('paymentForm').reset();
+            document.getElementById('borrowerSearchInput').value = '';
+            document.getElementById('selectedLoanId').value = '';
+            document.getElementById('Loan_ID').value = '';
+            document.getElementById('dueDateHint').innerText = '';
+            document.getElementById('Delayed_Details').style.color = '';
+            document.getElementById('Date_field').value = todayLocalISO();
+            const pa = document.getElementById('Paid_Amount');
+            ['totalAmount', 'totalPaidSoFar', 'emiAmount', 'totalTenure', 'paidCount'].forEach(k => delete pa.dataset[k]);
+            selectedLoanData = null; // IMPORTANT: forget the old loan so it can't be used by mistake
+        }
+
         async function validatePayment(event) {
             event.preventDefault();
             if (!selectedLoanData) { alert("தயவுசெய்து சரியான கஸ்டமர் / லோனைத் தேர்ந்தெடுக்கவும்!"); return; }
 
-            const borrowerName = selectedLoanData.borrower_name;
-            let rawPhone = selectedLoanData.phone_number || selectedLoanData.mobile || selectedLoanData.whatsapp_number || "";
-            if (!rawPhone) {
-                try {
-                    const bResp = await window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID, [window.AppwriteQuery.limit(100)]);
-                    const bMatch = bResp.documents.find(b => b.full_name === borrowerName);
-                    if (bMatch) rawPhone = bMatch.whatsapp_number || bMatch.phone_number || "";
-                } catch (e) {}
-            }
-            const borrowerPhone = rawPhone || "8778003840";
-
-            const loanType = selectedLoanData.loan_type || 'Weekly';
-            const loanId = document.getElementById('Loan_ID').value;
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn.disabled) return; // block double click
             const paidAmount = parseFloat(document.getElementById('Paid_Amount').value) || 0;
-            const balanceAmount = parseFloat(document.getElementById('Balance_Amount').value) || 0;
-            const paymentDateRaw = document.getElementById('Date_field').value;
-            const paymentMode = document.getElementById('Payment_Mode').value;
-            const delayDetails = document.getElementById('Delayed_Details').value;
-            const paidInst = parseInt(document.getElementById('Paid_Installment').value) || 1;
-            const remInst = parseInt(document.getElementById('Remaining_Installment').value) || 0;
-
             if (paidAmount <= 0) { alert("சரியான தொகையை உள்ளிடவும்!"); return; }
 
-            const currentYear = new Date().getFullYear();
-            let paymentId = `PAY/001/${currentYear}`;
-            try {
-                const paymentsList = await window.appwriteDatabases.listDocuments(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, [window.AppwriteQuery.limit(100)]);
-                const nextSeq = (paymentsList.total || paymentsList.documents.length) + 1;
-                paymentId = `PAY/${String(nextSeq).padStart(3, '0')}/${currentYear}`;
-            } catch (err) {
-                paymentId = `PAY/${Math.floor(100 + Math.random() * 900)}/${currentYear}`;
-            }
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Payment...';
 
             try {
-                await window.appwriteDatabases.createDocument(
-                    VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, window.AppwriteID.unique(),
-                    {
-                        payment_id: paymentId, loan_id: loanId, borrower_name: borrowerName, phone_number: borrowerPhone,
-                        amount_paid: paidAmount.toFixed(2), balance_amount: balanceAmount.toFixed(2),
-                        paid_installment: paidInst.toString(), remaining_installment: remInst.toString(),
-                        payment_date: paymentDateRaw, payment_mode: paymentMode, delayed_details: delayDetails
-                    }
-                );
-            } catch (err) {
-                alert("Database save failed: " + err.message);
-                return;
-            }
+                const loan = selectedLoanData;
+                const borrowerName = loan.borrower_name;
+                const loanId = document.getElementById('Loan_ID').value;
+                const loanType = loan.loan_type || 'Weekly';
+                const paymentDateRaw = document.getElementById('Date_field').value;
+                const paymentMode = document.getElementById('Payment_Mode').value;
+                const delayDetails = document.getElementById('Delayed_Details').value;
 
-            const baseLoanDateStr = selectedLoanData.loan_date || paymentDateRaw;
-            const dueDateObj = computeInstallmentDueDate(baseLoanDateStr, loanType, paidInst + 1);
-            const formattedPayDate = formatDateCustom(paymentDateRaw);
-            const nextDueDateStr = formatDateCustom(dueDateObj);
-
-            let cleanMobile = String(borrowerPhone).replace(/\D/g, "");
-            if (cleanMobile.length > 10) cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
-            const finalMobile = "91" + cleanMobile;
-
-            let loanTypeDisp = loanType;
-            if (['weekly', 'daily', 'monthly'].includes(loanType.toLowerCase())) {
-                loanTypeDisp = "Personal Loan (" + loanType + ")";
-            }
-
-            let templateName = "";
-            let customComponents = {};
-
-            if (remInst <= 0 || balanceAmount <= 0) {
-                templateName = "vel_fin_loan_closed";
-                customComponents = {
-                    customer_name: String(borrowerName), loan_id: String(loanId), loan_type: String(loanTypeDisp),
-                    paid_amount: String(paidAmount.toFixed(2)), pay_date: String(formattedPayDate),
-                    paid_installment: String(paidInst), remaining_installments: "0", balance_amount: "0.00"
-                };
-            } else {
-                templateName = "vel_fin_payment_receipt";
-                customComponents = {
-                    body_1: String(borrowerName), body_2: String(loanTypeDisp), body_3: String(paidAmount.toFixed(2)),
-                    body_4: String(formattedPayDate), body_5: String(paidInst), body_6: String(remInst),
-                    body_7: String(balanceAmount.toFixed(2)), body_8: String(nextDueDateStr),
-                    body_9: String(paymentId), body_10: String(loanId)
-                };
-            }
-
-            const functionPayload = {
-                mobile: finalMobile, phone: finalMobile, to: finalMobile, recipient: finalMobile,
-                template_name: templateName, templateName: templateName,
-                components: customComponents, customComponents: customComponents
-            };
-
-            try {
-                const execRes = await window.appwriteFunctions.createExecution('6adb02310009b131da2d', JSON.stringify(functionPayload));
-                if (execRes.status === 'failed') {
-                    alert("Payment Saved! ஆனால் வாட்ஸ்அப் அனுப்புவதில் பிழை: " + (execRes.errors || execRes.responseBody));
-                } else {
-                    alert("Payment successfully saved to Cloud Database and WhatsApp receipt sent to " + finalMobile + "!");
+                let rawPhone = loan.phone_number || loan.mobile || loan.whatsapp_number || "";
+                if (!rawPhone) {
+                    try {
+                        const bResp = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.BORROWERS_ID);
+                        const bMatch = (bResp.documents || []).find(b => b.full_name === borrowerName);
+                        if (bMatch) rawPhone = bMatch.whatsapp_number || bMatch.phone_number || "";
+                    } catch (e) {}
                 }
-            } catch (error) {
-                alert("Payment saved to database, but automated WhatsApp dispatch failed: " + error.message);
-            }
+                const borrowerPhone = rawPhone || "8778003840";
 
-            document.getElementById('paymentForm').reset();
-            document.getElementById('borrowerSearchInput').value = '';
-            document.getElementById('dueDateHint').innerText = '';
-            document.getElementById('Date_field').valueAsDate = new Date();
-            await loadActiveLoansFromAppwrite();
+                // Fresh payments from the database (for totals, duplicate check and the next Payment ID)
+                const freshResp = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID);
+                const allPaymentsFresh = freshResp.documents || [];
+                const loanPaymentsFresh = allPaymentsFresh.filter(p => paymentBelongsToLoan(p, loan));
+                const totalPaidFresh = loanPaymentsFresh.reduce((s, p) => s + (parseFloat(p.amount_paid || 0)), 0);
+
+                const calc = computeAfterPayment(loan, totalPaidFresh, paidAmount);
+
+                // Overpayment check
+                const remainingBefore = calc.totalAmount - totalPaidFresh;
+                if (calc.totalAmount > 0 && paidAmount > remainingBefore + 0.5) {
+                    alert(`எச்சரிக்கை: செலுத்தும் தொகை (₹${paidAmount.toFixed(2)}) மீதித் தொகையை (₹${Math.max(0, remainingBefore).toFixed(2)}) விட அதிகம்! சரியான தொகையை உள்ளிடவும்.`);
+                    return;
+                }
+
+                // Same loan + same date + same amount already recorded?
+                const sameAlready = loanPaymentsFresh.some(p =>
+                    toISO(p.payment_date) === toISO(paymentDateRaw) &&
+                    Math.abs(parseFloat(p.amount_paid || 0) - paidAmount) < 0.01);
+                if (sameAlready) {
+                    const goOn = confirm("இதே கடனுக்கு இதே தேதியில் இதே தொகை (₹" + paidAmount.toFixed(2) + ") ஏற்கனவே பதிவாகியுள்ளது. மீண்டும் சேர்க்கவா?");
+                    if (!goOn) return;
+                }
+
+                const paidInst = calc.paidInst;
+                const remInst = calc.remInst;
+                const balanceAmount = calc.balance;
+                const isLoanFinished = balanceAmount <= 0.5;   // closed ONLY when nothing is left to pay
+
+                // Payment ID = highest existing number + 1 (never count + 1)
+                const currentYear = new Date().getFullYear();
+                let paymentId = '';
+                let savedOk = false;
+                let latestList = allPaymentsFresh;
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    if (attempt > 0) {
+                        const again = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID);
+                        latestList = again.documents || latestList;
+                    }
+                    const seqs = latestList.map(p => parseInt(String(p.payment_id || '').split('/')[1], 10) || 0);
+                    const nextSeq = (seqs.length ? Math.max(...seqs) : 0) + 1;
+                    paymentId = `PAY/${String(nextSeq).padStart(3, '0')}/${currentYear}`;
+
+                    try {
+                        await window.appwriteDatabases.createDocument(
+                            VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, window.AppwriteID.unique(),
+                            {
+                                payment_id: paymentId, loan_id: loanId, borrower_name: borrowerName, phone_number: borrowerPhone,
+                                amount_paid: paidAmount.toFixed(2), balance_amount: balanceAmount.toFixed(2),
+                                paid_installment: paidInst.toString(), remaining_installment: remInst.toString(),
+                                payment_date: paymentDateRaw, payment_mode: paymentMode, delayed_details: delayDetails
+                            }
+                        );
+                        savedOk = true;
+                        break;
+                    } catch (saveErr) {
+                        const isConflict = saveErr && (saveErr.code === 409 || /already exist|unique/i.test(String(saveErr.message || '')));
+                        if (!isConflict || attempt === 2) {
+                            alert("Database save failed: " + saveErr.message);
+                            return;
+                        }
+                    }
+                }
+                if (!savedOk) return;
+
+                // Fully paid -> mark the loan CLOSED automatically
+                if (isLoanFinished && loan.$id) {
+                    try {
+                        await window.appwriteDatabases.updateDocument(VFC_DB.DB_ID, VFC_DB.LOANS_ID, loan.$id, { status: 'CLOSED' });
+                    } catch (closeErr) {
+                        console.warn("Could not auto-close loan:", closeErr);
+                    }
+                }
+
+                const baseLoanDateStr = loan.loan_date || paymentDateRaw;
+                const dueDateObj = computeInstallmentDueDate(baseLoanDateStr, loanType, paidInst + 1);
+                const formattedPayDate = formatDateCustom(paymentDateRaw);
+                const nextDueDateStr = formatDateCustom(dueDateObj);
+
+                let cleanMobile = String(borrowerPhone).replace(/\D/g, "");
+                if (cleanMobile.length > 10) cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
+                const finalMobile = "91" + cleanMobile;
+
+                // Correct loan-type wording: Personal vs Credit Vault
+                let loanTypeDisp = loanType;
+                if (['weekly', 'daily', 'monthly'].includes(String(loanType).toLowerCase())) {
+                    loanTypeDisp = (isPersonalLoan(loan) ? "Personal Loan (" : "Credit Vault Loan (") + loanType + ")";
+                }
+
+                let templateName = "";
+                let customComponents = {};
+
+                if (isLoanFinished) {
+                    templateName = "vel_fin_loan_closed";
+                    customComponents = {
+                        customer_name: String(borrowerName), loan_id: String(loanId), loan_type: String(loanTypeDisp),
+                        paid_amount: String(paidAmount.toFixed(2)), pay_date: String(formattedPayDate),
+                        paid_installment: String(paidInst), remaining_installments: "0", balance_amount: "0.00"
+                    };
+                } else {
+                    templateName = "vel_fin_payment_receipt";
+                    customComponents = {
+                        body_1: String(borrowerName), body_2: String(loanTypeDisp), body_3: String(paidAmount.toFixed(2)),
+                        body_4: String(formattedPayDate), body_5: String(paidInst), body_6: String(remInst),
+                        body_7: String(balanceAmount.toFixed(2)), body_8: String(nextDueDateStr),
+                        body_9: String(paymentId), body_10: String(loanId)
+                    };
+                }
+
+                const functionPayload = {
+                    mobile: finalMobile, phone: finalMobile, to: finalMobile, recipient: finalMobile,
+                    template_name: templateName, templateName: templateName,
+                    components: customComponents, customComponents: customComponents
+                };
+
+                try {
+                    const execRes = await window.appwriteFunctions.createExecution('6adb02310009b131da2d', JSON.stringify(functionPayload));
+                    if (execRes.status === 'failed') {
+                        alert("Payment Saved (" + paymentId + ")! ஆனால் வாட்ஸ்அப் அனுப்புவதில் பிழை: " + (execRes.errors || execRes.responseBody));
+                    } else {
+                        alert("Payment " + paymentId + " saved to Cloud Database and WhatsApp receipt sent to " + finalMobile + "!" + (isLoanFinished ? "\nLoan fully paid - status changed to CLOSED." : ""));
+                    }
+                } catch (error) {
+                    alert("Payment saved (" + paymentId + "), but automated WhatsApp dispatch failed: " + error.message);
+                }
+
+                resetFormAfterSubmit();
+                await loadActiveLoansFromAppwrite();
+            } catch (err) {
+                console.error("Payment error:", err);
+                alert("Error: " + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = SUBMIT_LABEL;
+            }
+        }
+
+        function toISO(dateInput) {
+            const d = parseFlexibleDate(dateInput);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         }
     </script>
 </body>
