@@ -1,30 +1,36 @@
 // db.js - Live Master Configuration File for Vel Fin Corp
 
-const { Client, Databases, Storage, Functions, ID, Query } = Appwrite;
+const { Client, Databases, Storage, Functions, Account, ID, Query } = Appwrite;
 
 // எப்போதும் லைவ் மோடில் மட்டுமே இயங்கும்
 const currentMode = 'LIVE';
 const isLive = true;
 
+const APPWRITE_ENDPOINT = 'https://sfo.cloud.appwrite.io/v1';
+const APPWRITE_PROJECT_ID = '6ad71a29000d4bde5d4e';
+
 const client = new Client()
-    .setEndpoint('https://sfo.cloud.appwrite.io/v1')  
-    .setProject('6ad71a29000d4bde5d4e');  
+    .setEndpoint(APPWRITE_ENDPOINT)
+    .setProject(APPWRITE_PROJECT_ID);
 
 const databases = new Databases(client);
 const storage = new Storage(client);
 const functions = new Functions(client);
+const accountService = new Account(client);
 
 // உண்மையான லைவ் டேட்டாபேஸ் மற்றும் கலெக்ஷன் ஐடிகள் (Live IDs)
 const LIVE_DB = {
+    ENDPOINT: APPWRITE_ENDPOINT,
+    PROJECT_ID: APPWRITE_PROJECT_ID,
     DB_ID: '6ad71cc60012c0f125b9',
     BORROWERS_ID: '6ad71e920004bbc106eb',       // Live_Borrowers
     LOANS_ID: '6ad71f29001d4ff46c50',           // Live_Loans
     PAYMENTS_ID: '6ad71ee900312b70ce69',        // Live_Payments
     RETAILERS_ID: '6ada05fd0007206813cf',       // Retialers/Staffs
     STAFFS_ID: '6ada05fd0007206813cf',          // Retialers/Staffs (Alias)
-    CREDIT_VAULT_ID: '6ad71f29001d4ff46c50',  
-    PERSONAL_LOAN_ID: '6ad71f29001d4ff46c50',  
-    DOCUMENTS_BUCKET_ID: '6ad728e7001cd61e6b73' 
+    CREDIT_VAULT_ID: '6ad71f29001d4ff46c50',
+    PERSONAL_LOAN_ID: '6ad71f29001d4ff46c50',
+    DOCUMENTS_BUCKET_ID: '6ad728e7001cd61e6b73'
 };
 
 // Global variables - லைவ் ஐடிகள் மட்டுமே இணைக்கப்படும்
@@ -32,13 +38,75 @@ window.appwriteClient = client;
 window.appwriteDatabases = databases;
 window.appwriteStorage = storage;
 window.appwriteFunctions = functions;
+window.appwriteAccount = accountService;
 window.VFC_DB = LIVE_DB;
 window.AppwriteID = ID;
 window.AppwriteQuery = Query;
 
+/* ================= Shared helper functions (used by login, borrower portal, reminders ...) ================= */
+
+// Last 10 digits of any phone number
+window.vfcLast10 = function(v) {
+    const d = String(v || '').replace(/\D/g, '');
+    return d.length > 10 ? d.slice(-10) : d;
+};
+
+// Read ALL documents of a collection (Appwrite returns only 25 by default, 100 max per request)
+window.vfcFetchAll = async function(collectionId) {
+    const all = [];
+    const hasOffset = typeof Query.offset === 'function';
+    let offset = 0;
+    while (true) {
+        const queries = [Query.limit(100)];
+        if (hasOffset) queries.push(Query.offset(offset));
+        const res = await databases.listDocuments(LIVE_DB.DB_ID, collectionId, queries);
+        const docs = res.documents || [];
+        all.push(...docs);
+        if (!hasOffset || docs.length < 100) break;
+        offset += 100;
+    }
+    return all;
+};
+
+// Read only the rows where field == value (needs an Index on that field in Appwrite).
+// If the index does not exist, it safely falls back to reading everything and filtering here.
+window.vfcQueryEqualOrAll = async function(collectionId, field, value, fallbackMatchFn) {
+    try {
+        const out = [];
+        const hasOffset = typeof Query.offset === 'function';
+        let offset = 0;
+        while (true) {
+            const queries = [Query.equal(field, [value]), Query.limit(100)];
+            if (hasOffset) queries.push(Query.offset(offset));
+            const res = await databases.listDocuments(LIVE_DB.DB_ID, collectionId, queries);
+            const docs = res.documents || [];
+            out.push(...docs);
+            if (!hasOffset || docs.length < 100) break;
+            offset += 100;
+        }
+        return out;
+    } catch (e) {
+        const all = await window.vfcFetchAll(collectionId);
+        return typeof fallbackMatchFn === 'function' ? all.filter(fallbackMatchFn) : all;
+    }
+};
+
+// Borrowers registered with this mobile number (phone OR whatsapp)
+window.vfcFindBorrowersByMobile = async function(mobile) {
+    const m = window.vfcLast10(mobile);
+    const matchFn = b => window.vfcLast10(b.phone_number) === m || window.vfcLast10(b.whatsapp_number) === m;
+    const a = await window.vfcQueryEqualOrAll(LIVE_DB.BORROWERS_ID, 'phone_number', m, matchFn);
+    const b = await window.vfcQueryEqualOrAll(LIVE_DB.BORROWERS_ID, 'whatsapp_number', m, matchFn);
+    const seen = new Set();
+    return a.concat(b).filter(d => (seen.has(d.$id) ? false : (seen.add(d.$id), true)));
+};
+
 // Strict Global Role-Based Security & Back-Forward Cache (bfcache) Protection
 (function() {
     const publicPages = ['index.html', 'login.html', 'contact.html', ''];
+
+    let adminVerified = false;   // kept in memory only - cannot be forged from the browser console
+    let adminVerifying = false;
 
     function getAllowedModulesForCurrentUser(userRole) {
         if (userRole === 'retailer') {
@@ -60,6 +128,19 @@ window.AppwriteQuery = Query;
             return ['borrowers-details.html', 'payments.html'];
         }
         return null; // admin gets all modules
+    }
+
+    function forceLogoutToLogin() {
+        document.documentElement.style.display = 'none';
+        sessionStorage.clear();
+        localStorage.removeItem('velfincorp_logged_user');
+        window.location.replace('login.html');
+    }
+
+    // Admin must have a REAL Appwrite login session (created at login.html with the admin e-mail & password)
+    function verifyAdminSession() {
+        if (!window.appwriteAccount) return Promise.resolve(false);
+        return window.appwriteAccount.get().then(() => true).catch(() => false);
     }
 
     // பக்கம் லோடு ஆவதற்கு முன்பே அனுமதி இல்லாத சைடுபார் மெனுக்களை CSS மூலம் மறைத்தல்
@@ -109,6 +190,11 @@ window.AppwriteQuery = Query;
         if (currentPage === 'login.html') {
             sessionStorage.clear();
             localStorage.removeItem('velfincorp_logged_user');
+            if (!window.__vfcLoginSessionCleared) {
+                window.__vfcLoginSessionCleared = true;
+                // also end any old Appwrite admin session (once per page load)
+                if (window.appwriteAccount) window.appwriteAccount.deleteSession('current').catch(() => {});
+            }
             return;
         }
 
@@ -126,14 +212,28 @@ window.AppwriteQuery = Query;
             return;
         }
 
-        // Admin அல்லாதவர்கள் (Retailer / Staff / Borrower) அனுமதி இல்லாத பக்கத்திற்கு Back/Forward மூலம் சென்றால் உடனடியாக லாக்-அவுட் செய்து லாகின் பக்கத்திற்கு அனுப்புதல்
+        // Admin: verify the real Appwrite session before showing anything
+        if (userRole === 'admin' && !adminVerified) {
+            document.documentElement.style.visibility = 'hidden';
+            if (!adminVerifying) {
+                adminVerifying = true;
+                verifyAdminSession().then(ok => {
+                    adminVerifying = false;
+                    if (ok) {
+                        adminVerified = true;
+                        document.documentElement.style.visibility = '';
+                    } else {
+                        forceLogoutToLogin();
+                    }
+                });
+            }
+        }
+
+        // Admin அல்லாதவர்கள் (Retailer / Staff / Borrower) அனுமதி இல்லாத பக்கத்திற்கு Back/Forward மூலம் சென்றால் உடனடியாக லாக்-அவுட்
         if (userRole !== 'admin') {
             const allowedModules = getAllowedModulesForCurrentUser(userRole) || [];
             if (!allowedModules.includes(currentPage)) {
-                document.documentElement.style.display = 'none';
-                sessionStorage.clear();
-                localStorage.removeItem('velfincorp_logged_user');
-                window.location.replace('login.html');
+                forceLogoutToLogin();
                 return;
             }
         }
