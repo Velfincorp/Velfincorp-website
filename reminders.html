@@ -7,22 +7,23 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - WhatsApp Reminders & Alerts</title>
+    <link rel="icon" type="image/jpeg" href="velfincorp-logo.jpeg">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
-    
+
     <script>
         // Centralized Authentication & Security Protection Script
         (function() {
             const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
             const userRole = sessionStorage.getItem('velfincorp_role');
-            
-            window.pageshow = function(event) {
+
+            window.addEventListener('pageshow', function(event) {
                 if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
                     window.location.replace('login.html');
                 }
-            };
+            });
 
             if (!loggedUser || !userRole) {
                 window.location.replace('login.html');
@@ -35,153 +36,29 @@
         })();
     </script>
     <style>
-        :root {
-            --navy: #0F1D36;
-            --gold: #C5A059;
-            --bg-color: #F8F9FB;
-            --text-main: #2D3748;
-            --white: #FFFFFF;
-            --danger: #C53030;
-            --success: #2F855A;
-        }
-        body {
-            font-family: 'Manrope', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            min-height: 100vh;
-        }
-        .sidebar {
-            width: 260px;
-            background-color: var(--navy);
-            color: var(--white);
-            display: flex;
-            flex-direction: column;
-            border-right: 3px solid var(--gold);
-            position: fixed;
-            height: 100vh;
-            box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1);
-            overflow-y: auto;
-        }
-        .sidebar-brand {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0,0,0,0.1);
-        }
-        .sidebar-logo {
-            height: 40px;
-            width: 40px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 2px solid var(--gold);
-            background: var(--white);
-            padding: 2px;
-        }
-        .sidebar-title {
-            font-family: 'Cinzel', serif;
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--gold);
-            letter-spacing: 1px;
-        }
-        .sidebar-menu {
-            list-style: none;
-            padding: 15px 0;
-            margin: 0;
-            flex: 1;
-        }
-        .sidebar-menu li a {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px 25px;
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: 0.3s;
-            border-left: 4px solid transparent;
-        }
-        .sidebar-menu li a:hover, .sidebar-menu li a.active {
-            background-color: rgba(197, 160, 89, 0.15);
-            color: var(--gold);
-            border-left-color: var(--gold);
-        }
-        .sidebar-menu li a i {
-            width: 20px;
-            text-align: center;
-            color: var(--gold);
-        }
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-        }
-        .btn-logout {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 10px;
-            width: 100%;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: 40px;
-            box-sizing: border-box;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: var(--white);
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08);
-            border-top: 5px solid var(--navy);
-        }
-        .header {
-            font-family: 'Cinzel', serif;
-            color: var(--navy);
-            font-size: 24px;
-            margin-bottom: 25px;
-            border-bottom: 2px solid var(--gold);
-            padding-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .btn-trigger {
-            background-color: var(--success);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .btn-trigger:hover {
-            background-color: #276749;
-        }
-        .info-box {
-            background: #f1f5f9;
-            padding: 20px;
-            border-radius: 6px;
-            margin-bottom: 25px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
+        :root { --navy: #0F1D36; --gold: #C5A059; --bg-color: #F8F9FB; --text-main: #2D3748; --white: #FFFFFF; --danger: #C53030; --success: #2F855A; }
+        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background-color: var(--navy); color: var(--white); display: flex; flex-direction: column; border-right: 3px solid var(--gold); position: fixed; height: 100vh; box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1); overflow-y: auto; }
+        .sidebar-brand { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0,0,0,0.1); }
+        .sidebar-logo { height: 40px; width: 40px; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold); background: var(--white); padding: 2px; }
+        .sidebar-title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: bold; color: var(--gold); letter-spacing: 1px; }
+        .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; flex: 1; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 15px; padding: 12px 25px; color: #cbd5e1; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active { background-color: rgba(197, 160, 89, 0.15); color: var(--gold); border-left-color: var(--gold); }
+        .sidebar-menu li a i { width: 20px; text-align: center; color: var(--gold); }
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
+        .btn-logout { background-color: var(--danger); color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
+        .main-content { margin-left: 260px; flex: 1; padding: 40px; box-sizing: border-box; }
+        .container { max-width: 900px; margin: 0 auto; background: var(--white); padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08); border-top: 5px solid var(--navy); }
+        .header { font-family: 'Cinzel', serif; color: var(--navy); font-size: 24px; margin-bottom: 25px; border-bottom: 2px solid var(--gold); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-trigger { background-color: var(--success); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-trigger:hover { background-color: #276749; }
+        .btn-preview { background-color: var(--navy); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-preview:hover { background-color: var(--gold); color: var(--navy); }
+        .btn-trigger:disabled, .btn-preview:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        .info-box { background: #f1f5f9; padding: 20px; border-radius: 6px; margin-bottom: 25px; font-size: 14px; line-height: 1.7; }
+        #reminderLog { font-family: monospace; background: #0f1d36; color: #38bdf8; padding: 15px; border-radius: 6px; min-height: 180px; max-height: 420px; overflow-y: auto; font-size: 13px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -217,165 +94,244 @@
         <div class="container">
             <div class="header">
                 <span>WhatsApp Reminders & Alerts</span>
-                <button class="btn-trigger" onclick="runAutomaticReminders()"><i class="fas fa-paper-plane"></i> Run System Reminders</button>
+                <div class="btn-row">
+                    <button class="btn-preview" id="btnPreview" onclick="runAutomaticReminders(true)"><i class="fas fa-eye"></i> Preview (No Sending)</button>
+                    <button class="btn-trigger" id="btnSend" onclick="runAutomaticReminders(false)"><i class="fas fa-paper-plane"></i> Send Reminders</button>
+                </div>
             </div>
 
             <div class="info-box">
-                <strong>Logic Check:</strong> This script connects to Appwrite Cloud Database to check all active loans. If tomorrow is the due date, it sends an <strong>Advance Reminder</strong> (`vel_fin_advance_reminder`). If the due date has passed, it sends a <strong>Delay Alert</strong> (`vel_fin_delay_alert`) with the Loan ID and exact overdue days via Appwrite Functions.
+                <strong>How it works:</strong> For every ACTIVE loan the next unpaid installment's due date is calculated (loan start date + installment number). 
+                If the due date is <strong>tomorrow</strong> an <strong>Advance Reminder</strong> (<code>vel_fin_advance_reminder</code>) is sent. 
+                If the due date has <strong>passed</strong> a <strong>Delay Alert</strong> (<code>vel_fin_delay_alert</code>) with the exact overdue days is sent. 
+                Use <strong>Preview</strong> first to see exactly who will receive a message; <strong>Send</strong> asks for confirmation and never sends the same reminder twice on the same day.
             </div>
 
-            <div id="reminderLog" style="font-family: monospace; background: #0f1d36; color: #38bdf8; padding: 15px; border-radius: 6px; min-height: 180px; max-height: 350px; overflow-y: auto;">
-                [System Ready] Click 'Run System Reminders' to process due dates from Appwrite Cloud and trigger automated WhatsApp alerts...
-            </div>
+            <div id="reminderLog">[System Ready] Click 'Preview' to see who is due, then 'Send Reminders' to message them on WhatsApp...</div>
         </div>
     </div>
 
     <script>
-        // Appwrite Functions இன்ஸ்டன்ஸை உருவாக்குதல்
-        let appwriteFunctionsInstance = null;
-        try {
-            if (window.appwriteClient) {
-                appwriteFunctionsInstance = new window.Appwrite.Functions(window.appwriteClient);
-            } else if (window.Appwrite && typeof VFC_DB !== 'undefined') {
-                const client = new window.Appwrite.Client()
-                    .setEndpoint(VFC_DB.ENDPOINT || 'https://cloud.appwrite.io/v1')
-                    .setProject(VFC_DB.PROJECT_ID || '6ad71a290004bde5d4e');
-                appwriteFunctionsInstance = new window.Appwrite.Functions(client);
-            }
-        } catch (err) {
-            console.error("Error initializing Appwrite Functions:", err);
+        const REMINDER_FUNCTION_ID = '6adb02310009b131da2d';
+        const SENT_LOG_KEY = 'velfincorp_reminder_log';
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
 
-        async function runAutomaticReminders() {
-            const logBox = document.getElementById('reminderLog');
-            logBox.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Connecting to Appwrite Cloud Database...`;
+        function log(html) {
+            const box = document.getElementById('reminderLog');
+            box.innerHTML += '<br>' + html;
+            box.scrollTop = box.scrollHeight;
+        }
 
-            let activeLoans = [];
-            let allPayments = [];
+        function normText(v) { return String(v || '').trim().toLowerCase(); }
+
+        function parseFlexibleDate(dateInput) {
+            if (!dateInput) return new Date();
+            if (dateInput instanceof Date) return new Date(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate());
+            const str = String(dateInput).trim().split('T')[0];
+            const parts = str.split(/[-\/]/);
+            if (parts.length === 3) {
+                if (parts[0].length === 4) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            }
+            const fb = new Date(dateInput);
+            return isNaN(fb.getTime()) ? new Date() : new Date(fb.getFullYear(), fb.getMonth(), fb.getDate());
+        }
+
+        function computeInstallmentDueDate(loanStart, loanType, n) {
+            const d = parseFlexibleDate(loanStart);
+            const t = String(loanType || 'Weekly').toLowerCase();
+            if (t.includes('daily')) d.setDate(d.getDate() + n);
+            else if (t.includes('monthly')) d.setMonth(d.getMonth() + n);
+            else d.setDate(d.getDate() + (n * 7));
+            return d;
+        }
+
+        function isPersonalLoan(loan) {
+            const category = String(loan.loan_category || '').trim();
+            const id = String(loan.loan_id || '').toUpperCase();
+            return category === 'Personal' || id.startsWith('VPL');
+        }
+
+        // A payment belongs to a loan only if the Loan ID AND the borrower match
+        function paymentBelongsToLoan(p, loan) {
+            if (!p.loan_id || p.loan_id !== loan.loan_id) return false;
+            const pName = normText(p.borrower_name || p.customer_name || p.full_name);
+            if (pName) return pName === normText(loan.borrower_name);
+            return true;
+        }
+
+        function todayKey() {
+            const n = new Date();
+            return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+        }
+
+        function loadSentLog() {
+            try {
+                const all = JSON.parse(localStorage.getItem(SENT_LOG_KEY) || '{}');
+                const t = todayKey();
+                return { [t]: all[t] || [] };  // keep only today's entries
+            } catch (e) { return { [todayKey()]: [] }; }
+        }
+
+        async function runAutomaticReminders(dryRun) {
+            const btnPreview = document.getElementById('btnPreview');
+            const btnSend = document.getElementById('btnSend');
+            btnPreview.disabled = true;
+            btnSend.disabled = true;
 
             try {
-                const loansResp = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.LOANS_ID
-                );
-                activeLoans = loansResp.documents.filter(loan => loan.status === 'ACTIVE');
+                log(`[${new Date().toLocaleTimeString()}] ${dryRun ? 'PREVIEW MODE - nothing will be sent. ' : ''}Connecting to Appwrite Cloud Database...`);
 
-                const paymentsResp = await window.appwriteDatabases.listDocuments(
-                    VFC_DB.DB_ID,
-                    VFC_DB.PAYMENTS_ID
-                );
-                allPayments = paymentsResp.documents;
-            } catch (e) {
-                logBox.innerHTML += `<br><span style="color: #f87171;">[Error] Failed to fetch data from Appwrite: ${e.message}</span>`;
-                return;
-            }
-
-            if (activeLoans.length === 0) {
-                logBox.innerHTML += `<br>[Info] No active loans found in Appwrite Cloud Database.`;
-                return;
-            }
-
-            logBox.innerHTML += `<br>[Info] Found ${activeLoans.length} active loans. Evaluating due dates...`;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-
-            const daysOfWeek = ["ஞாயிற்றுக்கிழமை", "திங்கட்கிழமை", "செவ்வாய்க்கிழமை", "புதன்கிழமை", "வியாழக்கிழமை", "வெள்ளிக்கிழமை", "சனிக்கிழமை"];
-
-            for (let loan of activeLoans) {
-                let customerName = loan.borrower_name || "Customer";
-                let loanId = loan.loan_id || "N/A";
-                let customerPhone = loan.phone_number || "8778003840";
-                let emi = parseFloat(loan.installment_amount || 1000).toFixed(2);
-                let totalTenure = parseInt(loan.tenure || 10);
-
-                let loanTypeDisp = "பர்சனல் லோன்";
-                if (loanId.includes("VML") || loanId.includes("VEL") || loanId.includes("VFL")) {
-                    loanTypeDisp = "பொருள் கடன் (Credit Vault)";
+                let loans = [], payments = [];
+                try {
+                    [loans, payments] = await Promise.all([
+                        window.vfcFetchAll(VFC_DB.LOANS_ID),
+                        window.vfcFetchAll(VFC_DB.PAYMENTS_ID)
+                    ]);
+                } catch (e) {
+                    log(`<span style="color:#f87171;">[Error] Failed to fetch data from Appwrite: ${esc(e.message)}</span>`);
+                    return;
                 }
 
-                // இதுவரை கட்டிய தவணைகளைக் கணக்கிடுதல்
-                let loanPayments = allPayments.filter(p => p.loan_id === loanId);
-                let paidCount = loanPayments.length;
-                let nextInstallmentNum = paidCount + 1;
-                let remainingInstallments = totalTenure - paidCount;
-                if (remainingInstallments < 0) remainingInstallments = 0;
-
-                // அடுத்த தவணைத் தேதியை (Due Date) கணக்கிடுதல்
-                let baseDateStr = loan.next_due_date || loan.loan_date || loan.start_date || loan.$createdAt;
-                let dueDate = new Date(baseDateStr);
-                dueDate.setHours(0, 0, 0, 0);
-
-                let cleanMobile = customerPhone.replace("+", "").replace(/\s+/g, "").replace(/-/g, "");
-                if (cleanMobile.length > 10) {
-                    cleanMobile = cleanMobile.substring(cleanMobile.length - 10);
+                const activeLoans = loans.filter(loan => loan.status === 'ACTIVE');
+                if (activeLoans.length === 0) {
+                    log('[Info] No active loans found in Appwrite Cloud Database.');
+                    return;
                 }
-                const finalMobile = "91" + cleanMobile;
+                log(`[Info] Found ${activeLoans.length} active loans. Evaluating due dates...`);
 
-                let templateName = "";
-                let customComponents = null;
+                const today = parseFlexibleDate(new Date());
+                const daysOfWeek = ["ஞாயிற்றுக்கிழமை", "திங்கட்கிழமை", "செவ்வாய்க்கிழமை", "புதன்கிழமை", "வியாழக்கிழமை", "வெள்ளிக்கிழமை", "சனிக்கிழமை"];
+                const queue = [];
 
-                // 1. நாளைக்கு டியூ என்றால் -> Advance Reminder (body_1 to body_7)
-                if (dueDate.getTime() === tomorrow.getTime()) {
-                    templateName = "vel_fin_advance_reminder";
-                    let dueDayName = daysOfWeek[dueDate.getDay()];
-                    let dueDateFormatted = dueDate.toLocaleDateString('en-GB').replace(/\//g, '-');
+                for (const loan of activeLoans) {
+                    const customerName = loan.borrower_name || "Customer";
+                    const loanId = loan.loan_id || "N/A";
+                    const emiNum = parseFloat(loan.installment_amount || 0);
+                    const emi = emiNum.toFixed(2);
+                    let totalTenure = 10;
+                    const tm = String(loan.tenure || '').match(/\d+/);
+                    if (tm) totalTenure = parseInt(tm[0]);
+                    const totalLoanAmt = parseFloat(loan.loan_amount || 0);
 
-                    customComponents = {
-                        "body_1": { "type": "text", "value": customerName },
-                        "body_2": { "type": "text", "value": loanId },
-                        "body_3": { "type": "text", "value": loanTypeDisp },
-                        "body_4": { "type": "text", "value": dueDayName },
-                        "body_5": { "type": "text", "value": dueDateFormatted },
-                        "body_6": { "type": "text", "value": nextInstallmentNum.toString() },
-                        "body_7": { "type": "text", "value": emi.toString() }
-                    };
-                } 
-                // 2. டியூ தேதி தாண்டிவிட்டால் (Delay) -> Delay Alert (body_1 to body_7)
-                else if (dueDate.getTime() < today.getTime()) {
-                    const diffTime = Math.abs(today - dueDate);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    const loanTypeDisp = isPersonalLoan(loan) ? "பர்சனல் லோன்" : "பொருள் கடன் (Credit Vault)";
 
-                    templateName = "vel_fin_delay_alert";
-                    customComponents = {
-                        "body_1": { "type": "text", "value": customerName },
-                        "body_2": { "type": "text", "value": loanId },
-                        "body_3": { "type": "text", "value": loanTypeDisp },
-                        "body_4": { "type": "text", "value": diffDays.toString() },
-                        "body_5": { "type": "text", "value": nextInstallmentNum.toString() },
-                        "body_6": { "type": "text", "value": emi.toString() },
-                        "body_7": { "type": "text", "value": remainingInstallments.toString() }
-                    };
-                }
+                    // இதுவரை கட்டிய தவணைகளைக் கணக்கிடுதல் (reports-ல் உள்ள அதே முறை)
+                    const loanPayments = payments.filter(p => paymentBelongsToLoan(p, loan));
+                    const totalPaid = loanPayments.reduce((s, p) => s + parseFloat(p.amount_paid || p.paid_amount || p.amount || 0), 0);
+                    const paidInstallments = emiNum > 0 ? Math.min(totalTenure, Math.floor((totalPaid + 0.01) / emiNum)) : loanPayments.length;
+                    const remainingInstallments = Math.max(0, totalTenure - paidInstallments);
 
-                // Appwrite Function வழியாக மெசேஜ் அனுப்புதல்
-                if (templateName && customComponents) {
-                    try {
-                        if (!appwriteFunctionsInstance) {
-                            throw new Error("Appwrite Functions instance not initialized.");
-                        }
-
-                        await appwriteFunctionsInstance.createExecution(
-                            '6adb02310009b131da2d',
-                            JSON.stringify({
-                                mobile: finalMobile,
-                                templateName: templateName,
-                                customComponents: customComponents
-                            })
-                        );
-
-                        logBox.innerHTML += `<br><span style="color: #4ade80;">[Success] ${templateName} triggered for ${customerName} (${loanId})</span>`;
-                    } catch (err) {
-                        logBox.innerHTML += `<br><span style="color: #f87171;">[Error] Failed for ${customerName} (${loanId}): ${err.message}</span>`;
+                    if ((totalLoanAmt > 0 && totalPaid >= totalLoanAmt) || paidInstallments >= totalTenure) {
+                        log(`[Skipped] ${esc(customerName)} (${esc(loanId)}) - fully paid`);
+                        continue;
                     }
-                } else {
-                    logBox.innerHTML += `<br>[Skipped] No reminder due today for ${customerName} (${loanId} - Due: ${dueDate.toLocaleDateString('en-GB')})`;
+
+                    const nextInstallmentNum = paidInstallments + 1;
+                    // அடுத்த தவணைத் தேதி = கடன் தொடங்கிய தேதி + தவணை எண்
+                    const dueDate = computeInstallmentDueDate(loan.loan_date || loan.$createdAt, loan.loan_type, nextInstallmentNum);
+                    const diffDays = Math.round((today - dueDate) / DAY_MS);   // negative = in the future
+
+                    const cleanMobile = window.vfcLast10(loan.phone_number);
+                    if (cleanMobile.length !== 10) {
+                        log(`<span style="color:#fbbf24;">[Skipped] ${esc(customerName)} (${esc(loanId)}) - no valid phone number</span>`);
+                        continue;
+                    }
+                    const finalMobile = "91" + cleanMobile;
+                    const dueText = dueDate.toLocaleDateString('en-GB');
+
+                    let templateName = "", comps = null, summary = "";
+
+                    if (diffDays === -1) {
+                        // நாளைக்கு டியூ -> Advance Reminder
+                        templateName = "vel_fin_advance_reminder";
+                        comps = {
+                            body_1: String(customerName),
+                            body_2: String(loanId),
+                            body_3: String(loanTypeDisp),
+                            body_4: String(daysOfWeek[dueDate.getDay()]),
+                            body_5: String(dueText.replace(/\//g, '-')),
+                            body_6: String(nextInstallmentNum),
+                            body_7: String(emi)
+                        };
+                        summary = `due tomorrow (${dueText}), installment ${nextInstallmentNum}`;
+                    } else if (diffDays >= 1) {
+                        // டியூ தேதி தாண்டிவிட்டால் -> Delay Alert
+                        templateName = "vel_fin_delay_alert";
+                        comps = {
+                            body_1: String(customerName),
+                            body_2: String(loanId),
+                            body_3: String(loanTypeDisp),
+                            body_4: String(diffDays),
+                            body_5: String(nextInstallmentNum),
+                            body_6: String(emi),
+                            body_7: String(remainingInstallments)
+                        };
+                        summary = `${diffDays} day(s) overdue since ${dueText}, installment ${nextInstallmentNum}`;
+                    }
+
+                    if (templateName) {
+                        queue.push({ loan, customerName, loanId, finalMobile, templateName, comps, summary });
+                    } else {
+                        log(`[Skipped] ${esc(customerName)} (${esc(loanId)}) - next due ${dueText}`);
+                    }
                 }
+
+                if (queue.length === 0) {
+                    log('<strong>[Completed] No reminders are due right now.</strong>');
+                    return;
+                }
+
+                log(`<strong>[Result] ${queue.length} reminder(s) ${dryRun ? 'would be sent' : 'ready to send'}:</strong>`);
+                queue.forEach(q => log(`&nbsp;&nbsp;• ${esc(q.templateName)} → ${esc(q.customerName)} (${esc(q.loanId)}) - ${esc(q.summary)}`));
+
+                if (dryRun) {
+                    log('<strong>[Preview finished] Nothing was sent. Click "Send Reminders" to send these.</strong>');
+                    return;
+                }
+
+                if (!confirm(`${queue.length} WhatsApp reminder(s) will be sent to customers. Continue?`)) {
+                    log('[Cancelled] Nothing was sent.');
+                    return;
+                }
+
+                const sentLog = loadSentLog();
+                const t = todayKey();
+                let sentCount = 0;
+
+                for (const q of queue) {
+                    const key = `${q.loanId}|${q.customerName}|${q.templateName}`;
+                    if (sentLog[t].includes(key)) {
+                        log(`[Already sent today] ${esc(q.customerName)} (${esc(q.loanId)})`);
+                        continue;
+                    }
+                    try {
+                        const payload = {
+                            mobile: q.finalMobile, phone: q.finalMobile, to: q.finalMobile, recipient: q.finalMobile,
+                            template_name: q.templateName, templateName: q.templateName,
+                            components: q.comps, customComponents: q.comps
+                        };
+                        const execRes = await window.appwriteFunctions.createExecution(REMINDER_FUNCTION_ID, JSON.stringify(payload));
+                        if (execRes && execRes.status === 'failed') {
+                            throw new Error(execRes.errors || execRes.responseBody || 'Function failed');
+                        }
+                        sentLog[t].push(key);
+                        localStorage.setItem(SENT_LOG_KEY, JSON.stringify(sentLog));
+                        sentCount++;
+                        log(`<span style="color:#4ade80;">[Success] ${esc(q.templateName)} sent to ${esc(q.customerName)} (${esc(q.loanId)})</span>`);
+                    } catch (err) {
+                        log(`<span style="color:#f87171;">[Error] Failed for ${esc(q.customerName)} (${esc(q.loanId)}): ${esc(err.message)}</span>`);
+                    }
+                }
+                log(`<strong>[Completed] ${sentCount} reminder(s) sent.</strong>`);
+            } finally {
+                btnPreview.disabled = false;
+                btnSend.disabled = false;
             }
-            logBox.innerHTML += `<br><strong>[Completed] Automated due date scan finished.</strong>`;
         }
 
         function handleLogout() {
