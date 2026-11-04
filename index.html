@@ -7,49 +7,9 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Vel Fin Corp - Trust, Finance & Prosperity</title>
+    <link rel="icon" type="image/jpeg" href="velfincorp-logo.jpeg">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script>
-        // Centralized Authentication & Security Protection Script
-        (function() {
-            const currentPage = window.location.pathname.split("/").pop() || "index.html";
-            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
-            const userRole = sessionStorage.getItem('velfincorp_role');
-
-            // 1. Prevent back/forward cache browsing after logout
-            window.pageshow = function(event) {
-                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
-                    window.location.replace('login.html');
-                }
-            };
-
-            // 2. Public pages that don't require login
-            const publicPages = ['index.html', 'login.html', 'contact.html', ''];
-            if (publicPages.includes(currentPage)) {
-                return; // Allow public access
-            }
-
-            // 3. If not logged in, redirect to login page immediately
-            if (!loggedUser || !userRole) {
-                window.location.replace('login.html');
-                return;
-            }
-
-            // 4. Role-based Access Control (RBAC) Enforcement
-            if (userRole === 'borrower') {
-                // Borrowers are ONLY allowed inside the borrower portal
-                if (currentPage !== 'borrower-portal.html') {
-                    window.location.replace('borrower-portal.html');
-                }
-            } else {
-                // Admin and Staff are NOT allowed inside the borrower portal
-                if (currentPage === 'borrower-portal.html') {
-                    window.location.replace('dashboard.html');
-                }
-            }
-        })();
-    </script>
 
     <style>
         :root {
@@ -59,7 +19,7 @@
             --bg-color: #F8F9FB;
             --text-main: #2D3748;
             --white: #FFFFFF;
-            
+
             /* Fibonacci Spacing Scale */
             --fib-xs: 8px;
             --fib-sm: 13px;
@@ -68,229 +28,72 @@
             --fib-xl: 55px;
             --fib-xxl: 89px;
         }
-        
-        body {
-            font-family: 'Manrope', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-        }
+
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; }
 
         /* Navigation Bar */
-        nav {
-            background-color: var(--navy);
-            color: var(--white);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--fib-md) var(--fib-xxl);
-            border-bottom: 3px solid var(--gold);
-            box-shadow: 0 4px 20px rgba(15, 29, 54, 0.15);
-        }
-
-        .brand-container {
-            display: flex;
-            align-items: center;
-            gap: var(--fib-sm);
-        }
-
-        .nav-logo {
-            height: 48px;
-            width: 48px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 2px solid var(--gold);
-            background: var(--white);
-            padding: 2px;
-        }
-
-        .logo-text-area {
-            font-family: 'Cinzel', serif;
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--gold);
-            letter-spacing: 1.5px;
-            line-height: 1.1;
-        }
-
-        .logo-subtext {
-            font-size: 9px;
-            color: #E2E8F0;
-            letter-spacing: 2px;
-            font-family: 'Manrope', sans-serif;
-            text-transform: uppercase;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: var(--fib-lg);
-            align-items: center;
-        }
-
-        .nav-links a {
-            color: var(--white);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            transition: 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: var(--gold);
-        }
-
-        .btn-login-nav {
-            background-color: var(--gold);
-            color: var(--navy);
-            padding: var(--fib-xs) var(--fib-md);
-            border-radius: 4px;
-            font-weight: bold;
-            box-shadow: 0 2px 10px rgba(197, 160, 89, 0.3);
-        }
-
-        .btn-login-nav:hover {
-            background-color: var(--white);
-            color: var(--navy);
-        }
+        nav { background-color: var(--navy); color: var(--white); display: flex; justify-content: space-between; align-items: center; padding: var(--fib-md) var(--fib-xxl); border-bottom: 3px solid var(--gold); box-shadow: 0 4px 20px rgba(15, 29, 54, 0.15); flex-wrap: wrap; gap: var(--fib-sm); }
+        .brand-container { display: flex; align-items: center; gap: var(--fib-sm); }
+        .nav-logo { height: 48px; width: 48px; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold); background: var(--white); padding: 2px; }
+        .logo-text-area { font-family: 'Cinzel', serif; font-size: 20px; font-weight: bold; color: var(--gold); letter-spacing: 1.5px; line-height: 1.1; }
+        .logo-subtext { font-size: 9px; color: #E2E8F0; letter-spacing: 2px; font-family: 'Manrope', sans-serif; text-transform: uppercase; }
+        .nav-links { display: flex; gap: var(--fib-lg); align-items: center; flex-wrap: wrap; }
+        .nav-links a { color: var(--white); text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.3s; }
+        .nav-links a:hover { color: var(--gold); }
+        .btn-login-nav { background-color: var(--gold); color: var(--navy) !important; padding: var(--fib-xs) var(--fib-md); border-radius: 4px; font-weight: bold; box-shadow: 0 2px 10px rgba(197, 160, 89, 0.3); }
+        .btn-login-nav:hover { background-color: var(--white); color: var(--navy) !important; }
 
         /* Hero Section */
-        .hero {
-            text-align: center;
-            padding: var(--fib-xxl) var(--fib-lg);
-            background: linear-gradient(rgba(15, 29, 54, 0.92), rgba(15, 29, 54, 0.92)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80');
-            background-size: cover;
-            background-position: center;
-            color: var(--white);
-            border-bottom: 5px solid var(--gold);
-        }
-
-        .hero-logo-badge {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 3px solid var(--gold);
-            object-fit: cover;
-            margin-bottom: var(--fib-md);
-            box-shadow: 0 0 30px rgba(197, 160, 89, 0.5);
-            background: var(--white);
-            padding: 4px;
-        }
-
-        .hero h1 {
-            font-family: 'Cinzel', serif;
-            font-size: 42px;
-            color: var(--gold);
-            margin-bottom: var(--fib-sm);
-            letter-spacing: 1.5px;
-        }
-
-        .hero p {
-            font-size: 17px;
-            max-width: 750px;
-            margin: 0 auto var(--fib-xl) auto;
-            color: #cbd5e1;
-            line-height: 1.8;
-        }
-
-        .btn-cta {
-            background-color: var(--gold);
-            color: var(--navy);
-            padding: var(--fib-sm) var(--fib-xl);
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 6px;
-            text-decoration: none;
-            transition: 0.3s;
-            display: inline-block;
-            box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
-        }
-
-        .btn-cta:hover {
-            background-color: var(--white);
-            transform: translateY(-2px);
-        }
+        .hero { text-align: center; padding: var(--fib-xxl) var(--fib-lg); background: linear-gradient(rgba(15, 29, 54, 0.92), rgba(15, 29, 54, 0.92)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80'); background-size: cover; background-position: center; color: var(--white); border-bottom: 5px solid var(--gold); }
+        .hero-logo-badge { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; margin-bottom: var(--fib-md); box-shadow: 0 0 30px rgba(197, 160, 89, 0.5); background: var(--white); padding: 4px; }
+        .hero h1 { font-family: 'Cinzel', serif; font-size: 42px; color: var(--gold); margin-bottom: var(--fib-sm); letter-spacing: 1.5px; }
+        .hero p { font-size: 17px; max-width: 750px; margin: 0 auto var(--fib-xl) auto; color: #cbd5e1; line-height: 1.8; }
+        .hero-buttons { display: flex; gap: var(--fib-md); justify-content: center; flex-wrap: wrap; }
+        .btn-cta { background-color: var(--gold); color: var(--navy); padding: var(--fib-sm) var(--fib-xl); font-size: 16px; font-weight: bold; border-radius: 6px; text-decoration: none; transition: 0.3s; display: inline-block; box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3); }
+        .btn-cta:hover { background-color: var(--white); transform: translateY(-2px); }
+        .btn-cta.outline { background: transparent; color: var(--gold); border: 2px solid var(--gold); box-shadow: none; }
+        .btn-cta.outline:hover { background: var(--gold); color: var(--navy); }
 
         /* Features / Services Section */
-        .features {
-            max-width: 1200px;
-            margin: var(--fib-xxl) auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: var(--fib-lg);
-            padding: 0 var(--fib-md);
-        }
+        .features { max-width: 1200px; margin: var(--fib-xxl) auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--fib-lg); padding: 0 var(--fib-md); }
+        .feature-card { background: var(--white); padding: var(--fib-xl) var(--fib-lg); border-radius: 10px; box-shadow: 0 10px 30px rgba(15, 29, 54, 0.06); border-top: 5px solid var(--navy); transition: 0.3s; }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(15, 29, 54, 0.1); border-top-color: var(--gold); }
+        .feature-card i { font-size: 32px; color: var(--gold); margin-bottom: var(--fib-md); }
+        .feature-card h3 { color: var(--navy); font-family: 'Cinzel', serif; margin-bottom: var(--fib-sm); font-size: 20px; }
+        .feature-card p { color: #475569; font-size: 14px; line-height: 1.8; }
 
-        .feature-card {
-            background: var(--white);
-            padding: var(--fib-xl) var(--fib-lg);
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(15, 29, 54, 0.06);
-            border-top: 5px solid var(--navy);
-            transition: 0.3s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(15, 29, 54, 0.1);
-            border-top-color: var(--gold);
-        }
-
-        .feature-card i {
-            font-size: 32px;
-            color: var(--gold);
-            margin-bottom: var(--fib-md);
-        }
-
-        .feature-card h3 {
-            color: var(--navy);
-            font-family: 'Cinzel', serif;
-            margin-bottom: var(--fib-sm);
-            font-size: 20px;
-        }
-
-        .feature-card p {
-            color: #475569;
-            font-size: 14px;
-            line-height: 1.8;
-        }
+        /* Partner Section */
+        .partner { background: var(--navy); border-top: 5px solid var(--gold); border-bottom: 5px solid var(--gold); padding: var(--fib-xxl) var(--fib-md); }
+        .partner-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--fib-xl); align-items: start; }
+        .partner h2 { font-family: 'Cinzel', serif; color: var(--gold); font-size: 30px; margin: 0 0 var(--fib-sm) 0; }
+        .partner .lead { color: #cbd5e1; font-size: 15px; line-height: 1.8; margin-bottom: var(--fib-md); }
+        .steps { list-style: none; padding: 0; margin: 0 0 var(--fib-md) 0; }
+        .steps li { color: #E2E8F0; font-size: 14px; line-height: 1.7; margin-bottom: var(--fib-sm); display: flex; gap: var(--fib-sm); align-items: flex-start; }
+        .steps li .num { background: var(--gold); color: var(--navy); font-weight: 800; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; }
+        .direct-contact { color: #cbd5e1; font-size: 14px; line-height: 2; }
+        .direct-contact a { color: var(--gold); text-decoration: none; font-weight: 700; }
+        .direct-contact a:hover { text-decoration: underline; }
+        .partner-form { background: var(--white); padding: var(--fib-lg); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+        .partner-form h3 { font-family: 'Cinzel', serif; color: var(--navy); margin: 0 0 var(--fib-md) 0; font-size: 18px; }
+        .pf-group { margin-bottom: var(--fib-sm); }
+        .pf-group label { display: block; font-weight: 600; color: var(--navy); font-size: 13px; margin-bottom: 6px; }
+        .pf-group input, .pf-group select { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+        .pf-group input:focus, .pf-group select:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15); }
+        .btn-whatsapp { width: 100%; background: #25D366; color: #fff; border: none; padding: 13px; border-radius: 6px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: var(--fib-xs); transition: 0.3s; }
+        .btn-whatsapp:hover { background: #1ea952; }
+        .pf-note { font-size: 12px; color: #64748b; margin-top: var(--fib-sm); line-height: 1.6; }
 
         /* Professional Footer */
-        footer {
-            background-color: var(--navy);
-            color: #E2E8F0;
-            text-align: center;
-            padding: var(--fib-xxl) var(--fib-md);
-            margin-top: var(--fib-xxl);
-            border-top: 3px solid var(--gold);
-            line-height: 1.9;
-        }
+        footer { background-color: var(--navy); color: #E2E8F0; text-align: center; padding: var(--fib-xxl) var(--fib-md); border-top: 3px solid var(--gold); line-height: 1.9; }
+        .footer-content { max-width: 700px; margin: 0 auto; }
+        footer strong { color: var(--gold); font-size: 20px; font-family: 'Cinzel', serif; display: block; margin-bottom: var(--fib-md); letter-spacing: 1px; }
+        .footer-info-item { margin-bottom: var(--fib-xs); font-size: 14px; }
+        .footer-bottom { margin-top: var(--fib-xl); padding-top: var(--fib-md); border-top: 1px solid rgba(255, 255, 255, 0.1); font-size: 12px; color: #94A3B8; }
 
-        .footer-content {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-
-        footer strong {
-            color: var(--gold);
-            font-size: 20px;
-            font-family: 'Cinzel', serif;
-            display: block;
-            margin-bottom: var(--fib-md);
-            letter-spacing: 1px;
-        }
-
-        .footer-info-item {
-            margin-bottom: var(--fib-xs);
-            font-size: 14px;
-        }
-
-        .footer-bottom {
-            margin-top: var(--fib-xl);
-            padding-top: var(--fib-md);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 12px;
-            color: #94A3B8;
+        @media (max-width: 768px) {
+            nav { padding: var(--fib-sm) var(--fib-md); }
+            .hero h1 { font-size: 30px; }
         }
     </style>
 </head>
@@ -307,6 +110,7 @@
         </div>
         <div class="nav-links">
             <a href="index.html">Home</a>
+            <a href="#partner">Become a Partner</a>
             <a href="contact.html">Contact Us</a>
             <a href="login.html" class="btn-login-nav">Secure Login</a>
         </div>
@@ -317,7 +121,10 @@
         <img src="velfincorp-logo.jpeg" alt="Vel Fin Corp Emblem" class="hero-logo-badge">
         <h1>VEL FIN CORP</h1>
         <p>Empowering your financial growth through structured credit solutions, asset financing, and transparent corporate loan management systems.</p>
-        <a href="login.html" class="btn-cta">Access Secure Portal</a>
+        <div class="hero-buttons">
+            <a href="login.html" class="btn-cta">Access Secure Portal</a>
+            <a href="#partner" class="btn-cta outline">Become a Retailer Partner</a>
+        </div>
     </div>
 
     <!-- Services Section -->
@@ -339,6 +146,59 @@
         </div>
     </div>
 
+    <!-- Become a Retailer Partner -->
+    <section class="partner" id="partner">
+        <div class="partner-inner">
+            <div>
+                <h2>Become a Retailer Partner</h2>
+                <p class="lead">Own a mobile, electronics, home appliance, jewellery or furniture showroom? Offer your customers easy weekly installments through Vel Fin Corp Credit Vault and grow your sales.</p>
+                <ul class="steps">
+                    <li><span class="num">1</span><span>Send us your showroom details using the form (it opens WhatsApp) or call us directly.</span></li>
+                    <li><span class="num">2</span><span>Our team contacts you to complete verification and the required documents.</span></li>
+                    <li><span class="num">3</span><span>We create your secure partner login so you can register customers and start Credit Vault loans.</span></li>
+                </ul>
+                <div class="direct-contact">
+                    <div><i class="fas fa-phone-alt"></i> Call: <a href="tel:+919486886293">+91 9486886293</a></div>
+                    <div><i class="fab fa-whatsapp"></i> WhatsApp: <a href="https://wa.me/919486886293" target="_blank" rel="noopener">+91 9486886293</a></div>
+                    <div><i class="fas fa-envelope"></i> Email: <a href="mailto:support@velfincorp.com?subject=Retailer%20Partner%20Enquiry">support@velfincorp.com</a></div>
+                </div>
+            </div>
+
+            <form class="partner-form" onsubmit="submitPartnerEnquiry(event)">
+                <h3>Partner Enquiry Form</h3>
+                <div class="pf-group">
+                    <label>Showroom / Shop Name *</label>
+                    <input type="text" id="pf_shop" placeholder="e.g., Sri Vinayaga Agencies" required>
+                </div>
+                <div class="pf-group">
+                    <label>Owner Name *</label>
+                    <input type="text" id="pf_owner" placeholder="Your full name" required>
+                </div>
+                <div class="pf-group">
+                    <label>Mobile Number *</label>
+                    <input type="text" id="pf_mobile" maxlength="10" placeholder="10 digit mobile number" oninput="this.value = this.value.replace(/\D/g, '').substring(0, 10)" required>
+                </div>
+                <div class="pf-group">
+                    <label>City / Location *</label>
+                    <input type="text" id="pf_city" placeholder="e.g., Dharmapuri" required>
+                </div>
+                <div class="pf-group">
+                    <label>Type of Business *</label>
+                    <select id="pf_type" required>
+                        <option value="">-Select-</option>
+                        <option value="Mobile Phones">Mobile Phones</option>
+                        <option value="Electronics / Home Appliances">Electronics / Home Appliances</option>
+                        <option value="Furniture">Furniture</option>
+                        <option value="Jewellery">Jewellery</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-whatsapp"><i class="fab fa-whatsapp"></i> Send Enquiry on WhatsApp</button>
+                <div class="pf-note">Your details are sent as a WhatsApp message to Vel Fin Corp. Nothing is stored on this website.</div>
+            </form>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer>
         <div class="footer-content">
@@ -351,6 +211,34 @@
             &copy; 2026 Vel Fin Corp. All Rights Reserved. | Corporate Finance Division
         </div>
     </footer>
+
+    <script>
+        const PARTNER_WHATSAPP_NUMBER = '919486886293';
+
+        function submitPartnerEnquiry(event) {
+            event.preventDefault();
+            const shop = document.getElementById('pf_shop').value.trim();
+            const owner = document.getElementById('pf_owner').value.trim();
+            const mobile = document.getElementById('pf_mobile').value.trim();
+            const city = document.getElementById('pf_city').value.trim();
+            const type = document.getElementById('pf_type').value;
+
+            if (!/^\d{10}$/.test(mobile)) {
+                alert('Please enter a valid 10 digit mobile number.');
+                return;
+            }
+
+            const text =
+                'Hello Vel Fin Corp, I would like to join as a Retailer Partner.\n\n' +
+                'Showroom: ' + shop + '\n' +
+                'Owner: ' + owner + '\n' +
+                'Mobile: ' + mobile + '\n' +
+                'City: ' + city + '\n' +
+                'Business: ' + type;
+
+            window.open('https://wa.me/' + PARTNER_WHATSAPP_NUMBER + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+        }
+    </script>
 
 </body>
 </html>
