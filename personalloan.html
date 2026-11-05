@@ -111,7 +111,6 @@
                             <option value="">-Select Type-</option>
                             <option value="Daily">Daily</option>
                             <option value="Weekly">Weekly</option>
-                            <option value="Monthly">Monthly</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -270,13 +269,6 @@
                     opt.textContent = weeks + " Weeks";
                     tenureSelect.appendChild(opt);
                 });
-            } else if (loanType === "Monthly") {
-                [3, 5, 6].forEach(months => {
-                    const opt = document.createElement('option');
-                    opt.value = months;
-                    opt.textContent = months + " Months";
-                    tenureSelect.appendChild(opt);
-                });
             }
             calculatePersonalLoan();
         }
@@ -301,8 +293,6 @@
                         if (tenureVal === 10) interestMultiplier = 1.0;
                         else if (tenureVal === 15) interestMultiplier = 1.125;
                         else if (tenureVal === 20) interestMultiplier = 1.24;
-                    } else if (loanType === "Monthly") {
-                        interestMultiplier = 1.15;
                     }
 
                     const totalPayable = loanAmount * interestMultiplier;
@@ -310,7 +300,6 @@
 
                     let tenureUnit = " Days";
                     if (loanType === "Weekly") tenureUnit = " Weeks";
-                    else if (loanType === "Monthly") tenureUnit = " Months";
 
                     document.getElementById('Tenure').value = tenureVal + tenureUnit;
                     document.getElementById('Installment_Amount').value = installment;
@@ -442,13 +431,6 @@
                         body_1: String(borrowerName), body_2: String(loanId), body_3: String(loanAmountStr),
                         body_4: String(emiAmount), body_5: String(tenureVal), body_6: String(loanDay),
                         body_7: String(loanDateStr), body_8: String(previousDayText)
-                    };
-                } else if (loanType === "Monthly") {
-                    templateName = "vel_fin_monthly_welcome";
-                    customComponents = {
-                        body_1: String(borrowerName), body_2: String(loanId), body_3: String(loanAmountStr),
-                        body_4: String(emiAmount), body_5: String(tenureVal), body_6: String(loanDateStr),
-                        body_7: String(dd), body_8: String(dd)
                     };
                 }
 
