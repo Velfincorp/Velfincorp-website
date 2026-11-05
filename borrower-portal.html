@@ -13,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --navy: #0F1D36; --gold: #C5A059; --bg-color: #F8F9FB; --text-main: #2D3748; --white: #FFFFFF; --danger: #C53030; --success: #2F855A; }
         body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; }
@@ -52,7 +53,14 @@
         .no-data { text-align: center; padding: 40px 10px; color: #475569; font-size: 15px; line-height: 1.7; }
         .no-data.error { color: var(--danger); font-weight: bold; }
         .loading { text-align: center; padding: 40px; color: #64748b; }
-        @media print { .btn-logout, .action-actions, .btn-pay { display: none !important; } body { padding: 0; } .container { box-shadow: none; } }
+        .upi-alt { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2c98f; }
+        .app-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+        .app-btn { background: #fff; border: 1px solid #cbd5e1; color: var(--navy); padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; text-decoration: none; }
+        .app-btn:hover { border-color: var(--gold); background: #fffbeb; }
+        .qr-box { display: inline-block; padding: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; margin: 4px 0; }
+        .upi-text { font-size: 12.5px; color: #475569; line-height: 1.8; }
+        .copy-btn { background: var(--navy); color: #fff; border: none; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; }
+        @media print { .btn-logout, .action-actions, .btn-pay, .upi-alt { display: none !important; } body { padding: 0; } .container { box-shadow: none; } }
     </style>
 </head>
 <body>
@@ -160,7 +168,11 @@
             let payBox = '';
             if (s.state === 'ACTIVE' && loan.status === 'ACTIVE' && s.remaining > 0 && s.payNow > 0) {
                 const note = encodeURIComponent('EMI ' + loan.loan_id);
-                const url = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${s.payNow.toFixed(2)}&cu=INR&tn=${note}`;
+                const q = `pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${s.payNow.toFixed(2)}&cu=INR&tn=${note}`;
+                const url = 'upi://pay?' + q;
+                const gpay = 'tez://upi/pay?' + q;
+                const phonepe = 'phonepe://pay?' + q;
+                const paytm = 'paytmmp://pay?' + q;
                 const late = s.delayDays > 0;
                 payBox = `
                     <div class="payment-box ${late ? 'late' : ''}">
@@ -168,7 +180,18 @@
                         <p>Installment ${s.paidInst + 1} of ${s.tenure} &nbsp;|&nbsp; Due date: <strong>${formatIndianDate(s.dueDate)}</strong>
                            ${late ? `<br><span style="color:#C53030; font-weight:800;">${s.delayDays} day${s.delayDays === 1 ? '' : 's'} overdue</span>` : ''}</p>
                         <a href="${esc(url)}" class="btn-pay"><i class="fas fa-rupee-sign"></i> Pay ${rupees(s.payNow)} via UPI</a>
-                        <p style="font-size:12px;">Open this page on your mobile to pay with GPay / PhonePe / Paytm. After you pay, the payment appears below once Vel Fin Corp records it.</p>
+                        <div class="upi-alt">
+                            <div class="app-row">
+                                <a href="${esc(gpay)}" class="app-btn">Google Pay</a>
+                                <a href="${esc(phonepe)}" class="app-btn">PhonePe</a>
+                                <a href="${esc(paytm)}" class="app-btn">Paytm</a>
+                            </div>
+                            <div class="qr-box" data-upi="${esc(url)}"></div>
+                            <p class="upi-text">Using a computer? Scan this QR code with any UPI app on your phone.<br>
+                                Or pay manually: UPI ID <strong>${esc(UPI_ID)}</strong> <button type="button" class="copy-btn" onclick="copyUpiId()">Copy</button>
+                                &nbsp;|&nbsp; Amount <strong>${rupees(s.payNow)}</strong> &nbsp;|&nbsp; Note: <strong>EMI ${esc(loan.loan_id)}</strong></p>
+                        </div>
+                        <p style="font-size:12px;">After you pay, the payment appears below once Vel Fin Corp records it.</p>
                     </div>`;
             }
 
@@ -282,12 +305,31 @@
                 }
 
                 portalContent.innerHTML = html;
+                renderQRCodes();
                 document.getElementById('actionButtons').style.display = 'flex';
             } catch (err) {
                 console.error("Borrower portal error:", err);
                 portalContent.innerHTML = `<div class="no-data error">Could not load your account right now.<br><span style="font-weight:500;">${esc(err.message)}</span></div>`;
             }
         });
+
+        function renderQRCodes() {
+            if (typeof QRCode === 'undefined') return;
+            document.querySelectorAll('.qr-box').forEach(el => {
+                if (el.dataset.done) return;
+                el.dataset.done = '1';
+                new QRCode(el, { text: el.dataset.upi, width: 150, height: 150 });
+            });
+        }
+
+        function copyUpiId() {
+            const done = () => alert('UPI ID copied: ' + UPI_ID);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(UPI_ID).then(done).catch(() => prompt('Copy this UPI ID:', UPI_ID));
+            } else {
+                prompt('Copy this UPI ID:', UPI_ID);
+            }
+        }
 
         function handleLogout() {
             sessionStorage.clear();
