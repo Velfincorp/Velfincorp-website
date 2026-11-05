@@ -93,6 +93,23 @@
            true  = old behaviour: the LAST 4 DIGITS of their mobile (or Vel@last4) also works for everyone. */
         const ALLOW_DEFAULT_PIN = false;
 
+        /* Borrower password = date of birth (DDMMYYYY).
+           true  = if a borrower has NO date of birth saved, the old rule (last 4 digits of mobile) still works for that borrower.
+           false = such a borrower cannot log in until a date of birth is saved. */
+        const ALLOW_LAST4_IF_NO_DOB = true;
+
+        // "1993-05-22", "22-05-1993", "22/05/1993", "1993-05-22T00:00:00" -> "22051993"
+        function dobToDDMMYYYY(dob) {
+            const str = String(dob || '').trim().split('T')[0];
+            const parts = str.split(/[-\/]/);
+            if (parts.length !== 3) return '';
+            let d, m, y;
+            if (parts[0].length === 4) { y = parts[0]; m = parts[1]; d = parts[2]; }
+            else { d = parts[0]; m = parts[1]; y = parts[2]; }
+            if (!/^\d{1,2}$/.test(d) || !/^\d{1,2}$/.test(m) || !/^\d{4}$/.test(y)) return '';
+            return d.padStart(2, '0') + m.padStart(2, '0') + y;
+        }
+
         function updateLoginFields() {
             const role = document.getElementById('userRole').value;
             const label = document.getElementById('usernameLabel');
@@ -106,6 +123,9 @@
                 input.type = 'text';
                 input.placeholder = 'Registered mobile number';
             }
+            document.getElementById('password').placeholder =
+                role === 'borrower' ? 'Date of birth (DDMMYYYY), e.g. 22051993' :
+                role === 'admin' ? 'Admin password' : 'Enter your password';
         }
 
         function togglePasswordVisibility() {
@@ -139,15 +159,10 @@
 
             if (!role) { alert("தயவுசெய்து Role-ஐத் தேர்ந்தெடுக்கவும்."); return; }
 
-            /* ---------------- BORROWER ---------------- */
+            /* ---------------- BORROWER (mobile number + date of birth) ---------------- */
             if (role === 'borrower') {
                 if (!/^\d{10}$/.test(username)) {
                     alert("தயவுசெய்து சரியான 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்.");
-                    return;
-                }
-                const expectedPassword = username.slice(-4);
-                if (!(password === expectedPassword || password.toLowerCase() === ('vel@' + expectedPassword))) {
-                    alert("தவறான பாஸ்வேர்ட்! உங்கள் மொபைல் எண்ணின் கடைசி 4 இலக்கங்களை உள்ளிடவும்.");
                     return;
                 }
 
@@ -155,8 +170,22 @@
                 loginBtn.innerText = "Verifying...";
                 try {
                     const found = await window.vfcFindBorrowersByMobile(username);
-                    if (!found.length) {
-                        alert("இந்த மொபைல் எண்ணில் பதிவு செய்யப்பட்ட கணக்கு எதுவும் இல்லை. Vel Fin Corp-ஐத் தொடர்பு கொள்ளவும்.");
+                    const typed = password.replace(/\D/g, '');   // 22-05-1993 / 22/05/1993 / 22051993 all work
+
+                    // accepted passwords = date of birth (DDMMYYYY) of the borrower(s) registered with this mobile
+                    const dobPasswords = found.map(b => dobToDDMMYYYY(b.dob)).filter(Boolean);
+                    let ok = false;
+                    if (found.length) {
+                        if (dobPasswords.length) {
+                            ok = dobPasswords.includes(typed);
+                        } else if (ALLOW_LAST4_IF_NO_DOB) {
+                            // borrower record has no date of birth saved -> old rule (last 4 digits of mobile)
+                            ok = (password === username.slice(-4) || password.toLowerCase() === ('vel@' + username.slice(-4)));
+                        }
+                    }
+
+                    if (!ok) {
+                        alert("மொபைல் எண் அல்லது பிறந்த தேதி தவறு.\nPassword = உங்கள் பிறந்த தேதி (DDMMYYYY), எ.கா. 22051993.\nபிரச்சனை தொடர்ந்தால் Vel Fin Corp-ஐத் தொடர்பு கொள்ளவும்.");
                         resetLoginButton();
                         return;
                     }
