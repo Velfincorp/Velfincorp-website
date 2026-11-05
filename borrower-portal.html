@@ -143,6 +143,7 @@
             const paidInst = emi > 0 ? Math.min(tenure, Math.floor((paid + 0.01) / emi)) : loanPayments.length;
 
             let state = 'ACTIVE', label = 'ACTIVE', color = '#2B6CB0', dueDate = null, delayDays = 0;
+            let missed = 0, shortfall = 0, penalty = 0;
             if (loan.status === 'CLOSED') {
                 state = 'CLOSED'; label = 'CLOSED'; color = '#64748b';
             } else if ((total > 0 && paid >= total) || paidInst >= tenure) {
@@ -153,9 +154,21 @@
                 delayDays = Math.round((today - dueDate) / 86400000);
                 if (delayDays > 0) { label = 'OVERDUE'; color = '#C53030'; }
                 else { label = 'ON TIME'; color = '#2F855A'; }
+
+                // missed installments, overdue amount and one-time late fee per missed installment
+                const isDaily = String(loan.loan_type || '').toLowerCase().includes('daily');
+                const step = isDaily ? 1 : 7;
+                const start = parseFlexibleDate(loan.loan_date || loan.$createdAt);
+                const diffFromStart = Math.round((today - start) / 86400000);
+                const dueCount = Math.max(0, Math.min(tenure, Math.ceil(diffFromStart / step) - 1));
+                missed = Math.max(0, dueCount - paidInst);
+                shortfall = Math.min(remaining, Math.max(0, dueCount * emi - paid));
+                const perPenalty = isDaily ? Math.min(Math.round(emi * 0.10), 75) : 295;
+                penalty = missed * perPenalty;
             }
-            const payNow = Math.round(Math.min(emi > 0 ? emi : remaining, remaining) * 100) / 100;
-            return { emi, tenure, total, paid, remaining, paidInst, state, label, color, dueDate, delayDays, payNow };
+            const baseDue = (delayDays > 0 && shortfall > 0) ? shortfall : (emi > 0 ? emi : remaining);
+            const payNow = Math.round(Math.min(baseDue, remaining) * 100) / 100;
+            return { emi, tenure, total, paid, remaining, paidInst, state, label, color, dueDate, delayDays, payNow, missed, shortfall, penalty };
         }
 
         function renderLoanCard(loan, loanPayments, multiNames) {
@@ -178,7 +191,9 @@
                     <div class="payment-box ${late ? 'late' : ''}">
                         <h4><i class="fas fa-shield-alt"></i> ${late ? 'Overdue EMI' : 'Next EMI'}</h4>
                         <p>Installment ${s.paidInst + 1} of ${s.tenure} &nbsp;|&nbsp; Due date: <strong>${formatIndianDate(s.dueDate)}</strong>
-                           ${late ? `<br><span style="color:#C53030; font-weight:800;">${s.delayDays} day${s.delayDays === 1 ? '' : 's'} overdue</span>` : ''}</p>
+                           ${late ? `<br><span style="color:#C53030; font-weight:800;">${s.delayDays} day${s.delayDays === 1 ? '' : 's'} overdue</span>` : ''}
+                           ${late && s.missed > 0 ? `<br>Missed installments: <strong>${s.missed}</strong> &nbsp;|&nbsp; Overdue amount: <strong>${rupees(s.shortfall)}</strong> &nbsp;|&nbsp; Late fee: <strong style="color:#C53030;">${rupees(s.penalty)}</strong>
+                           <br><span style="font-size:12px; color:#64748b;">The late fee is payable separately - please contact Vel Fin Corp.</span>` : ''}</p>
                         <a href="${esc(url)}" class="btn-pay"><i class="fas fa-rupee-sign"></i> Pay ${rupees(s.payNow)} via UPI</a>
                         <div class="upi-alt">
                             <div class="app-row">
