@@ -488,8 +488,7 @@
                         const again = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID);
                         latestList = again.documents || latestList;
                     }
-                    const seqs = latestList.map(p => parseInt(String(p.payment_id || '').split('/')[1], 10) || 0);
-                    const nextSeq = (seqs.length ? Math.max(...seqs) : 0) + 1;
+                    const nextSeq = nextPaymentNumber(latestList);
                     paymentId = `PAY/${String(nextSeq).padStart(3, '0')}/${currentYear}`;
 
                     try {
@@ -584,6 +583,20 @@
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = SUBMIT_LABEL;
             }
+        }
+
+        /* Next Payment number = highest NORMAL number + 1.
+           Old versions of this page sometimes saved a RANDOM id (e.g. PAY/919/2026) when the payments list could not be read.
+           Numbers far above the real running count are treated as such strays and ignored, so the sequence does not jump to 920. */
+        function nextPaymentNumber(list) {
+            const nums = (list || [])
+                .map(p => parseInt(String(p.payment_id || '').split('/')[1], 10) || 0)
+                .filter(n => n > 0);
+            if (!nums.length) return 1;
+            const limit = (list || []).length + 100;       // a real number can never be this far above the record count
+            const sane = nums.filter(n => n <= limit);
+            const base = sane.length ? Math.max(...sane) : 0;
+            return base + 1;
         }
 
         function toISO(dateInput) {
