@@ -157,7 +157,22 @@ window.vfcFindBorrowersByMobile = async function(mobile) {
         }
     }
 
+    // Adds the "Defaulters Report" link to every page's sidebar automatically (admin sees it; staff only if allowed)
+    function injectDefaultersMenuItem() {
+        const menu = document.querySelector('.sidebar-menu');
+        if (!menu || menu.querySelector('a[href="defaulters-report.html"]')) return;
+        const li = document.createElement('li');
+        li.innerHTML = '<a href="defaulters-report.html"><i class="fas fa-exclamation-triangle"></i> Defaulters Report</a>';
+        const ref = menu.querySelector('a[href="allpayments-report.html"]');
+        if (ref && ref.parentElement && ref.parentElement.parentElement === menu) {
+            menu.insertBefore(li, ref.parentElement.nextSibling);
+        } else {
+            menu.appendChild(li);
+        }
+    }
+
     function applySidebarMenuFilter() {
+        injectDefaultersMenuItem();
         const userRole = sessionStorage.getItem('velfincorp_role');
         if (!userRole || userRole === 'admin') {
             const lockStyle = document.getElementById('vfc-strict-menu-lock');
