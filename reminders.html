@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
     <script src="db.js"></script>
+    <script src="collection-core.js"></script>
 
     <script>
         // Centralized Authentication & Security Protection Script
@@ -48,8 +49,8 @@
         .sidebar-menu li a i { width: 20px; text-align: center; color: var(--gold); }
         .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
         .btn-logout { background-color: var(--danger); color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
-        .main-content { margin-left: 260px; flex: 1; padding: 40px; box-sizing: border-box; }
-        .container { max-width: 900px; margin: 0 auto; background: var(--white); padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08); border-top: 5px solid var(--navy); }
+        .main-content { margin-left: 260px; flex: 1; padding: 40px; box-sizing: border-box; min-width: 0; }
+        .container { max-width: 950px; margin: 0 auto; background: var(--white); padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(15, 29, 54, 0.08); border-top: 5px solid var(--navy); }
         .header { font-family: 'Cinzel', serif; color: var(--navy); font-size: 24px; margin-bottom: 25px; border-bottom: 2px solid var(--gold); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
         .btn-trigger { background-color: var(--success); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
@@ -57,8 +58,10 @@
         .btn-preview { background-color: var(--navy); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
         .btn-preview:hover { background-color: var(--gold); color: var(--navy); }
         .btn-trigger:disabled, .btn-preview:disabled { background-color: #94a3b8; cursor: not-allowed; }
-        .info-box { background: #f1f5f9; padding: 20px; border-radius: 6px; margin-bottom: 25px; font-size: 14px; line-height: 1.7; }
+        .info-box { background: #f1f5f9; padding: 20px; border-radius: 6px; margin-bottom: 18px; font-size: 14px; line-height: 1.7; }
+        .warn-box { background: #fffbeb; border: 1px solid #f59e0b; color: #92400e; padding: 14px 18px; border-radius: 6px; margin-bottom: 18px; font-size: 13.5px; line-height: 1.7; }
         #reminderLog { font-family: monospace; background: #0f1d36; color: #38bdf8; padding: 15px; border-radius: 6px; min-height: 180px; max-height: 420px; overflow-y: auto; font-size: 13px; line-height: 1.6; }
+        @media (max-width: 800px) { .container { padding: 16px !important; } }
     </style>
 </head>
 <body>
@@ -79,6 +82,8 @@
             <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
             <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="defaulters-report.html"><i class="fas fa-exclamation-triangle"></i> Defaulters Report</a></li>
+            <li><a href="my-collection.html"><i class="fas fa-clipboard-list"></i> My Collection List</a></li>
             <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
             <li><a href="reminders.html" class="active"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
             <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
@@ -100,11 +105,19 @@
                 </div>
             </div>
 
+            <div class="warn-box">
+                <strong>Before you press "Send Reminders":</strong> the three templates
+                <code>vel_fin_overdue_stage1</code>, <code>vel_fin_overdue_stage2</code> and <code>vel_fin_overdue_stage3</code>
+                must show <strong>Approved</strong> in MSG91. Until then only use <strong>Preview</strong>.
+            </div>
+
             <div class="info-box">
-                <strong>How it works:</strong> For every ACTIVE loan the next unpaid installment's due date is calculated (loan start date + installment number). 
-                If the due date is <strong>tomorrow</strong> an <strong>Advance Reminder</strong> (<code>vel_fin_advance_reminder</code>) is sent. 
-                If the due date has <strong>passed</strong> a <strong>Delay Alert</strong> (<code>vel_fin_delay_alert</code>) with the exact overdue days is sent. 
-                Use <strong>Preview</strong> first to see exactly who will receive a message; <strong>Send</strong> asks for confirmation and never sends the same reminder twice on the same day.
+                <strong>How it works:</strong> For every ACTIVE loan the system checks the installments.<br>
+                &bull; If the next EMI is due <strong>tomorrow</strong> &rarr; <strong>Advance Reminder</strong> (<code>vel_fin_advance_reminder</code>).<br>
+                &bull; If installments are <strong>overdue</strong> &rarr; a message by <strong>Stage</strong> with the exact overdue amount, the late fee and the total:
+                Stage 1 &rarr; <code>vel_fin_overdue_stage1</code>, Stage 2 &rarr; <code>vel_fin_overdue_stage2</code>, Stage 3 and 4 &rarr; <code>vel_fin_overdue_stage3</code>.<br>
+                &bull; The same stage message is <strong>not repeated for 3 days</strong> (recorded in the Follow-ups table, so it works from any computer).<br>
+                &bull; Use <strong>Preview</strong> first to see exactly who will receive what.
             </div>
 
             <div id="reminderLog">[System Ready] Click 'Preview' to see who is due, then 'Send Reminders' to message them on WhatsApp...</div>
@@ -112,13 +125,11 @@
     </div>
 
     <script>
+        const C = window.VFC_COLLECTION;
         const REMINDER_FUNCTION_ID = '6adb02310009b131da2d';
         const SENT_LOG_KEY = 'velfincorp_reminder_log';
-        const DAY_MS = 24 * 60 * 60 * 1000;
-
-        function esc(s) {
-            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        }
+        const RESEND_AFTER_DAYS = 3;   // the same stage message is not repeated within this many days
+        const DAY_MS = C.DAY_MS;
 
         function log(html) {
             const box = document.getElementById('reminderLog');
@@ -126,55 +137,32 @@
             box.scrollTop = box.scrollHeight;
         }
 
-        function normText(v) { return String(v || '').trim().toLowerCase(); }
-
-        function parseFlexibleDate(dateInput) {
-            if (!dateInput) return new Date();
-            if (dateInput instanceof Date) return new Date(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate());
-            const str = String(dateInput).trim().split('T')[0];
-            const parts = str.split(/[-\/]/);
-            if (parts.length === 3) {
-                if (parts[0].length === 4) return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-                return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-            }
-            const fb = new Date(dateInput);
-            return isNaN(fb.getTime()) ? new Date() : new Date(fb.getFullYear(), fb.getMonth(), fb.getDate());
-        }
-
-        function computeInstallmentDueDate(loanStart, loanType, n) {
-            const d = parseFlexibleDate(loanStart);
-            const t = String(loanType || 'Weekly').toLowerCase();
-            if (t.includes('daily')) d.setDate(d.getDate() + n);
-            else if (t.includes('monthly')) d.setMonth(d.getMonth() + n);
-            else d.setDate(d.getDate() + (n * 7));
-            return d;
-        }
-
-        function isPersonalLoan(loan) {
-            const category = String(loan.loan_category || '').trim();
-            const id = String(loan.loan_id || '').toUpperCase();
-            return category === 'Personal' || id.startsWith('VPL');
-        }
-
-        // A payment belongs to a loan only if the Loan ID AND the borrower match
-        function paymentBelongsToLoan(p, loan) {
-            if (!p.loan_id || p.loan_id !== loan.loan_id) return false;
-            const pName = normText(p.borrower_name || p.customer_name || p.full_name);
-            if (pName) return pName === normText(loan.borrower_name);
-            return true;
-        }
-
-        function todayKey() {
-            const n = new Date();
-            return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
-        }
+        function num(n) { return Math.round(Number(n) || 0).toLocaleString('en-IN'); }
 
         function loadSentLog() {
             try {
                 const all = JSON.parse(localStorage.getItem(SENT_LOG_KEY) || '{}');
-                const t = todayKey();
+                const t = C.todayISO();
                 return { [t]: all[t] || [] };  // keep only today's entries
-            } catch (e) { return { [todayKey()]: [] }; }
+            } catch (e) { return { [C.todayISO()]: [] }; }
+        }
+
+        // next EMI due date information for a loan that is NOT overdue
+        function nextDueInfo(loan, loanPayments) {
+            const type = String(loan.loan_type || 'Weekly').toLowerCase().includes('daily') ? 'daily' : 'weekly';
+            const step = type === 'daily' ? 1 : 7;
+            const emi = parseFloat(loan.installment_amount || 0);
+            let tenure = 10;
+            const tm = String(loan.tenure || '').match(/\d+/);
+            if (tm) tenure = parseInt(tm[0]);
+            const total = parseFloat(loan.loan_amount || 0);
+            const paid = loanPayments.reduce((s, p) => s + parseFloat(p.amount_paid || p.paid_amount || p.amount || 0), 0);
+            const paidInst = emi > 0 ? Math.min(tenure, Math.floor((paid + 0.01) / emi)) : 0;
+            if (emi <= 0 || (total > 0 && paid >= total - 0.5) || paidInst >= tenure) return null;
+            const start = C.parseFlexibleDate(loan.loan_date || loan.$createdAt);
+            const due = new Date(start.getTime());
+            due.setDate(due.getDate() + (paidInst + 1) * step);
+            return { emi, nextNum: paidInst + 1, dueDate: due };
         }
 
         async function runAutomaticReminders(dryRun) {
@@ -186,129 +174,109 @@
             try {
                 log(`[${new Date().toLocaleTimeString()}] ${dryRun ? 'PREVIEW MODE - nothing will be sent. ' : ''}Connecting to Appwrite Cloud Database...`);
 
-                let loans = [], payments = [];
+                let loans = [], payments = [], followups = [];
                 try {
                     [loans, payments] = await Promise.all([
                         window.vfcFetchAll(VFC_DB.LOANS_ID),
                         window.vfcFetchAll(VFC_DB.PAYMENTS_ID)
                     ]);
                 } catch (e) {
-                    log(`<span style="color:#f87171;">[Error] Failed to fetch data from Appwrite: ${esc(e.message)}</span>`);
+                    log(`<span style="color:#f87171;">[Error] Failed to fetch data from Appwrite: ${C.esc(e.message)}</span>`);
                     return;
                 }
+                try { followups = await window.vfcFetchAll(VFC_DB.FOLLOWUPS_ID); }
+                catch (e) { log(`<span style="color:#fbbf24;">[Warning] Follow-ups table could not be read - repeat protection will use this browser only (${C.esc(e.message)})</span>`); }
 
-                const activeLoans = loans.filter(loan => loan.status === 'ACTIVE');
-                if (activeLoans.length === 0) {
-                    log('[Info] No active loans found in Appwrite Cloud Database.');
-                    return;
-                }
-                log(`[Info] Found ${activeLoans.length} active loans. Evaluating due dates...`);
+                const activeLoans = loans.filter(l => l.status === 'ACTIVE');
+                if (activeLoans.length === 0) { log('[Info] No active loans found in Appwrite Cloud Database.'); return; }
+                log(`[Info] Found ${activeLoans.length} active loans. Evaluating...`);
 
-                const today = parseFlexibleDate(new Date());
+                const today = C.parseFlexibleDate(new Date());
                 const daysOfWeek = ["ஞாயிற்றுக்கிழமை", "திங்கட்கிழமை", "செவ்வாய்க்கிழமை", "புதன்கிழமை", "வியாழக்கிழமை", "வெள்ளிக்கிழமை", "சனிக்கிழமை"];
                 const queue = [];
+                let skippedRecent = 0, notDue = 0, noPhone = 0;
 
                 for (const loan of activeLoans) {
-                    const customerName = loan.borrower_name || "Customer";
-                    const loanId = loan.loan_id || "N/A";
-                    const emiNum = parseFloat(loan.installment_amount || 0);
-                    const emi = emiNum.toFixed(2);
-                    let totalTenure = 10;
-                    const tm = String(loan.tenure || '').match(/\d+/);
-                    if (tm) totalTenure = parseInt(tm[0]);
-                    const totalLoanAmt = parseFloat(loan.loan_amount || 0);
+                    const lp = payments.filter(p => C.paymentBelongsToLoan(p, loan));
+                    const mobile = C.last10(loan.phone_number);
+                    const kind = C.loanKindText(loan);
+                    const name = loan.borrower_name || 'Customer';
+                    const info = C.computeDefaulterInfo(loan, lp, today);
 
-                    const loanTypeDisp = isPersonalLoan(loan) ? "பர்சனல் லோன்" : "பொருள் கடன் (Credit Vault)";
-
-                    // இதுவரை கட்டிய தவணைகளைக் கணக்கிடுதல் (reports-ல் உள்ள அதே முறை)
-                    const loanPayments = payments.filter(p => paymentBelongsToLoan(p, loan));
-                    const totalPaid = loanPayments.reduce((s, p) => s + parseFloat(p.amount_paid || p.paid_amount || p.amount || 0), 0);
-                    const paidInstallments = emiNum > 0 ? Math.min(totalTenure, Math.floor((totalPaid + 0.01) / emiNum)) : loanPayments.length;
-                    const remainingInstallments = Math.max(0, totalTenure - paidInstallments);
-
-                    if ((totalLoanAmt > 0 && totalPaid >= totalLoanAmt) || paidInstallments >= totalTenure) {
-                        log(`[Skipped] ${esc(customerName)} (${esc(loanId)}) - fully paid`);
+                    if (mobile.length !== 10) {
+                        if (info || nextDueInfo(loan, lp)) { noPhone++; log(`<span style="color:#fbbf24;">[Skipped] ${C.esc(name)} (${C.esc(loan.loan_id)}) - no valid phone number</span>`); }
                         continue;
                     }
+                    const finalMobile = '91' + mobile;
 
-                    const nextInstallmentNum = paidInstallments + 1;
-                    // அடுத்த தவணைத் தேதி = கடன் தொடங்கிய தேதி + தவணை எண்
-                    const dueDate = computeInstallmentDueDate(loan.loan_date || loan.$createdAt, loan.loan_type, nextInstallmentNum);
-                    const diffDays = Math.round((today - dueDate) / DAY_MS);   // negative = in the future
+                    if (info) {
+                        /* ---------- OVERDUE: stage message ---------- */
+                        const stage = info.stage;
+                        const templateName = C.TEMPLATES.overdue[stage];
+                        const autoKey = 'AUTO_S' + stage;
 
-                    const cleanMobile = window.vfcLast10(loan.phone_number);
-                    if (cleanMobile.length !== 10) {
-                        log(`<span style="color:#fbbf24;">[Skipped] ${esc(customerName)} (${esc(loanId)}) - no valid phone number</span>`);
-                        continue;
-                    }
-                    const finalMobile = "91" + cleanMobile;
-                    const dueText = dueDate.toLocaleDateString('en-GB');
+                        // already sent recently? (durable record in the Follow-ups table)
+                        const recent = C.followupsForLoan(followups, loan).find(f =>
+                            f.outcome === autoKey &&
+                            Math.round((today - C.parseFlexibleDate(f.followup_date)) / DAY_MS) < RESEND_AFTER_DAYS);
+                        if (recent) { skippedRecent++; log(`[Skipped] ${C.esc(name)} (${C.esc(loan.loan_id)}) - Stage ${stage} message already sent on ${C.formatIndianDate(recent.followup_date)}`); continue; }
 
-                    let templateName = "", comps = null, summary = "";
-
-                    if (diffDays === -1) {
-                        // நாளைக்கு டியூ -> Advance Reminder
-                        templateName = "vel_fin_advance_reminder";
-                        comps = {
-                            body_1: String(customerName),
-                            body_2: String(loanId),
-                            body_3: String(loanTypeDisp),
-                            body_4: String(daysOfWeek[dueDate.getDay()]),
-                            body_5: String(dueText.replace(/\//g, '-')),
-                            body_6: String(nextInstallmentNum),
-                            body_7: String(emi)
-                        };
-                        summary = `due tomorrow (${dueText}), installment ${nextInstallmentNum}`;
-                    } else if (diffDays >= 1) {
-                        // டியூ தேதி தாண்டிவிட்டால் -> Delay Alert
-                        templateName = "vel_fin_delay_alert";
-                        comps = {
-                            body_1: String(customerName),
-                            body_2: String(loanId),
-                            body_3: String(loanTypeDisp),
-                            body_4: String(diffDays),
-                            body_5: String(nextInstallmentNum),
-                            body_6: String(emi),
-                            body_7: String(remainingInstallments)
-                        };
-                        summary = `${diffDays} day(s) overdue since ${dueText}, installment ${nextInstallmentNum}`;
-                    }
-
-                    if (templateName) {
-                        queue.push({ loan, customerName, loanId, finalMobile, templateName, comps, summary });
+                        let comps;
+                        if (stage === 1) {
+                            comps = {
+                                body_1: String(name), body_2: String(loan.loan_id), body_3: String(kind), body_4: String(info.overdueDays),
+                                body_5: num(info.shortfall), body_6: num(info.penalty), body_7: num(info.totalDue)
+                            };
+                        } else {
+                            comps = {
+                                body_1: String(name), body_2: String(loan.loan_id), body_3: String(kind), body_4: String(info.overdueDays),
+                                body_5: String(info.missed), body_6: num(info.shortfall), body_7: num(info.penalty), body_8: num(info.totalDue)
+                            };
+                        }
+                        queue.push({
+                            loan, name, finalMobile, templateName, comps, autoKey, stage, kind: 'overdue',
+                            summary: `Stage ${stage}: ${info.overdueDays} day(s) overdue, ${info.missed} missed, overdue ₹${num(info.shortfall)} + late fee ₹${num(info.penalty)} = ₹${num(info.totalDue)}`
+                        });
                     } else {
-                        log(`[Skipped] ${esc(customerName)} (${esc(loanId)}) - next due ${dueText}`);
+                        /* ---------- NOT OVERDUE: advance reminder if the next EMI is due tomorrow ---------- */
+                        const nd = nextDueInfo(loan, lp);
+                        if (!nd) continue;
+                        const diff = Math.round((nd.dueDate - today) / DAY_MS);
+                        if (diff === 1) {
+                            const dueText = nd.dueDate.toLocaleDateString('en-GB').replace(/\//g, '-');
+                            queue.push({
+                                loan, name, finalMobile, templateName: C.TEMPLATES.advance, kind: 'advance', stage: 0, autoKey: null,
+                                comps: {
+                                    body_1: String(name), body_2: String(loan.loan_id), body_3: String(kind),
+                                    body_4: String(daysOfWeek[nd.dueDate.getDay()]), body_5: dueText,
+                                    body_6: String(nd.nextNum), body_7: nd.emi.toFixed(2)
+                                },
+                                summary: `EMI ₹${num(nd.emi)} (installment ${nd.nextNum}) due tomorrow ${dueText}`
+                            });
+                        } else {
+                            notDue++;
+                        }
                     }
                 }
 
-                if (queue.length === 0) {
-                    log('<strong>[Completed] No reminders are due right now.</strong>');
-                    return;
-                }
+                log(`[Info] Not due yet: ${notDue} | Skipped (sent recently): ${skippedRecent} | No phone: ${noPhone}`);
+
+                if (queue.length === 0) { log('<strong>[Completed] No reminders are due right now.</strong>'); return; }
 
                 log(`<strong>[Result] ${queue.length} reminder(s) ${dryRun ? 'would be sent' : 'ready to send'}:</strong>`);
-                queue.forEach(q => log(`&nbsp;&nbsp;• ${esc(q.templateName)} → ${esc(q.customerName)} (${esc(q.loanId)}) - ${esc(q.summary)}`));
+                queue.forEach(q => log(`&nbsp;&nbsp;&bull; ${C.esc(q.templateName)} &rarr; ${C.esc(q.name)} (${C.esc(q.loan.loan_id)}) - ${C.esc(q.summary)}`));
 
-                if (dryRun) {
-                    log('<strong>[Preview finished] Nothing was sent. Click "Send Reminders" to send these.</strong>');
-                    return;
-                }
+                if (dryRun) { log('<strong>[Preview finished] Nothing was sent. Click "Send Reminders" to send these.</strong>'); return; }
 
-                if (!confirm(`${queue.length} WhatsApp reminder(s) will be sent to customers. Continue?`)) {
-                    log('[Cancelled] Nothing was sent.');
-                    return;
-                }
+                if (!confirm(`${queue.length} WhatsApp reminder(s) will be sent to customers. Continue?`)) { log('[Cancelled] Nothing was sent.'); return; }
 
                 const sentLog = loadSentLog();
-                const t = todayKey();
+                const t = C.todayISO();
                 let sentCount = 0;
 
                 for (const q of queue) {
-                    const key = `${q.loanId}|${q.customerName}|${q.templateName}`;
-                    if (sentLog[t].includes(key)) {
-                        log(`[Already sent today] ${esc(q.customerName)} (${esc(q.loanId)})`);
-                        continue;
-                    }
+                    const key = `${q.loan.loan_id}|${q.name}|${q.templateName}`;
+                    if (sentLog[t].includes(key)) { log(`[Already sent today] ${C.esc(q.name)} (${C.esc(q.loan.loan_id)})`); continue; }
                     try {
                         const payload = {
                             mobile: q.finalMobile, phone: q.finalMobile, to: q.finalMobile, recipient: q.finalMobile,
@@ -316,15 +284,35 @@
                             components: q.comps, customComponents: q.comps
                         };
                         const execRes = await window.appwriteFunctions.createExecution(REMINDER_FUNCTION_ID, JSON.stringify(payload));
-                        if (execRes && execRes.status === 'failed') {
-                            throw new Error(execRes.errors || execRes.responseBody || 'Function failed');
-                        }
+                        if (execRes && execRes.status === 'failed') throw new Error(execRes.errors || execRes.responseBody || 'Function failed');
+
                         sentLog[t].push(key);
                         localStorage.setItem(SENT_LOG_KEY, JSON.stringify(sentLog));
                         sentCount++;
-                        log(`<span style="color:#4ade80;">[Success] ${esc(q.templateName)} sent to ${esc(q.customerName)} (${esc(q.loanId)})</span>`);
+                        log(`<span style="color:#4ade80;">[Success] ${C.esc(q.templateName)} sent to ${C.esc(q.name)} (${C.esc(q.loan.loan_id)})</span>`);
+
+                        // durable record so the same stage message is not repeated (overdue messages only)
+                        if (q.autoKey) {
+                            try {
+                                await window.appwriteDatabases.createDocument(VFC_DB.DB_ID, VFC_DB.FOLLOWUPS_ID, window.AppwriteID.unique(), {
+                                    loan_id: q.loan.loan_id,
+                                    borrower_name: String(q.name).slice(0, 150),
+                                    phone_number: C.last10(q.loan.phone_number),
+                                    agent_phone: 'SYSTEM',
+                                    agent_name: 'Auto WhatsApp',
+                                    followup_date: t,
+                                    method: 'WHATSAPP',
+                                    outcome: q.autoKey,
+                                    promise_date: '',
+                                    promise_amount: '',
+                                    note: q.templateName
+                                });
+                            } catch (recErr) {
+                                log(`<span style="color:#fbbf24;">[Warning] Sent, but could not record it in Follow-ups: ${C.esc(recErr.message)}</span>`);
+                            }
+                        }
                     } catch (err) {
-                        log(`<span style="color:#f87171;">[Error] Failed for ${esc(q.customerName)} (${esc(q.loanId)}): ${esc(err.message)}</span>`);
+                        log(`<span style="color:#f87171;">[Error] Failed for ${C.esc(q.name)} (${C.esc(q.loan.loan_id)}): ${C.esc(err.message)}</span>`);
                     }
                 }
                 log(`<strong>[Completed] ${sentCount} reminder(s) sent.</strong>`);
