@@ -124,7 +124,7 @@
                 input.placeholder = 'Registered mobile number';
             }
             document.getElementById('password').placeholder =
-                role === 'borrower' ? 'Date of birth (DDMMYYYY), e.g. 22051993' :
+                role === 'borrower' ? 'Date of birth, e.g. 05091995 or 05/09/1995' :
                 role === 'admin' ? 'Admin password' : 'Enter your password';
         }
 
@@ -185,7 +185,7 @@
                     }
 
                     if (!ok) {
-                        alert("மொபைல் எண் அல்லது பிறந்த தேதி தவறு.\nPassword = உங்கள் பிறந்த தேதி (DDMMYYYY), எ.கா. 22051993.\nபிரச்சனை தொடர்ந்தால் Vel Fin Corp-ஐத் தொடர்பு கொள்ளவும்.");
+                        alert("மொபைல் எண் அல்லது பிறந்த தேதி தவறு.\nPassword = உங்கள் பிறந்த தேதி, எ.கா. 05091995 அல்லது 05/09/1995.\nபிரச்சனை தொடர்ந்தால் Vel Fin Corp-ஐத் தொடர்பு கொள்ளவும்.");
                         resetLoginButton();
                         return;
                     }
