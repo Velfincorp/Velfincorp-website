@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Vel Fin Corp - My Collection List</title>
+    <link rel="icon" type="image/jpeg" href="velfincorp-logo.jpeg">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
+    <script src="collection-core.js"></script>
+    <script>
+        (function() {
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                    window.location.replace('login.html');
+                }
+            });
+            if (!loggedUser || !userRole) { window.location.replace('login.html'); return; }
+            if (userRole === 'borrower') { window.location.replace('borrower-portal.html'); }
+        })();
+    </script>
+    <style>
+        :root { --navy: #0F1D36; --gold: #C5A059; --bg-color: #F8F9FB; --text-main: #2D3748; --white: #FFFFFF; --danger: #C53030; --success: #2F855A; }
+        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background-color: var(--navy); color: var(--white); display: flex; flex-direction: column; border-right: 3px solid var(--gold); position: fixed; height: 100vh; left: 0; top: 0; box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1); overflow-y: auto; }
+        .sidebar-brand { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0,0,0,0.1); }
+        .sidebar-logo { height: 40px; width: 40px; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold); background: var(--white); padding: 2px; }
+        .sidebar-title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: bold; color: var(--gold); letter-spacing: 1px; }
+        .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; flex: 1; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 15px; padding: 12px 25px; color: #cbd5e1; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active { background-color: rgba(197, 160, 89, 0.15); color: var(--gold); border-left-color: var(--gold); }
+        .sidebar-menu li a i { width: 20px; text-align: center; color: var(--gold); }
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
+        .btn-logout { background-color: var(--danger); color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; display: block; text-align: center; box-sizing: border-box; }
+        .main-content { margin-left: 260px; flex: 1; padding: 30px; box-sizing: border-box; min-width: 0; }
+        .container { max-width: 1300px; margin: 0 auto; background: var(--white); padding: 28px; border-radius: 8px; box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05); border-top: 5px solid var(--navy); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 12px; }
+        h2 { font-family: 'Cinzel', serif; color: var(--navy); margin: 0; }
+        .sub-head { font-size: 13px; color: #64748b; margin-bottom: 18px; }
+        .btn { border: none; padding: 9px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13px; }
+        .btn-navy { background: var(--navy); color: #fff; }
+        .btn-green { background: var(--success); color: #fff; }
+        .btn-grey { background: #e2e8f0; color: var(--navy); }
+        .btn:disabled { opacity: .6; cursor: not-allowed; }
+        .warn-box { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 6px; font-size: 12.5px; margin-bottom: 14px; display: none; line-height: 1.6; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-top: 4px solid var(--navy); border-radius: 8px; padding: 12px; text-align: center; }
+        .card.red { border-top-color: var(--danger); }
+        .card.green { border-top-color: var(--success); }
+        .card h4 { margin: 0 0 5px 0; font-size: 11px; color: #64748b; text-transform: uppercase; }
+        .card .v { font-size: 19px; font-weight: 800; color: var(--navy); }
+        .card .v.red { color: var(--danger); }
+        .card .v.green { color: var(--success); }
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+        .filters input, .filters select { flex: 1; min-width: 150px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: #fff; box-sizing: border-box; }
+        .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+        .cl-card { border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; background: #fff; box-shadow: 0 2px 8px rgba(15, 29, 54, 0.05); }
+        .cl-card.broken { border-left: 6px solid #C53030; }
+        .cl-card.today { border-left: 6px solid #DD6B20; }
+        .cl-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+        .cl-name { font-weight: 800; color: var(--navy); font-size: 16px; line-height: 1.3; }
+        .cl-id { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 14px; color: #fff; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .kv { background: #f1f5f9; border-radius: 8px; padding: 8px 10px; }
+        .kv .k { font-size: 10.5px; color: #64748b; text-transform: uppercase; font-weight: 700; }
+        .kv .val { font-size: 15px; font-weight: 800; color: var(--navy); }
+        .kv.total { background: #fef2f2; }
+        .kv.total .val { color: var(--danger); }
+        .cl-line { font-size: 12.5px; color: #475569; line-height: 1.6; margin: 6px 0; }
+        .cl-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .abtn { flex: 1 1 auto; min-width: 84px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 10px; border-radius: 8px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; border: none; cursor: pointer; }
+        .abtn.call { background: #2B6CB0; }
+        .abtn.wa { background: #25D366; }
+        .abtn.map { background: #64748b; }
+        .abtn.fu { background: var(--gold); color: var(--navy); }
+        .abtn.pay { background: var(--success); }
+        .section-title { font-family: 'Cinzel', serif; color: var(--navy); font-size: 15px; margin: 24px 0 10px; }
+        .cleared-item { display: inline-block; background: #e6ffed; border: 1px solid #9ae6b4; color: #276749; border-radius: 16px; padding: 5px 12px; margin: 3px; font-size: 12.5px; font-weight: 700; }
+        .empty { text-align: center; color: #64748b; padding: 40px 10px; line-height: 1.8; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 5000; }
+        .modal-content { background: #fff; width: 480px; max-width: 94%; max-height: 92vh; overflow-y: auto; padding: 22px; border-radius: 12px; border-top: 5px solid var(--navy); box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+        .modal-content h3 { font-family: 'Cinzel', serif; color: var(--navy); margin: 0 0 10px 0; }
+        .modal-content label { display: block; font-weight: 700; font-size: 13px; color: var(--navy); margin: 12px 0 6px; }
+        .modal-content select, .modal-content textarea, .modal-content input { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; box-sizing: border-box; font-family: inherit; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+        @media (max-width: 800px) {
+            .container { padding: 14px !important; }
+            .list { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-title">VEL FIN CORP</div>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
+            <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
+            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
+            <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
+            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
+            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="defaulters-report.html"><i class="fas fa-exclamation-triangle"></i> Defaulters Report</a></li>
+            <li><a href="my-collection.html" class="active"><i class="fas fa-clipboard-list"></i> My Collection List</a></li>
+            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
+            <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
+            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="header-row">
+                <h2>My Collection List</h2>
+                <button class="btn btn-navy" onclick="loadAll()"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+            <div class="sub-head" id="subHead"></div>
+            <div class="warn-box" id="warnBox"></div>
+            <div class="cards" id="summaryCards"></div>
+
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="Search name, phone or Loan ID..." oninput="renderList()">
+                <select id="agentFilter" onchange="renderList()" style="display:none;"></select>
+                <select id="statusFilter" onchange="renderList()">
+                    <option value="">-All assigned-</option>
+                    <option value="broken">Broken promises</option>
+                    <option value="today">Promise due today</option>
+                    <option value="nofu">No follow-up yet</option>
+                </select>
+            </div>
+
+            <div class="list" id="list"><div class="empty"><i class="fas fa-spinner fa-spin"></i> Loading...</div></div>
+
+            <div id="clearedBox"></div>
+        </div>
+    </div>
+
+    <!-- Follow-up modal -->
+    <div class="modal" id="fuModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-phone-volume"></i> Record Follow-up</h3>
+            <div id="fuInfo" style="font-size:13px; color:#475569; line-height:1.7;"></div>
+
+            <label>How did you contact? *</label>
+            <select id="fuMethod">
+                <option value="CALL">Phone call</option>
+                <option value="VISIT">Visit</option>
+                <option value="WHATSAPP">WhatsApp</option>
+            </select>
+
+            <label>Result *</label>
+            <select id="fuOutcome" onchange="toggleFuPromise()">
+                <option value="">-Select result-</option>
+                <option value="NOT_REACHED">Not reached / no answer</option>
+                <option value="PROMISED">Promised to pay on a date</option>
+                <option value="REFUSED">Refused to pay</option>
+                <option value="PAID">Says already paid</option>
+            </select>
+
+            <div id="fuPromiseBox" style="display:none;">
+                <label>Promise date *</label>
+                <input type="date" id="fuPromiseDate">
+                <label>Promised amount (₹)</label>
+                <input type="number" id="fuPromiseAmount" min="0" step="1">
+            </div>
+
+            <label>Note</label>
+            <textarea id="fuNote" rows="3" placeholder="What did the customer say?"></textarea>
+
+            <div class="modal-actions">
+                <button class="btn btn-grey" onclick="closeModal('fuModal')">Cancel</button>
+                <button class="btn btn-green" id="btnSaveFu" onclick="saveFollowup()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const C = window.VFC_COLLECTION;
+        const ROLE = sessionStorage.getItem('velfincorp_role');
+        const IS_ADMIN = ROLE === 'admin';
+        const ME_PHONE = C.last10(sessionStorage.getItem('velfincorp_logged_user'));
+        const ME_NAME = sessionStorage.getItem('velfincorp_user_name') || ME_PHONE || 'Admin';
+        let PERMS = [];
+        try { PERMS = JSON.parse(sessionStorage.getItem('velfincorp_permissions') || '[]'); } catch (e) {}
+        const CAN_PAY = IS_ADMIN || PERMS.includes('payments.html');
+
+        let activeItems = [];     // overdue + assigned
+        let clearedItems = [];    // assigned but no longer overdue
+        let fuTarget = null;
+
+        function showWarnings(list) {
+            const box = document.getElementById('warnBox');
+            if (!list.length) { box.style.display = 'none'; return; }
+            box.style.display = 'block';
+            box.innerHTML = '<strong>Notice:</strong><br>' + list.map(C.esc).join('<br>');
+        }
+        async function safeFetch(id, label, warnings) {
+            try { return await window.vfcFetchAll(id); }
+            catch (e) { console.warn(label, e); warnings.push(label + ' could not be read (' + e.message + '). Check the table ID in db.js and the table permissions in Appwrite.'); return []; }
+        }
+
+        function findBorrowerProfile(loan, borrowers) {
+            const nm = C.normText(loan.borrower_name);
+            const ph = C.last10(loan.phone_number);
+            const phoneMatch = b => ph && (C.last10(b.phone_number) === ph || C.last10(b.whatsapp_number) === ph);
+            return borrowers.find(b => C.normText(b.full_name) === nm && phoneMatch(b))
+                || borrowers.find(b => C.normText(b.full_name) === nm)
+                || null;
+        }
+
+        async function loadAll() {
+            const list = document.getElementById('list');
+            list.innerHTML = '<div class="empty"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+            const warnings = [];
+            try {
+                const [loans, payments, assigns, fups, borrowers] = await Promise.all([
+                    window.vfcFetchAll(VFC_DB.LOANS_ID),
+                    window.vfcFetchAll(VFC_DB.PAYMENTS_ID),
+                    safeFetch(VFC_DB.ASSIGNMENTS_ID, 'Assignments table', warnings),
+                    safeFetch(VFC_DB.FOLLOWUPS_ID, 'Follow-ups table', warnings),
+                    safeFetch(VFC_DB.BORROWERS_ID, 'Borrower list', warnings)
+                ]);
+
+                const today = C.parseFlexibleDate(new Date());
+                const mine = assigns.filter(a => a.status === 'ACTIVE' && (IS_ADMIN || C.last10(a.agent_phone) === ME_PHONE));
+
+                activeItems = [];
+                clearedItems = [];
+                mine.forEach(a => {
+                    const loan = loans.find(l => l.loan_id === a.loan_id && C.nameKey(l.borrower_name) === C.nameKey(a.borrower_name));
+                    if (!loan) return;
+                    if (loan.status !== 'ACTIVE') { clearedItems.push({ a, loan }); return; }
+                    const lp = payments.filter(p => C.paymentBelongsToLoan(p, loan));
+                    const info = C.computeDefaulterInfo(loan, lp, today);
+                    if (!info) { clearedItems.push({ a, loan }); return; }
+                    const lastFu = C.latestHumanFollowup(fups, loan);
+                    const promise = C.promiseStatus(lastFu, true, today);
+                    const profile = findBorrowerProfile(loan, borrowers);
+                    activeItems.push({ a, loan, info, lastFu, promise, profile });
+                });
+
+                // priority: broken promise, promise today, then most days overdue
+                const rank = it => it.promise && it.promise.code === 'BROKEN' ? 0 : (it.promise && it.promise.code === 'TODAY' ? 1 : 2);
+                activeItems.sort((p, q) => rank(p) - rank(q) || q.info.overdueDays - p.info.overdueDays);
+
+                showWarnings(warnings);
+                buildAgentFilter(mine);
+                renderHeader(mine);
+                renderList();
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = `<div class="empty" style="color:#C53030;">Error: ${C.esc(err.message)}</div>`;
+            }
+        }
+
+        function buildAgentFilter(mine) {
+            const sel = document.getElementById('agentFilter');
+            if (!IS_ADMIN) { sel.style.display = 'none'; return; }
+            const map = {};
+            mine.forEach(a => { map[C.last10(a.agent_phone)] = a.agent_name || a.agent_phone; });
+            const current = sel.value;
+            sel.innerHTML = '<option value="">-All agents-</option>' + Object.keys(map).map(p => `<option value="${C.esc(p)}">${C.esc(map[p])}</option>`).join('');
+            sel.value = current;
+            sel.style.display = '';
+        }
+
+        function renderHeader(mine) {
+            document.getElementById('subHead').innerHTML = IS_ADMIN
+                ? 'Admin view: all agents\' assigned loans.'
+                : `Agent: <strong>${C.esc(ME_NAME)}</strong> (${C.esc(ME_PHONE)})`;
+        }
+
+        function currentFiltered() {
+            const q = document.getElementById('searchInput').value.toLowerCase().trim();
+            const st = document.getElementById('statusFilter').value;
+            const ag = document.getElementById('agentFilter').value;
+            return activeItems.filter(it => {
+                const l = it.loan;
+                const matchQ = !q || C.normText(l.borrower_name).includes(q) || C.normText(l.phone_number).includes(q) || C.normText(l.loan_id).includes(q);
+                const matchAg = !ag || C.last10(it.a.agent_phone) === ag;
+                let matchSt = true;
+                if (st === 'broken') matchSt = !!(it.promise && it.promise.code === 'BROKEN');
+                else if (st === 'today') matchSt = !!(it.promise && it.promise.code === 'TODAY');
+                else if (st === 'nofu') matchSt = !it.lastFu;
+                return matchQ && matchAg && matchSt;
+            });
+        }
+
+        function renderSummary(items) {
+            const totalToCollect = items.reduce((s, x) => s + x.info.totalDue, 0);
+            const broken = items.filter(x => x.promise && x.promise.code === 'BROKEN').length;
+            const todayP = items.filter(x => x.promise && x.promise.code === 'TODAY').length;
+            document.getElementById('summaryCards').innerHTML = `
+                <div class="card"><h4>Assigned (overdue)</h4><div class="v">${items.length}</div></div>
+                <div class="card green"><h4>Recovered / cleared</h4><div class="v green">${clearedItems.length}</div></div>
+                <div class="card red"><h4>Total to collect</h4><div class="v red">${C.rupees(totalToCollect)}</div></div>
+                <div class="card"><h4>Promise due today</h4><div class="v">${todayP}</div></div>
+                <div class="card red"><h4>Broken promises</h4><div class="v red">${broken}</div></div>`;
+        }
+
+        function renderList() {
+            const items = currentFiltered();
+            renderSummary(items);
+            const list = document.getElementById('list');
+
+            if (!items.length) {
+                list.innerHTML = activeItems.length
+                    ? '<div class="empty">No loans match this filter.</div>'
+                    : `<div class="empty"><i class="fas fa-clipboard-check" style="font-size:30px; color:#2F855A;"></i><br>${IS_ADMIN ? 'No overdue loans are assigned to any agent.' : 'No overdue loans are assigned to you right now.'}<br><small>Admin assigns loans from <strong>Defaulters Report</strong>.</small></div>`;
+            } else {
+                list.innerHTML = items.map((it, idx) => card(it, idx)).join('');
+            }
+
+            const cb = document.getElementById('clearedBox');
+            if (clearedItems.length) {
+                const shownCleared = IS_ADMIN ? clearedItems : clearedItems;
+                cb.innerHTML = `<div class="section-title"><i class="fas fa-check-circle" style="color:#2F855A;"></i> Recovered / cleared (${shownCleared.length})</div>` +
+                    shownCleared.map(c => `<span class="cleared-item">${C.esc(c.loan.borrower_name)} (${C.esc(c.loan.loan_id)})</span>`).join('');
+            } else cb.innerHTML = '';
+        }
+
+        function card(it, idx) {
+            const l = it.loan, i = it.info, st = C.STAGE_INFO[i.stage];
+            const mobile = C.last10(l.phone_number);
+            const wa = C.waOverdueLink(l, i);
+            const p = it.profile;
+            const addr = p ? [p.address, p.city, p.pincode].filter(Boolean).join(', ') : '';
+            const mapUrl = addr ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr) : '';
+            const cls = it.promise && it.promise.code === 'BROKEN' ? 'broken' : (it.promise && it.promise.code === 'TODAY' ? 'today' : '');
+            const payUrl = `payments.html?loan=${encodeURIComponent(l.loan_id)}&name=${encodeURIComponent(l.borrower_name)}`;
+
+            let fuLine = '<span style="color:#C53030; font-weight:700;">No follow-up recorded yet</span>';
+            if (it.lastFu) {
+                const o = C.OUTCOMES[it.lastFu.outcome] || { label: it.lastFu.outcome, color: '#64748b' };
+                fuLine = `Last follow-up: <strong style="color:${o.color};">${C.esc(o.label)}</strong> on ${C.formatIndianDate(it.lastFu.followup_date)}` +
+                         (it.lastFu.note ? ` <em>"${C.esc(it.lastFu.note)}"</em>` : '');
+            }
+            const promiseBadge = it.promise ? `<span class="badge" style="background:${it.promise.color};">${C.esc(it.promise.label)}</span>` : '';
+
+            return `
+            <div class="cl-card ${cls}">
+                <div class="cl-head">
+                    <div>
+                        <div class="cl-name">${C.esc(l.borrower_name)}</div>
+                        <div class="cl-id">${C.esc(l.loan_id)} &middot; ${i.type === 'daily' ? 'Daily' : 'Weekly'} &middot; ${C.isPersonalLoan(l) ? 'Personal' : 'Credit Vault'}${IS_ADMIN ? ' &middot; Agent: ' + C.esc(it.a.agent_name || it.a.agent_phone) : ''}</div>
+                    </div>
+                    <span class="badge" style="background:${st.color};">${st.label}</span>
+                </div>
+                <div class="grid2">
+                    <div class="kv"><div class="k">Days overdue</div><div class="val" style="color:#C53030;">${i.overdueDays}</div></div>
+                    <div class="kv"><div class="k">Missed installments</div><div class="val">${i.missed}</div></div>
+                    <div class="kv"><div class="k">Overdue amount</div><div class="val">${C.rupees(i.shortfall)}</div></div>
+                    <div class="kv"><div class="k">Penalty (${i.missed} x ${C.rupees(i.penaltyEach)})</div><div class="val">${C.rupees(i.penalty)}</div></div>
+                </div>
+                <div class="kv total" style="margin-bottom:10px;"><div class="k">Total to collect</div><div class="val">${C.rupees(i.totalDue)}</div></div>
+                <div class="cl-line"><i class="fas fa-phone"></i> ${C.esc(mobile || l.phone_number || '-')} &nbsp;|&nbsp; Last paid: ${i.lastPaid ? C.formatIndianDate(i.lastPaid) : '<span style="color:#C53030;">Never</span>'}</div>
+                ${addr ? `<div class="cl-line"><i class="fas fa-map-marker-alt"></i> ${C.esc(addr)}</div>` : ''}
+                <div class="cl-line">${fuLine} ${promiseBadge}</div>
+                ${it.a.note ? `<div class="cl-line" style="color:#92400e;"><i class="fas fa-sticky-note"></i> Admin note: ${C.esc(it.a.note)}</div>` : ''}
+                <div class="cl-actions">
+                    ${mobile.length === 10 ? `<a class="abtn call" href="tel:+91${mobile}"><i class="fas fa-phone"></i> Call</a>` : ''}
+                    ${wa ? `<a class="abtn wa" href="${C.esc(wa)}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a>` : ''}
+                    ${mapUrl ? `<a class="abtn map" href="${C.esc(mapUrl)}" target="_blank" rel="noopener"><i class="fas fa-location-arrow"></i> Map</a>` : ''}
+                    <button class="abtn fu" onclick="openFollowup(${idx})"><i class="fas fa-pen"></i> Follow-up</button>
+                    ${CAN_PAY ? `<a class="abtn pay" href="${C.esc(payUrl)}"><i class="fas fa-rupee-sign"></i> Payment</a>` : ''}
+                </div>
+            </div>`;
+        }
+
+        /* ---------------- Follow-up ---------------- */
+        function openFollowup(idx) {
+            const it = currentFiltered()[idx];
+            if (!it) return;
+            fuTarget = it;
+            document.getElementById('fuInfo').innerHTML =
+                `<strong>${C.esc(it.loan.borrower_name)}</strong> (${C.esc(it.loan.loan_id)})<br>Total to collect ${C.rupees(it.info.totalDue)} | ${it.info.overdueDays} days overdue`;
+            document.getElementById('fuMethod').value = 'CALL';
+            document.getElementById('fuOutcome').value = '';
+            document.getElementById('fuNote').value = '';
+            const pd = document.getElementById('fuPromiseDate');
+            pd.value = '';
+            pd.min = C.todayISO();
+            document.getElementById('fuPromiseAmount').value = Math.round(it.info.totalDue);
+            toggleFuPromise();
+            document.getElementById('fuModal').style.display = 'flex';
+        }
+
+        function toggleFuPromise() {
+            const outcome = document.getElementById('fuOutcome').value;
+            document.getElementById('fuPromiseBox').style.display = outcome === 'PROMISED' ? 'block' : 'none';
+        }
+
+        async function saveFollowup() {
+            if (!fuTarget) return;
+            const outcome = document.getElementById('fuOutcome').value;
+            const method = document.getElementById('fuMethod').value;
+            const promiseDate = document.getElementById('fuPromiseDate').value;
+            const promiseAmount = document.getElementById('fuPromiseAmount').value;
+            const note = document.getElementById('fuNote').value.trim();
+
+            if (!outcome) { alert('Please select the result.'); return; }
+            if (outcome === 'PROMISED') {
+                if (!promiseDate) { alert('Please enter the promise date.'); return; }
+                if (promiseDate < C.todayISO()) { alert('Promise date cannot be in the past.'); return; }
+            }
+
+            const btn = document.getElementById('btnSaveFu');
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+            try {
+                const l = fuTarget.loan;
+                await window.appwriteDatabases.createDocument(VFC_DB.DB_ID, VFC_DB.FOLLOWUPS_ID, window.AppwriteID.unique(), {
+                    loan_id: l.loan_id,
+                    borrower_name: String(l.borrower_name || '').slice(0, 150),
+                    phone_number: C.last10(l.phone_number),
+                    agent_phone: IS_ADMIN ? 'ADMIN' : ME_PHONE,
+                    agent_name: String(ME_NAME).slice(0, 150),
+                    followup_date: C.todayISO(),
+                    method: method,
+                    outcome: outcome,
+                    promise_date: outcome === 'PROMISED' ? promiseDate : '',
+                    promise_amount: outcome === 'PROMISED' ? String(promiseAmount || '') : '',
+                    note: note.slice(0, 500)
+                });
+                closeModal('fuModal');
+                if (outcome === 'PAID') alert('Saved. If the customer paid, please also record it in Payment Collection.');
+                await loadAll();
+            } catch (err) {
+                console.error(err);
+                alert('Could not save the follow-up: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Save';
+            }
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
+        }
+
+        window.addEventListener('DOMContentLoaded', loadAll);
+    </script>
+</body>
+</html>
