@@ -150,6 +150,17 @@
                         <label>Date *</label>
                         <input type="date" id="Date_field" onchange="updateCalculations()" required>
                     </div>
+                    <div class="form-group">
+                        <label>Collected By</label>
+                        <input type="text" id="Collected_By" class="readonly-field" readonly>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Late Fee / Penalty Collected (₹) <small style="color:var(--gold);">(optional - extra amount, not part of the EMI)</small></label>
+                        <input type="number" step="0.01" min="0" id="Penalty_Paid" value="0" placeholder="0.00">
+                    </div>
                 </div>
 
                 <button type="submit" id="submitBtn" class="btn-submit"><i class="fas fa-paper-plane"></i> Submit Payment & Send WhatsApp Receipt</button>
@@ -187,9 +198,25 @@
             return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
         }
 
+        // who is collecting (taken from the login)
+        const COLLECTOR_ROLE = sessionStorage.getItem('velfincorp_role');
+        const COLLECTOR_PHONE = COLLECTOR_ROLE === 'admin' ? '' : String(sessionStorage.getItem('velfincorp_logged_user') || '').replace(/\D/g, '').slice(-10);
+        const COLLECTOR_NAME = COLLECTOR_ROLE === 'admin' ? 'Admin' : (sessionStorage.getItem('velfincorp_user_name') || COLLECTOR_PHONE || 'Staff');
+
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('Date_field').value = todayLocalISO();
+            document.getElementById('Collected_By').value = COLLECTOR_NAME + (COLLECTOR_PHONE ? ' (' + COLLECTOR_PHONE + ')' : '');
             await loadActiveLoansFromAppwrite();
+
+            // opened from "My Collection List" -> payments.html?loan=VPL%2F002%2F2026&name=...
+            const params = new URLSearchParams(window.location.search);
+            const wantedLoan = params.get('loan');
+            const wantedName = (params.get('name') || '').trim().toLowerCase();
+            if (wantedLoan) {
+                const match = allActiveLoans.find(l => l.loan_id === wantedLoan && (!wantedName || String(l.borrower_name || '').trim().toLowerCase() === wantedName))
+                           || allActiveLoans.find(l => l.loan_id === wantedLoan);
+                if (match) await selectBorrowerLoan(match);
+            }
         });
 
         document.addEventListener('click', (e) => {
@@ -413,6 +440,8 @@
             document.getElementById('dueDateHint').innerText = '';
             document.getElementById('Delayed_Details').style.color = '';
             document.getElementById('Date_field').value = todayLocalISO();
+            document.getElementById('Collected_By').value = COLLECTOR_NAME + (COLLECTOR_PHONE ? ' (' + COLLECTOR_PHONE + ')' : '');
+            document.getElementById('Penalty_Paid').value = '0';
             const pa = document.getElementById('Paid_Amount');
             ['totalAmount', 'totalPaidSoFar', 'emiAmount', 'totalTenure', 'paidCount'].forEach(k => delete pa.dataset[k]);
             selectedLoanData = null; // IMPORTANT: forget the old loan so it can't be used by mistake
@@ -492,15 +521,34 @@
                     paymentId = `PAY/${String(nextSeq).padStart(3, '0')}/${currentYear}`;
 
                     try {
-                        await window.appwriteDatabases.createDocument(
-                            VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, window.AppwriteID.unique(),
-                            {
-                                payment_id: paymentId, loan_id: loanId, borrower_name: borrowerName, phone_number: borrowerPhone,
-                                amount_paid: paidAmount.toFixed(2), balance_amount: balanceAmount.toFixed(2),
-                                paid_installment: paidInst.toString(), remaining_installment: remInst.toString(),
-                                payment_date: paymentDateRaw, payment_mode: paymentMode, delayed_details: delayDetails
+                        const basePayload = {
+                            payment_id: paymentId, loan_id: loanId, borrower_name: borrowerName, phone_number: borrowerPhone,
+                            amount_paid: paidAmount.toFixed(2), balance_amount: balanceAmount.toFixed(2),
+                            paid_installment: paidInst.toString(), remaining_installment: remInst.toString(),
+                            payment_date: paymentDateRaw, payment_mode: paymentMode, delayed_details: delayDetails
+                        };
+                        const penaltyPaid = Math.max(0, parseFloat(document.getElementById('Penalty_Paid').value) || 0);
+                        const extraPayload = {
+                            collected_by: String(COLLECTOR_NAME).slice(0, 150),
+                            collected_by_phone: COLLECTOR_PHONE,
+                            penalty_paid: penaltyPaid.toFixed(2)
+                        };
+                        try {
+                            await window.appwriteDatabases.createDocument(
+                                VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, window.AppwriteID.unique(),
+                                Object.assign({}, basePayload, extraPayload)
+                            );
+                        } catch (colErr) {
+                            // the three new columns are not in Live_Payments yet -> save without them
+                            if (/unknown attribute|invalid document structure/i.test(String(colErr.message || ''))) {
+                                await window.appwriteDatabases.createDocument(
+                                    VFC_DB.DB_ID, VFC_DB.PAYMENTS_ID, window.AppwriteID.unique(), basePayload
+                                );
+                                alert("Payment saved, but 'collected_by', 'collected_by_phone', 'penalty_paid' columns are missing in Live_Payments, so who collected / penalty could NOT be saved. Please add those columns in Appwrite.");
+                            } else {
+                                throw colErr;
                             }
-                        );
+                        }
                         savedOk = true;
                         break;
                     } catch (saveErr) {
