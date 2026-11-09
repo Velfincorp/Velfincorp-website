@@ -30,7 +30,12 @@ const LIVE_DB = {
     STAFFS_ID: '6ada05fd0007206813cf',          // Retialers/Staffs (Alias)
     CREDIT_VAULT_ID: '6ad71f29001d4ff46c50',
     PERSONAL_LOAN_ID: '6ad71f29001d4ff46c50',
-    DOCUMENTS_BUCKET_ID: '6ad728e7001cd61e6b73'
+    DOCUMENTS_BUCKET_ID: '6ad728e7001cd61e6b73',
+
+    // Collection tables (Agent / Follow-up / Cash)
+    ASSIGNMENTS_ID: '6aec5d4e003c0ab1eb7f',     // assignments
+    FOLLOWUPS_ID: '6aec5d600027adfa08b0',       // followups
+    CASH_HANDOVERS_ID: '6aec5d72003d0a9b6810'   // cash_handovers
 };
 
 // Global variables - லைவ் ஐடிகள் மட்டுமே இணைக்கப்படும்
@@ -157,22 +162,28 @@ window.vfcFindBorrowersByMobile = async function(mobile) {
         }
     }
 
-    // Adds the "Defaulters Report" link to every page's sidebar automatically (admin sees it; staff only if allowed)
-    function injectDefaultersMenuItem() {
+    // Adds extra links to every page's sidebar automatically (admin sees them; staff only if allowed)
+    function injectExtraMenuItems() {
         const menu = document.querySelector('.sidebar-menu');
-        if (!menu || menu.querySelector('a[href="defaulters-report.html"]')) return;
-        const li = document.createElement('li');
-        li.innerHTML = '<a href="defaulters-report.html"><i class="fas fa-exclamation-triangle"></i> Defaulters Report</a>';
-        const ref = menu.querySelector('a[href="allpayments-report.html"]');
-        if (ref && ref.parentElement && ref.parentElement.parentElement === menu) {
-            menu.insertBefore(li, ref.parentElement.nextSibling);
-        } else {
-            menu.appendChild(li);
-        }
+        if (!menu) return;
+        const items = [
+            { href: 'defaulters-report.html', icon: 'fa-exclamation-triangle', label: 'Defaulters Report' },
+            { href: 'my-collection.html',     icon: 'fa-clipboard-list',       label: 'My Collection List' }
+        ];
+        let anchor = menu.querySelector('a[href="allpayments-report.html"]');
+        let after = (anchor && anchor.parentElement && anchor.parentElement.parentElement === menu) ? anchor.parentElement : null;
+        items.forEach(it => {
+            let existing = menu.querySelector('a[href="' + it.href + '"]');
+            if (existing) { after = existing.parentElement; return; }
+            const li = document.createElement('li');
+            li.innerHTML = '<a href="' + it.href + '"><i class="fas ' + it.icon + '"></i> ' + it.label + '</a>';
+            if (after) menu.insertBefore(li, after.nextSibling); else menu.appendChild(li);
+            after = li;
+        });
     }
 
     function applySidebarMenuFilter() {
-        injectDefaultersMenuItem();
+        injectExtraMenuItems();
         const userRole = sessionStorage.getItem('velfincorp_role');
         if (!userRole || userRole === 'admin') {
             const lockStyle = document.getElementById('vfc-strict-menu-lock');
@@ -284,6 +295,63 @@ window.vfcFindBorrowersByMobile = async function(mobile) {
         if (document.visibilityState === 'visible') {
             enforcePortalSecurity();
         }
+    });
+})();
+
+
+/* ================= Responsive layout for phones & tablets (all pages) ================= */
+(function () {
+    const css = `
+    .vfc-menu-btn { display: none; }
+    .vfc-backdrop { display: none; }
+    @media (max-width: 900px) {
+        html, body { overflow-x: hidden; max-width: 100%; }
+        body.vfc-has-sidebar { display: block !important; }
+        body.vfc-has-sidebar .sidebar { transform: translateX(-105%); transition: transform .25s ease; z-index: 3000 !important; width: 272px !important; top: 0 !important; bottom: 0 !important; height: auto !important; -webkit-overflow-scrolling: touch; }
+        body.vfc-menu-open .sidebar { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,.45); }
+        body.vfc-menu-open .vfc-backdrop { display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); z-index: 2500; }
+        .vfc-menu-btn { display: flex; position: fixed; top: 10px; left: 10px; z-index: 2400; width: 44px; height: 44px; border: none; border-radius: 10px; background: #0F1D36; color: #C5A059; font-size: 20px; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,.25); cursor: pointer; }
+        body.vfc-menu-open .vfc-menu-btn { display: none; }
+        body.vfc-has-sidebar .main-content { margin-left: 0 !important; padding: 64px 12px 24px !important; width: 100% !important; max-width: 100vw; box-sizing: border-box; height: auto !important; min-width: 0; }
+        .container { padding: 16px !important; max-width: 100% !important; }
+        .form-row { flex-direction: column; gap: 12px !important; }
+        .form-group { min-width: 0 !important; width: 100%; }
+        input, select, textarea { font-size: 16px !important; }
+        .modal-content { width: 96% !important; max-width: 96% !important; padding: 16px !important; }
+        .container > table, .admin-control-box > table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .header-flex, .header-row, .header { flex-wrap: wrap; }
+        .mail-app-container { flex-direction: column; }
+        .mail-folders { width: 100% !important; box-sizing: border-box; border-right: none !important; border-bottom: 1px solid #e2e8f0; }
+        .cards-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+    }`;
+    try {
+        const style = document.createElement('style');
+        style.id = 'vfc-responsive-style';
+        style.textContent = css;
+        document.head.appendChild(style);
+    } catch (e) {}
+
+    window.addEventListener('DOMContentLoaded', function () {
+        if (!document.querySelector('.sidebar')) return;
+        document.body.classList.add('vfc-has-sidebar');
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'vfc-menu-btn';
+        btn.setAttribute('aria-label', 'Menu');
+        btn.innerHTML = '&#9776;';
+        const backdrop = document.createElement('div');
+        backdrop.className = 'vfc-backdrop';
+
+        btn.addEventListener('click', function () { document.body.classList.add('vfc-menu-open'); });
+        backdrop.addEventListener('click', function () { document.body.classList.remove('vfc-menu-open'); });
+        document.body.appendChild(btn);
+        document.body.appendChild(backdrop);
+
+        // close the drawer after choosing a menu item
+        document.querySelectorAll('.sidebar a').forEach(function (a) {
+            a.addEventListener('click', function () { document.body.classList.remove('vfc-menu-open'); });
+        });
     });
 })();
 
