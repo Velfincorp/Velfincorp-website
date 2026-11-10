@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Vel Fin Corp - Daily Collection Dashboard</title>
+    <link rel="icon" type="image/jpeg" href="velfincorp-logo.jpeg">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="db.js"></script>
+    <script src="collection-core.js"></script>
+    <script>
+        (function() {
+            const loggedUser = sessionStorage.getItem('velfincorp_logged_user');
+            const userRole = sessionStorage.getItem('velfincorp_role');
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted || !sessionStorage.getItem('velfincorp_logged_user')) {
+                    window.location.replace('login.html');
+                }
+            });
+            if (!loggedUser || !userRole) { window.location.replace('login.html'); return; }
+            if (userRole === 'borrower') { window.location.replace('borrower-portal.html'); }
+        })();
+    </script>
+    <style>
+        :root { --navy: #0F1D36; --gold: #C5A059; --bg-color: #F8F9FB; --text-main: #2D3748; --white: #FFFFFF; --danger: #C53030; --success: #2F855A; }
+        body { font-family: 'Manrope', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background-color: var(--navy); color: var(--white); display: flex; flex-direction: column; border-right: 3px solid var(--gold); position: fixed; height: 100vh; left: 0; top: 0; box-shadow: 4px 0 15px rgba(15, 29, 54, 0.1); overflow-y: auto; }
+        .sidebar-brand { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0,0,0,0.1); }
+        .sidebar-logo { height: 40px; width: 40px; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold); background: var(--white); padding: 2px; }
+        .sidebar-title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: bold; color: var(--gold); letter-spacing: 1px; }
+        .sidebar-menu { list-style: none; padding: 15px 0; margin: 0; flex: 1; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 15px; padding: 12px 25px; color: #cbd5e1; text-decoration: none; font-size: 14px; font-weight: 500; transition: 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active { background-color: rgba(197, 160, 89, 0.15); color: var(--gold); border-left-color: var(--gold); }
+        .sidebar-menu li a i { width: 20px; text-align: center; color: var(--gold); }
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
+        .btn-logout { background-color: var(--danger); color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; display: block; text-align: center; box-sizing: border-box; }
+        .main-content { margin-left: 260px; flex: 1; padding: 30px; box-sizing: border-box; min-width: 0; }
+        .container { max-width: 1400px; margin: 0 auto; background: var(--white); padding: 28px; border-radius: 8px; box-shadow: 0 4px 20px rgba(15, 29, 54, 0.05); border-top: 5px solid var(--navy); }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 12px; }
+        h2 { font-family: 'Cinzel', serif; color: var(--navy); margin: 0; }
+        h3.sec { font-family: 'Cinzel', serif; color: var(--navy); font-size: 16px; margin: 26px 0 10px; border-bottom: 2px solid var(--gold); padding-bottom: 6px; }
+        .btn { border: none; padding: 9px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13px; }
+        .btn-navy { background: var(--navy); color: #fff; }
+        .btn-green { background: var(--success); color: #fff; }
+        .btn-gold { background: var(--gold); color: var(--navy); }
+        .btn-grey { background: #e2e8f0; color: var(--navy); }
+        .btn:disabled { opacity: .6; cursor: not-allowed; }
+        .date-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .date-bar input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+        .warn-box { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 6px; font-size: 12.5px; margin-bottom: 14px; display: none; line-height: 1.6; }
+        .note-box { background: #f1f5f9; border-left: 4px solid var(--gold); padding: 10px 14px; border-radius: 6px; font-size: 12.5px; line-height: 1.7; margin-bottom: 16px; color: #475569; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 8px; }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-top: 4px solid var(--navy); border-radius: 8px; padding: 13px; text-align: center; }
+        .card.red { border-top-color: var(--danger); }
+        .card.green { border-top-color: var(--success); }
+        .card.gold { border-top-color: var(--gold); }
+        .card h4 { margin: 0 0 6px 0; font-size: 11px; color: #64748b; text-transform: uppercase; }
+        .card .v { font-size: 20px; font-weight: 800; color: var(--navy); }
+        .card .v.red { color: var(--danger); }
+        .card .v.green { color: var(--success); }
+        .card small { display: block; color: #64748b; font-size: 11px; margin-top: 3px; }
+        .eff-bar { background: #e2e8f0; height: 12px; border-radius: 8px; overflow: hidden; margin-top: 8px; }
+        .eff-fill { height: 100%; background: var(--success); }
+        .chips { display: flex; gap: 10px; flex-wrap: wrap; }
+        .chip { padding: 8px 14px; border-radius: 20px; color: #fff; font-size: 12.5px; font-weight: 800; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 12px; border: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
+        th { background: var(--navy); color: #fff; font-family: 'Cinzel', serif; font-size: 12px; white-space: nowrap; }
+        tbody tr:hover { background: #f8fafc; }
+        .money { font-weight: 800; white-space: nowrap; }
+        .scroll { overflow-x: auto; }
+        .empty { text-align: center; color: #64748b; padding: 22px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 5000; }
+        .modal-content { background: #fff; width: 460px; max-width: 94%; max-height: 92vh; overflow-y: auto; padding: 22px; border-radius: 12px; border-top: 5px solid var(--navy); box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+        .modal-content h3 { font-family: 'Cinzel', serif; color: var(--navy); margin: 0 0 10px 0; }
+        .modal-content label { display: block; font-weight: 700; font-size: 13px; color: var(--navy); margin: 12px 0 6px; }
+        .modal-content input, .modal-content textarea { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; box-sizing: border-box; font-family: inherit; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+        @media (max-width: 800px) {
+            .container { padding: 14px !important; }
+            .resp-table thead { display: none; }
+            .resp-table, .resp-table tbody, .resp-table tr, .resp-table td { display: block; width: 100%; box-sizing: border-box; }
+            .resp-table tr { border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 12px; padding: 4px 0; background: #fff; box-shadow: 0 2px 8px rgba(15,29,54,.06); }
+            .resp-table td { border: none; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 8px 14px; text-align: right; }
+            .resp-table td::before { content: attr(data-label); font-weight: 700; color: #64748b; font-size: 12px; text-align: left; flex-shrink: 0; }
+            .resp-table td:last-child { border-bottom: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="velfincorp-logo.jpeg" alt="Logo" class="sidebar-logo">
+            <div class="sidebar-title">VEL FIN CORP</div>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="dashboard.html"><i class="fas fa-home"></i> Main Dashboard</a></li>
+            <li><a href="borrowers-details.html"><i class="fas fa-users"></i> Borrower Details</a></li>
+            <li><a href="borrowers-report.html"><i class="fas fa-id-card"></i> Borrower Report</a></li>
+            <li><a href="creditvault.html"><i class="fas fa-file-invoice-dollar"></i> Credit Vault Loan</a></li>
+            <li><a href="personalloan.html"><i class="fas fa-hand-holding-usd"></i> Personal Loan</a></li>
+            <li><a href="payments.html"><i class="fas fa-money-bill-wave"></i> Payment Collection</a></li>
+            <li><a href="creditvault-report.html"><i class="fas fa-vault"></i> Credit Vault Report</a></li>
+            <li><a href="personalloan-report.html"><i class="fas fa-chart-line"></i> Personal Loan Report</a></li>
+            <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
+            <li><a href="defaulters-report.html"><i class="fas fa-exclamation-triangle"></i> Defaulters Report</a></li>
+            <li><a href="my-collection.html"><i class="fas fa-clipboard-list"></i> My Collection List</a></li>
+            <li><a href="collection-dashboard.html" class="active"><i class="fas fa-chart-pie"></i> Daily Collection</a></li>
+            <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
+            <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
+            <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
+            <li><a href="login.html"><i class="fas fa-key"></i> Access & Password</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="header-row">
+                <h2>Daily Collection</h2>
+                <div class="date-bar">
+                    <button class="btn btn-grey" onclick="shiftDate(-1)"><i class="fas fa-chevron-left"></i></button>
+                    <input type="date" id="dateInput" onchange="onDateChange()">
+                    <button class="btn btn-grey" onclick="shiftDate(1)"><i class="fas fa-chevron-right"></i></button>
+                    <button class="btn btn-navy" onclick="setToday()">Today</button>
+                    <button class="btn btn-gold" onclick="loadAll()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+            </div>
+
+            <div class="warn-box" id="warnBox"></div>
+            <div class="note-box">
+                <strong>Demand</strong> = installments due on the selected date <em>plus</em> arrears brought forward from earlier days (shown as per the payments recorded <u>before</u> that date).
+                <strong>Collection Efficiency</strong> = EMI collected on that date &divide; total demand. Penalty collected is shown separately and is not part of the efficiency.
+                Payments recorded before the "Collected By" feature was added show as <em>"Not recorded"</em> in the agent table.
+            </div>
+
+            <div class="cards" id="mainCards"></div>
+
+            <h3 class="sec">Overdue stages (as on this date)</h3>
+            <div class="chips" id="stageChips"></div>
+
+            <h3 class="sec">Collected by agent</h3>
+            <div class="scroll"><table class="resp-table"><thead><tr>
+                <th>Agent</th><th>Payments</th><th>EMI collected</th><th>Penalty collected</th><th>Total</th><th>of which Cash</th>
+            </tr></thead><tbody id="agentBody"></tbody></table></div>
+
+            <h3 class="sec">Collected by payment mode</h3>
+            <div class="cards" id="modeCards"></div>
+
+            <h3 class="sec">Cash in hand with agents (all days up to this date)</h3>
+            <div class="scroll"><table class="resp-table"><thead><tr>
+                <th>Agent</th><th>Cash collected</th><th>Handed over</th><th>Pending with agent</th><th>Action</th>
+            </tr></thead><tbody id="cashBody"></tbody></table></div>
+
+            <h3 class="sec">Recent cash handovers</h3>
+            <div class="scroll"><table class="resp-table"><thead><tr>
+                <th>Date</th><th>Agent</th><th>Amount</th><th>Received by</th><th>Note</th>
+            </tr></thead><tbody id="handoverBody"></tbody></table></div>
+
+            <h3 class="sec">Payments on this date</h3>
+            <div class="scroll"><table class="resp-table"><thead><tr>
+                <th>Receipt</th><th>Borrower</th><th>Loan</th><th>EMI</th><th>Penalty</th><th>Mode</th><th>Collected by</th>
+            </tr></thead><tbody id="payBody"></tbody></table></div>
+        </div>
+    </div>
+
+    <!-- Handover modal -->
+    <div class="modal" id="hoModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-hand-holding-usd"></i> Record Cash Handover</h3>
+            <div id="hoInfo" style="font-size:13px; color:#475569; line-height:1.7;"></div>
+            <label>Amount received from agent (₹) *</label>
+            <input type="number" id="hoAmount" min="1" step="1">
+            <label>Date *</label>
+            <input type="date" id="hoDate">
+            <label>Note (optional)</label>
+            <textarea id="hoNote" rows="2" maxlength="150" placeholder="e.g. Counted in office"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-grey" onclick="closeModal('hoModal')">Cancel</button>
+                <button class="btn btn-green" id="btnSaveHo" onclick="saveHandover()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const C = window.VFC_COLLECTION;
+        const IS_ADMIN = sessionStorage.getItem('velfincorp_role') === 'admin';
+        const ME_NAME = sessionStorage.getItem('velfincorp_user_name') || 'Admin';
+
+        let loans = [], payments = [], handovers = [];
+        let hoTarget = null;
+
+        function warn(list) {
+            const b = document.getElementById('warnBox');
+            if (!list.length) { b.style.display = 'none'; return; }
+            b.style.display = 'block';
+            b.innerHTML = '<strong>Notice:</strong><br>' + list.map(C.esc).join('<br>');
+        }
+        async function safeFetch(id, label, warnings) {
+            try { return await window.vfcFetchAll(id); }
+            catch (e) { console.warn(label, e); warnings.push(label + ' could not be read (' + e.message + '). Check the table ID in db.js and the table permissions.'); return []; }
+        }
+
+        function selectedDate() {
+            const v = document.getElementById('dateInput').value || C.todayISO();
+            return C.parseFlexibleDate(v);
+        }
+        function setToday() { document.getElementById('dateInput').value = C.todayISO(); render(); }
+        function shiftDate(n) {
+            const d = selectedDate();
+            d.setDate(d.getDate() + n);
+            document.getElementById('dateInput').value = C.toISO(d);
+            render();
+        }
+        function onDateChange() { render(); }
+
+        const dayOf = p => C.toISO(p.payment_date || p.$createdAt);
+        const amt = v => parseFloat(v) || 0;
+
+        async function loadAll() {
+            const warnings = [];
+            try {
+                const [l, p, h] = await Promise.all([
+                    window.vfcFetchAll(VFC_DB.LOANS_ID),
+                    window.vfcFetchAll(VFC_DB.PAYMENTS_ID),
+                    safeFetch(VFC_DB.CASH_HANDOVERS_ID, 'Cash handovers table', warnings)
+                ]);
+                loans = l; payments = p; handovers = h;
+                if (!document.getElementById('dateInput').value) document.getElementById('dateInput').value = C.todayISO();
+                warn(warnings);
+                render();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('mainCards').innerHTML = `<div class="empty" style="color:#C53030;">Error: ${C.esc(err.message)}</div>`;
+            }
+        }
+
+        /* demand of ONE loan on date D (arrears brought forward + installment due on D) */
+        function demandFor(loan, loanPayments, D) {
+            const emi = amt(loan.installment_amount);
+            if (emi <= 0) return null;
+            const total = amt(loan.loan_amount);
+            const allPaid = loanPayments.reduce((s, p) => s + amt(p.amount_paid), 0);
+            // closed-but-unpaid loans (cancelled) and pending loans are not part of the demand
+            if (loan.status === 'PENDING') return null;
+            if (loan.status === 'CLOSED' && allPaid < total - 0.5) return null;
+
+            const Diso = C.toISO(D);
+            const before = loanPayments.filter(p => dayOf(p) < Diso);
+            const paidBefore = before.reduce((s, p) => s + amt(p.amount_paid), 0);
+            const remainingBefore = Math.max(0, total - paidBefore);
+            if (remainingBefore <= 0.5) return null;
+
+            const type = String(loan.loan_type || 'Weekly').toLowerCase().includes('daily') ? 'daily' : 'weekly';
+            const step = type === 'daily' ? 1 : 7;
+            let tenure = 10;
+            const tm = String(loan.tenure || '').match(/\d+/);
+            if (tm) tenure = parseInt(tm[0]);
+
+            const start = C.parseFlexibleDate(loan.loan_date || loan.$createdAt);
+            const diff = Math.round((D - start) / C.DAY_MS);
+            if (diff <= 0) return null;                     // loan starts on/after this date
+
+            const kBefore = Math.max(0, Math.min(tenure, Math.ceil(diff / step) - 1));
+            const dueToday = (diff % step === 0) && (diff / step) <= tenure;
+            const kIncl = Math.min(tenure, kBefore + (dueToday ? 1 : 0));
+            const demand = Math.min(remainingBefore, Math.max(0, kIncl * emi - paidBefore));
+            const arrears = Math.min(remainingBefore, Math.max(0, kBefore * emi - paidBefore));
+            const dueAmt = Math.max(0, demand - arrears);
+            const info = C.computeDefaulterInfo(loan, before, D);
+            return { demand, arrears, dueAmt, info };
+        }
+
+        function render() {
+            const D = selectedDate();
+            const Diso = C.toISO(D);
+
+            // payments grouped per loan once
+            const byLoan = {};
+            payments.forEach(p => { (byLoan[p.loan_id] = byLoan[p.loan_id] || []).push(p); });
+
+            let demandTotal = 0, arrearsTotal = 0, dueTotal = 0;
+            const stage = { 1: { n: 0, amt: 0 }, 2: { n: 0, amt: 0 }, 3: { n: 0, amt: 0 }, 4: { n: 0, amt: 0 } };
+            let penaltyOutstanding = 0;
+            loans.forEach(loan => {
+                const lp = (byLoan[loan.loan_id] || []).filter(p => C.paymentBelongsToLoan(p, loan));
+                const d = demandFor(loan, lp, D);
+                if (!d) return;
+                demandTotal += d.demand; arrearsTotal += d.arrears; dueTotal += d.dueAmt;
+                if (d.info) {
+                    stage[d.info.stage].n++;
+                    stage[d.info.stage].amt += d.info.totalDue;
+                    penaltyOutstanding += d.info.penalty;
+                }
+            });
+
+            const dayPays = payments.filter(p => dayOf(p) === Diso);
+            const emiCollected = dayPays.reduce((s, p) => s + amt(p.amount_paid), 0);
+            const penCollected = dayPays.reduce((s, p) => s + amt(p.penalty_paid), 0);
+            const eff = demandTotal > 0 ? (emiCollected / demandTotal) * 100 : (emiCollected > 0 ? 100 : 0);
+            const gap = Math.max(0, demandTotal - emiCollected);
+
+            document.getElementById('mainCards').innerHTML = `
+                <div class="card"><h4>Due on this date</h4><div class="v">${C.rupees(dueTotal)}</div></div>
+                <div class="card red"><h4>Arrears brought forward</h4><div class="v red">${C.rupees(arrearsTotal)}</div></div>
+                <div class="card gold"><h4>Total demand</h4><div class="v">${C.rupees(demandTotal)}</div></div>
+                <div class="card green"><h4>EMI collected</h4><div class="v green">${C.rupees(emiCollected)}</div><small>${dayPays.length} payment(s)</small></div>
+                <div class="card green"><h4>Penalty collected</h4><div class="v green">${C.rupees(penCollected)}</div></div>
+                <div class="card red"><h4>Still to collect</h4><div class="v red">${C.rupees(gap)}</div></div>
+                <div class="card ${eff >= 80 ? 'green' : 'red'}" style="grid-column: span 2;">
+                    <h4>Collection Efficiency</h4>
+                    <div class="v ${eff >= 80 ? 'green' : 'red'}">${eff.toFixed(1)}%</div>
+                    <div class="eff-bar"><div class="eff-fill" style="width:${Math.min(100, eff)}%; ${eff < 80 ? 'background:#C53030;' : ''}"></div></div>
+                </div>`;
+
+            document.getElementById('stageChips').innerHTML = [1, 2, 3, 4].map(s => {
+                const i = C.STAGE_INFO[s];
+                return `<span class="chip" style="background:${i.color};">${i.label} - ${i.text}: ${stage[s].n} (${C.rupees(stage[s].amt)})</span>`;
+            }).join('') + `<span class="chip" style="background:#475569;">Penalty outstanding (calculated): ${C.rupees(penaltyOutstanding)}</span>`;
+
+            renderAgents(dayPays);
+            renderModes(dayPays);
+            renderCash(Diso);
+            renderHandovers();
+            renderPayments(dayPays);
+        }
+
+        function collectorKey(p) {
+            const ph = C.last10(p.collected_by_phone);
+            if (ph) return { key: ph, name: p.collected_by || ph };
+            if (p.collected_by === 'Admin') return { key: 'ADMIN', name: 'Admin' };
+            if (p.collected_by) return { key: 'N:' + p.collected_by, name: p.collected_by };
+            return { key: 'NONE', name: 'Not recorded' };
+        }
+
+        function renderAgents(dayPays) {
+            const map = {};
+            dayPays.forEach(p => {
+                const k = collectorKey(p);
+                const o = map[k.key] = map[k.key] || { name: k.name, n: 0, emi: 0, pen: 0, cash: 0 };
+                o.n++; o.emi += amt(p.amount_paid); o.pen += amt(p.penalty_paid);
+                if (String(p.payment_mode || '').toLowerCase() === 'cash') o.cash += amt(p.amount_paid) + amt(p.penalty_paid);
+            });
+            const rows = Object.values(map).sort((a, b) => (b.emi + b.pen) - (a.emi + a.pen));
+            document.getElementById('agentBody').innerHTML = rows.length ? rows.map(o => `<tr>
+                <td data-label="Agent"><strong>${C.esc(o.name)}</strong></td>
+                <td data-label="Payments">${o.n}</td>
+                <td data-label="EMI collected" class="money">${C.rupees(o.emi)}</td>
+                <td data-label="Penalty collected" class="money">${C.rupees(o.pen)}</td>
+                <td data-label="Total" class="money" style="color:#2F855A;">${C.rupees(o.emi + o.pen)}</td>
+                <td data-label="of which Cash" class="money">${C.rupees(o.cash)}</td></tr>`).join('')
+                : '<tr><td colspan="6" class="empty">No payments on this date.</td></tr>';
+        }
+
+        function renderModes(dayPays) {
+            const modes = { Cash: 0, UPI: 0, 'Bank Transfer': 0, Other: 0 };
+            dayPays.forEach(p => {
+                const total = amt(p.amount_paid) + amt(p.penalty_paid);
+                const m = String(p.payment_mode || '');
+                if (/cash/i.test(m)) modes.Cash += total;
+                else if (/upi/i.test(m)) modes.UPI += total;
+                else if (/bank/i.test(m)) modes['Bank Transfer'] += total;
+                else modes.Other += total;
+            });
+            document.getElementById('modeCards').innerHTML = Object.keys(modes).map(k =>
+                `<div class="card"><h4>${k}</h4><div class="v">${C.rupees(modes[k])}</div></div>`).join('');
+        }
+
+        function renderCash(Diso) {
+            const map = {};
+            payments.forEach(p => {
+                if (dayOf(p) > Diso) return;
+                if (!/cash/i.test(String(p.payment_mode || ''))) return;
+                const ph = C.last10(p.collected_by_phone);
+                if (!ph) return;                                  // admin / old entries are not "agent cash"
+                const o = map[ph] = map[ph] || { name: p.collected_by || ph, phone: ph, cash: 0, handed: 0 };
+                o.cash += amt(p.amount_paid) + amt(p.penalty_paid);
+                if (p.collected_by) o.name = p.collected_by;
+            });
+            handovers.forEach(h => {
+                if (C.toISO(h.handover_date) > Diso) return;
+                const ph = C.last10(h.agent_phone);
+                const o = map[ph] = map[ph] || { name: h.agent_name || ph, phone: ph, cash: 0, handed: 0 };
+                o.handed += amt(h.amount);
+            });
+            const rows = Object.values(map).sort((a, b) => (b.cash - b.handed) - (a.cash - a.handed));
+            window.__cashRows = rows;
+            document.getElementById('cashBody').innerHTML = rows.length ? rows.map((o, i) => {
+                const pending = o.cash - o.handed;
+                return `<tr>
+                    <td data-label="Agent"><strong>${C.esc(o.name)}</strong><br><small style="color:#64748b;">${C.esc(o.phone)}</small></td>
+                    <td data-label="Cash collected" class="money">${C.rupees(o.cash)}</td>
+                    <td data-label="Handed over" class="money">${C.rupees(o.handed)}</td>
+                    <td data-label="Pending with agent" class="money" style="color:${pending > 0.5 ? '#C53030' : '#2F855A'};">${C.rupees(pending)}</td>
+                    <td data-label="Action">${IS_ADMIN ? `<button class="btn btn-gold" onclick="openHandover(${i})"><i class="fas fa-plus"></i> Record handover</button>` : '-'}</td></tr>`;
+            }).join('') : '<tr><td colspan="5" class="empty">No agent cash collections recorded yet.</td></tr>';
+        }
+
+        function renderHandovers() {
+            const rows = handovers.slice().sort((a, b) => C.parseFlexibleDate(b.handover_date) - C.parseFlexibleDate(a.handover_date) || new Date(b.$createdAt) - new Date(a.$createdAt)).slice(0, 15);
+            document.getElementById('handoverBody').innerHTML = rows.length ? rows.map(h => `<tr>
+                <td data-label="Date">${C.formatIndianDate(h.handover_date)}</td>
+                <td data-label="Agent">${C.esc(h.agent_name || h.agent_phone)}</td>
+                <td data-label="Amount" class="money">${C.rupees(h.amount)}</td>
+                <td data-label="Received by">${C.esc(h.received_by || '-')}</td>
+                <td data-label="Note">${C.esc(h.note || '')}</td></tr>`).join('')
+                : '<tr><td colspan="5" class="empty">No handovers recorded yet.</td></tr>';
+        }
+
+        function renderPayments(dayPays) {
+            const rows = dayPays.slice().sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
+            document.getElementById('payBody').innerHTML = rows.length ? rows.map(p => `<tr>
+                <td data-label="Receipt"><strong>${C.esc(p.payment_id)}</strong></td>
+                <td data-label="Borrower">${C.esc(p.borrower_name)}</td>
+                <td data-label="Loan">${C.esc(p.loan_id)}</td>
+                <td data-label="EMI" class="money">${C.rupees(p.amount_paid)}</td>
+                <td data-label="Penalty" class="money">${C.rupees(p.penalty_paid)}</td>
+                <td data-label="Mode">${C.esc(p.payment_mode || '-')}</td>
+                <td data-label="Collected by">${C.esc(collectorKey(p).name)}</td></tr>`).join('')
+                : '<tr><td colspan="7" class="empty">No payments on this date.</td></tr>';
+        }
+
+        /* ---------- cash handover ---------- */
+        function openHandover(i) {
+            const o = (window.__cashRows || [])[i];
+            if (!o) return;
+            hoTarget = o;
+            const pending = Math.max(0, o.cash - o.handed);
+            document.getElementById('hoInfo').innerHTML = `<strong>${C.esc(o.name)}</strong> (${C.esc(o.phone)})<br>Cash pending with agent: <strong>${C.rupees(pending)}</strong>`;
+            document.getElementById('hoAmount').value = Math.round(pending) || '';
+            document.getElementById('hoDate').value = C.todayISO();
+            document.getElementById('hoNote').value = '';
+            document.getElementById('hoModal').style.display = 'flex';
+        }
+
+        async function saveHandover() {
+            if (!hoTarget) return;
+            const amount = parseFloat(document.getElementById('hoAmount').value) || 0;
+            const date = document.getElementById('hoDate').value;
+            if (amount <= 0) { alert('Please enter the amount received.'); return; }
+            if (!date) { alert('Please choose the date.'); return; }
+            const btn = document.getElementById('btnSaveHo');
+            btn.disabled = true;
+            try {
+                await window.appwriteDatabases.createDocument(VFC_DB.DB_ID, VFC_DB.CASH_HANDOVERS_ID, window.AppwriteID.unique(), {
+                    agent_phone: hoTarget.phone,
+                    agent_name: String(hoTarget.name).slice(0, 150),
+                    handover_date: date,
+                    amount: String(Math.round(amount)),
+                    received_by: String(ME_NAME).slice(0, 150),
+                    note: document.getElementById('hoNote').value.trim().slice(0, 150)
+                });
+                closeModal('hoModal');
+                await loadAll();
+            } catch (err) {
+                console.error(err);
+                alert('Could not save the handover: ' + err.message);
+            } finally { btn.disabled = false; }
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function handleLogout() {
+            sessionStorage.clear();
+            localStorage.removeItem('velfincorp_logged_user');
+            window.location.replace('login.html');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('dateInput').value = C.todayISO();
+            loadAll();
+        });
+    </script>
+</body>
+</html>
