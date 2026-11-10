@@ -168,7 +168,8 @@ window.vfcFindBorrowersByMobile = async function(mobile) {
         if (!menu) return;
         const items = [
             { href: 'defaulters-report.html', icon: 'fa-exclamation-triangle', label: 'Defaulters Report' },
-            { href: 'my-collection.html',     icon: 'fa-clipboard-list',       label: 'My Collection List' }
+            { href: 'my-collection.html',     icon: 'fa-clipboard-list',       label: 'My Collection List' },
+            { href: 'collection-dashboard.html', icon: 'fa-chart-pie',          label: 'Daily Collection' }
         ];
         let anchor = menu.querySelector('a[href="allpayments-report.html"]');
         let after = (anchor && anchor.parentElement && anchor.parentElement.parentElement === menu) ? anchor.parentElement : null;
