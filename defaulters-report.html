@@ -117,6 +117,7 @@
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
             <li><a href="defaulters-report.html" class="active"><i class="fas fa-exclamation-triangle"></i> Defaulters Report</a></li>
             <li><a href="my-collection.html"><i class="fas fa-clipboard-list"></i> My Collection List</a></li>
+            <li><a href="collection-dashboard.html"><i class="fas fa-chart-pie"></i> Daily Collection</a></li>
             <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
             <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
             <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
@@ -172,6 +173,7 @@
                 <table class="resp-table">
                     <thead>
                         <tr>
+                            <th>S.No</th>
                             <th>Loan</th>
                             <th>Borrower</th>
                             <th>Type / EMI</th>
@@ -185,7 +187,7 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="tbody"><tr><td colspan="11" class="empty">Loading...</td></tr></tbody>
+                    <tbody id="tbody"><tr><td colspan="12" class="empty">Loading...</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -244,7 +246,7 @@
 
         async function loadDefaulters() {
             const tbody = document.getElementById('tbody');
-            tbody.innerHTML = '<tr><td colspan="11" class="empty"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12" class="empty"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
             const warnings = [];
             try {
                 const [loans, payments, assigns, fups, staffDocs] = await Promise.all([
@@ -276,7 +278,7 @@
                 applyFilters();
             } catch (err) {
                 console.error(err);
-                tbody.innerHTML = `<tr><td colspan="11" class="empty" style="color:#C53030;">Error: ${C.esc(err.message)}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" class="empty" style="color:#C53030;">Error: ${C.esc(err.message)}</td></tr>`;
             }
         }
 
@@ -363,7 +365,7 @@
         function renderTable(list) {
             const tbody = document.getElementById('tbody');
             if (!list.length) {
-                tbody.innerHTML = '<tr><td colspan="11" class="empty"><i class="fas fa-check-circle" style="color:#2F855A;"></i> No overdue accounts for this filter.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="12" class="empty"><i class="fas fa-check-circle" style="color:#2F855A;"></i> No overdue accounts for this filter.</td></tr>';
                 return;
             }
             tbody.innerHTML = list.map((x, idx) => {
@@ -371,6 +373,7 @@
                 const mobile = C.last10(l.phone_number);
                 const wa = C.waOverdueLink(l, i);
                 return `<tr>
+                    <td data-label="S.No" style="font-weight:700;">${idx + 1}</td>
                     <td data-label="Loan"><div style="text-align:left;"><strong>${C.esc(l.loan_id)}</strong><br><small class="sub">${x.personal ? 'Personal' : 'Credit Vault'} | Last paid: ${i.lastPaid ? C.formatIndianDate(i.lastPaid) : 'Never'}</small></div></td>
                     <td data-label="Borrower"><div style="text-align:left;">${C.esc(l.borrower_name)}<br><small class="sub">${C.esc(mobile || l.phone_number || '-')}</small></div></td>
                     <td data-label="Type / EMI">${i.type === 'daily' ? 'Daily' : 'Weekly'} &middot; <span class="money">${C.rupees(i.emi)}</span></td>
