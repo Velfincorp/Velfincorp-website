@@ -130,6 +130,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th>S.No</th>
                         <th>Loan ID</th>
                         <th>Borrower Name</th>
                         <th>Phone Number</th>
@@ -141,7 +142,7 @@
                     </tr>
                 </thead>
                 <tbody id="reportTableBody">
-                    <tr><td colspan="8" style="text-align: center;">Loading personal loans from database...</td></tr>
+                    <tr><td colspan="9" style="text-align: center;">Loading personal loans from database...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -309,7 +310,7 @@
                     return category === 'Personal' || loanId.startsWith('VPL');
                 });
 
-                allPersonalLoans.sort((a, b) => parseFlexibleDate(b.loan_date || b.$createdAt) - parseFlexibleDate(a.loan_date || a.$createdAt));
+                allPersonalLoans.sort((a, b) => (parseFlexibleDate(b.loan_date || b.$createdAt) - parseFlexibleDate(a.loan_date || a.$createdAt)) || (new Date(b.$createdAt) - new Date(a.$createdAt)));
                 renderTable(allPersonalLoans);
             } catch(error) {
                 tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
@@ -369,15 +370,16 @@
         function renderTable(loans) {
             const tbody = document.getElementById('reportTableBody');
             if (loans.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No matching personal loans found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">No matching personal loans found.</td></tr>';
                 return;
             }
             tbody.innerHTML = '';
-            loans.forEach((loan) => {
+            loans.forEach((loan, idx) => {
                 const tr = document.createElement('tr');
                 tr.onclick = () => showLoanDetails(loan);
                 const payStatus = getPaymentStatusInfo(loan);
                 tr.innerHTML = `
+                    <td>${idx + 1}</td>
                     <td><strong>${loan.loan_id || '-'}</strong></td>
                     <td>${loan.borrower_name || '-'}</td>
                     <td>${loan.phone_number || '-'}</td>
