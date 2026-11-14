@@ -117,6 +117,7 @@
             <li><a href="allpayments-report.html"><i class="fas fa-receipt"></i> All Payments Report</a></li>
             <li><a href="defaulters-report.html"><i class="fas fa-exclamation-triangle"></i> Defaulters Report</a></li>
             <li><a href="my-collection.html" class="active"><i class="fas fa-clipboard-list"></i> My Collection List</a></li>
+            <li><a href="collection-dashboard.html"><i class="fas fa-chart-pie"></i> Daily Collection</a></li>
             <li><a href="mail-inbox.html"><i class="fas fa-envelope"></i> Support Mail Inbox</a></li>
             <li><a href="reminders.html"><i class="fas fa-bell"></i> WhatsApp Reminders</a></li>
             <li><a href="retailers.html"><i class="fas fa-store"></i> Retailers & Staff</a></li>
@@ -360,7 +361,7 @@
             <div class="cl-card ${cls}">
                 <div class="cl-head">
                     <div>
-                        <div class="cl-name">${C.esc(l.borrower_name)}</div>
+                        <div class="cl-name">${idx + 1}. ${C.esc(l.borrower_name)}</div>
                         <div class="cl-id">${C.esc(l.loan_id)} &middot; ${i.type === 'daily' ? 'Daily' : 'Weekly'} &middot; ${C.isPersonalLoan(l) ? 'Personal' : 'Credit Vault'}${IS_ADMIN ? ' &middot; Agent: ' + C.esc(it.a.agent_name || it.a.agent_phone) : ''}</div>
                     </div>
                     <span class="badge" style="background:${st.color};">${st.label}</span>
