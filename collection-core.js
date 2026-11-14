@@ -142,13 +142,25 @@
         return { type, emi, tenure, paidInst, missed, overdueDays, shortfall, penalty, penaltyEach: each, totalDue: shortfall + penalty, stage, lastPaid, remaining };
     }
 
+    // Tamil singular / plural: 1 தவணை உள்ளது, 2 தவணைகள் உள்ளன ; 1 நாள், 2 நாட்கள்
+    function daysTamil(n) { return n === 1 ? '1 நாள்' : `${n} நாட்கள்`; }
+    function installmentsTamil(n) { return n === 1 ? '1 தவணை' : `${n} தவணைகள்`; }
+
+    function waOverdueText(loan, info) {
+        const name = String(loan.borrower_name || '').replace(/\s+/g, ' ').trim();
+        const verb = info.missed === 1 ? 'உள்ளது' : 'உள்ளன';
+        return `வணக்கம் ${name},\n\n` +
+               `உங்கள் கடன் எண் ${loan.loan_id}-ல் ${installmentsTamil(info.missed)} நிலுவையில் ${verb} (${daysTamil(info.overdueDays)} தாமதம்).\n\n` +
+               `நிலுவைத் தொகை: ${rupees(info.shortfall)}\n` +
+               `தாமதக் கட்டணம்: ${rupees(info.penalty)}\n` +
+               `மொத்தம் செலுத்த வேண்டியது: ${rupees(info.totalDue)}\n\n` +
+               `தயவுசெய்து விரைவில் செலுத்தவும்.\n\nநன்றி,\nVel Fin Corp`;
+    }
+
     function waOverdueLink(loan, info) {
         const mobile = last10(loan.phone_number);
         if (mobile.length !== 10) return '';
-        const msg = `வணக்கம் ${loan.borrower_name}, உங்கள் கடன் ${loan.loan_id}-ல் ${info.missed} தவணை(கள்) நிலுவையில் உள்ளன (${info.overdueDays} நாட்கள் தாமதம்). ` +
-                    `நிலுவைத் தொகை ${rupees(info.shortfall)}, தாமதக் கட்டணம் ${rupees(info.penalty)}, மொத்தம் ${rupees(info.totalDue)}. ` +
-                    `தயவுசெய்து விரைவில் செலுத்தவும். - Vel Fin Corp`;
-        return `https://wa.me/91${mobile}?text=${encodeURIComponent(msg)}`;
+        return `https://wa.me/91${mobile}?text=${encodeURIComponent(waOverdueText(loan, info))}`;
     }
 
     /* ============ follow-ups / promises ============ */
@@ -193,7 +205,7 @@
         esc, rupees, normText, nameKey, last10,
         parseFlexibleDate, formatIndianDate, toISO, todayISO,
         isPersonalLoan, loanKindText, paymentBelongsToLoan,
-        penaltyEach, stageFor, computeDefaulterInfo, waOverdueLink,
+        penaltyEach, stageFor, computeDefaulterInfo, waOverdueLink, waOverdueText, daysTamil, installmentsTamil,
         isAutoFollowup, followupsForLoan, latestHumanFollowup, promiseStatus, activeAssignmentFor
     };
 })();
