@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="db.js"></script>
     <script src="collection-core.js"></script>
     <script>
@@ -49,6 +50,7 @@
         .btn-green { background: var(--success); color: #fff; }
         .btn-gold { background: var(--gold); color: var(--navy); }
         .btn-grey { background: #e2e8f0; color: var(--navy); }
+        .btn-red { background: #C53030; color: #fff; }
         .btn:disabled { opacity: .6; cursor: not-allowed; }
         .date-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .date-bar input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
@@ -56,6 +58,8 @@
         .note-box { background: #f1f5f9; border-left: 4px solid var(--gold); padding: 10px 14px; border-radius: 6px; font-size: 12.5px; line-height: 1.7; margin-bottom: 16px; color: #475569; }
         .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 8px; }
         .card { background: #fff; border: 1px solid #e2e8f0; border-top: 4px solid var(--navy); border-radius: 8px; padding: 13px; text-align: center; }
+        .card.click { cursor: pointer; transition: .15s; }
+        .card.click:hover { box-shadow: 0 6px 16px rgba(15,29,54,.15); transform: translateY(-2px); }
         .card.red { border-top-color: var(--danger); }
         .card.green { border-top-color: var(--success); }
         .card.gold { border-top-color: var(--gold); }
@@ -64,26 +68,44 @@
         .card .v.red { color: var(--danger); }
         .card .v.green { color: var(--success); }
         .card small { display: block; color: #64748b; font-size: 11px; margin-top: 3px; }
+        .card .tap { display: block; color: var(--gold); font-size: 10.5px; margin-top: 4px; font-weight: 700; }
         .eff-bar { background: #e2e8f0; height: 12px; border-radius: 8px; overflow: hidden; margin-top: 8px; }
         .eff-fill { height: 100%; background: var(--success); }
         .chips { display: flex; gap: 10px; flex-wrap: wrap; }
         .chip { padding: 8px 14px; border-radius: 20px; color: #fff; font-size: 12.5px; font-weight: 800; }
+        .chip.click { cursor: pointer; }
+        .chip.click:hover { opacity: .88; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { padding: 10px 12px; border: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
+        th, td { padding: 9px 11px; border: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
         th { background: var(--navy); color: #fff; font-family: 'Cinzel', serif; font-size: 12px; white-space: nowrap; }
         tbody tr:hover { background: #f8fafc; }
+        tr.rowclick { cursor: pointer; }
+        tr.total td { background: #f1f5f9; font-weight: 800; }
         .money { font-weight: 800; white-space: nowrap; }
         .scroll { overflow-x: auto; }
         .empty { text-align: center; color: #64748b; padding: 22px; }
+        .badge { display: inline-block; padding: 3px 9px; border-radius: 14px; color: #fff; font-size: 11px; font-weight: 800; white-space: nowrap; }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 5000; }
         .modal-content { background: #fff; width: 460px; max-width: 94%; max-height: 92vh; overflow-y: auto; padding: 22px; border-radius: 12px; border-top: 5px solid var(--navy); box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+        .modal-content.wide { width: 1150px; }
+        .modal-content.mid { width: 820px; }
         .modal-content h3 { font-family: 'Cinzel', serif; color: var(--navy); margin: 0 0 10px 0; }
         .modal-content label { display: block; font-weight: 700; font-size: 13px; color: var(--navy); margin: 12px 0 6px; }
         .modal-content input, .modal-content textarea { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; box-sizing: border-box; font-family: inherit; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+        .list-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        .list-sub { font-size: 13px; color: #475569; line-height: 1.7; margin-bottom: 10px; }
+
+        .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; font-size: 13px; }
+        .dgrid .k { color: #64748b; font-size: 11.5px; text-transform: uppercase; font-weight: 700; }
+        .dgrid .v { font-weight: 700; color: var(--navy); margin-bottom: 4px; word-break: break-word; }
+        .dsec { font-family: 'Cinzel', serif; color: var(--navy); font-size: 14px; margin: 18px 0 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+        .hist-item { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.6; }
 
         @media (max-width: 800px) {
             .container { padding: 14px !important; }
+            .dgrid { grid-template-columns: 1fr; }
             .resp-table thead { display: none; }
             .resp-table, .resp-table tbody, .resp-table tr, .resp-table td { display: block; width: 100%; box-sizing: border-box; }
             .resp-table tr { border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 12px; padding: 4px 0; background: #fff; box-shadow: 0 2px 8px rgba(15,29,54,.06); }
@@ -128,7 +150,7 @@
                 <h2>Daily Collection</h2>
                 <div class="date-bar">
                     <button class="btn btn-grey" onclick="shiftDate(-1)"><i class="fas fa-chevron-left"></i></button>
-                    <input type="date" id="dateInput" onchange="onDateChange()">
+                    <input type="date" id="dateInput" onchange="render()">
                     <button class="btn btn-grey" onclick="shiftDate(1)"><i class="fas fa-chevron-right"></i></button>
                     <button class="btn btn-navy" onclick="setToday()">Today</button>
                     <button class="btn btn-gold" onclick="loadAll()"><i class="fas fa-sync-alt"></i> Refresh</button>
@@ -137,8 +159,9 @@
 
             <div class="warn-box" id="warnBox"></div>
             <div class="note-box">
-                <strong>Demand</strong> = installments due on the selected date <em>plus</em> arrears brought forward from earlier days (shown as per the payments recorded <u>before</u> that date).
-                <strong>Collection Efficiency</strong> = EMI collected on that date &divide; total demand. Penalty collected is shown separately and is not part of the efficiency.
+                <strong>Click any box or stage</strong> to see the list of customers behind that amount - you can download it as PDF / CSV or print it, and click a customer to see the full details.<br>
+                <strong>Demand</strong> = installments due on the selected date <em>plus</em> arrears brought forward from earlier days.
+                <strong>Collection Efficiency</strong> = EMI collected on that date &divide; total demand. Penalty collected is shown separately.
                 Payments recorded before the "Collected By" feature was added show as <em>"Not recorded"</em> in the agent table.
             </div>
 
@@ -149,7 +172,7 @@
 
             <h3 class="sec">Collected by agent</h3>
             <div class="scroll"><table class="resp-table"><thead><tr>
-                <th>Agent</th><th>Payments</th><th>EMI collected</th><th>Penalty collected</th><th>Total</th><th>of which Cash</th>
+                <th>S.No</th><th>Agent</th><th>Payments</th><th>EMI collected</th><th>Penalty collected</th><th>Total</th><th>of which Cash</th>
             </tr></thead><tbody id="agentBody"></tbody></table></div>
 
             <h3 class="sec">Collected by payment mode</h3>
@@ -157,18 +180,51 @@
 
             <h3 class="sec">Cash in hand with agents (all days up to this date)</h3>
             <div class="scroll"><table class="resp-table"><thead><tr>
-                <th>Agent</th><th>Cash collected</th><th>Handed over</th><th>Pending with agent</th><th>Action</th>
+                <th>S.No</th><th>Agent</th><th>Cash collected</th><th>Handed over</th><th>Pending with agent</th><th>Action</th>
             </tr></thead><tbody id="cashBody"></tbody></table></div>
 
             <h3 class="sec">Recent cash handovers</h3>
             <div class="scroll"><table class="resp-table"><thead><tr>
-                <th>Date</th><th>Agent</th><th>Amount</th><th>Received by</th><th>Note</th>
+                <th>S.No</th><th>Date</th><th>Agent</th><th>Amount</th><th>Received by</th><th>Note</th>
             </tr></thead><tbody id="handoverBody"></tbody></table></div>
 
             <h3 class="sec">Payments on this date</h3>
             <div class="scroll"><table class="resp-table"><thead><tr>
-                <th>Receipt</th><th>Borrower</th><th>Loan</th><th>EMI</th><th>Penalty</th><th>Mode</th><th>Collected by</th>
+                <th>S.No</th><th>Receipt</th><th>Borrower</th><th>Loan</th><th>EMI</th><th>Penalty</th><th>Mode</th><th>Collected by</th>
             </tr></thead><tbody id="payBody"></tbody></table></div>
+        </div>
+    </div>
+
+    <!-- LIST modal (opened by clicking a box) -->
+    <div class="modal" id="listModal">
+        <div class="modal-content wide">
+            <div class="list-head">
+                <h3 id="listTitle" style="margin:0;"></h3>
+                <div class="modal-actions" style="margin:0;">
+                    <button class="btn btn-red" onclick="downloadListPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="btn btn-green" onclick="downloadListCSV()"><i class="fas fa-file-csv"></i> CSV</button>
+                    <button class="btn btn-navy" onclick="printList()"><i class="fas fa-print"></i> Print</button>
+                    <button class="btn btn-grey" onclick="closeModal('listModal')">Close</button>
+                </div>
+            </div>
+            <div id="listPrint">
+                <div class="list-sub" id="listSub"></div>
+                <div class="scroll" id="listTableBox"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETAIL modal (opened by clicking a customer) -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content mid">
+            <div class="list-head">
+                <h3 style="margin:0;">Customer Details</h3>
+                <div class="modal-actions" style="margin:0;">
+                    <button class="btn btn-red" onclick="downloadDetailPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="btn btn-grey" onclick="closeModal('detailModal')">Close</button>
+                </div>
+            </div>
+            <div id="detailPrint"></div>
         </div>
     </div>
 
@@ -195,8 +251,15 @@
         const IS_ADMIN = sessionStorage.getItem('velfincorp_role') === 'admin';
         const ME_NAME = sessionStorage.getItem('velfincorp_user_name') || 'Admin';
 
-        let loans = [], payments = [], handovers = [];
+        let loans = [], payments = [], handovers = [], borrowers = [], assignments = [], followups = [];
+        let rowsCache = [];            // one entry per loan that has demand on the selected date
+        let dayPaysCache = [];
+        let currentList = null;
+        let detailLoan = null;
         let hoTarget = null;
+
+        const dayOf = p => C.toISO(p.payment_date || p.$createdAt);
+        const amt = v => parseFloat(v) || 0;
 
         function warn(list) {
             const b = document.getElementById('warnBox');
@@ -209,10 +272,7 @@
             catch (e) { console.warn(label, e); warnings.push(label + ' could not be read (' + e.message + '). Check the table ID in db.js and the table permissions.'); return []; }
         }
 
-        function selectedDate() {
-            const v = document.getElementById('dateInput').value || C.todayISO();
-            return C.parseFlexibleDate(v);
-        }
+        function selectedDate() { return C.parseFlexibleDate(document.getElementById('dateInput').value || C.todayISO()); }
         function setToday() { document.getElementById('dateInput').value = C.todayISO(); render(); }
         function shiftDate(n) {
             const d = selectedDate();
@@ -220,20 +280,19 @@
             document.getElementById('dateInput').value = C.toISO(d);
             render();
         }
-        function onDateChange() { render(); }
-
-        const dayOf = p => C.toISO(p.payment_date || p.$createdAt);
-        const amt = v => parseFloat(v) || 0;
 
         async function loadAll() {
             const warnings = [];
             try {
-                const [l, p, h] = await Promise.all([
+                const [l, p, h, b, a, f] = await Promise.all([
                     window.vfcFetchAll(VFC_DB.LOANS_ID),
                     window.vfcFetchAll(VFC_DB.PAYMENTS_ID),
-                    safeFetch(VFC_DB.CASH_HANDOVERS_ID, 'Cash handovers table', warnings)
+                    safeFetch(VFC_DB.CASH_HANDOVERS_ID, 'Cash handovers table', warnings),
+                    safeFetch(VFC_DB.BORROWERS_ID, 'Borrower list', warnings),
+                    safeFetch(VFC_DB.ASSIGNMENTS_ID, 'Assignments table', warnings),
+                    safeFetch(VFC_DB.FOLLOWUPS_ID, 'Follow-ups table', warnings)
                 ]);
-                loans = l; payments = p; handovers = h;
+                loans = l; payments = p; handovers = h; borrowers = b; assignments = a; followups = f;
                 if (!document.getElementById('dateInput').value) document.getElementById('dateInput').value = C.todayISO();
                 warn(warnings);
                 render();
@@ -249,9 +308,8 @@
             if (emi <= 0) return null;
             const total = amt(loan.loan_amount);
             const allPaid = loanPayments.reduce((s, p) => s + amt(p.amount_paid), 0);
-            // closed-but-unpaid loans (cancelled) and pending loans are not part of the demand
             if (loan.status === 'PENDING') return null;
-            if (loan.status === 'CLOSED' && allPaid < total - 0.5) return null;
+            if (loan.status === 'CLOSED' && allPaid < total - 0.5) return null;   // cancelled loan
 
             const Diso = C.toISO(D);
             const before = loanPayments.filter(p => dayOf(p) < Diso);
@@ -267,7 +325,7 @@
 
             const start = C.parseFlexibleDate(loan.loan_date || loan.$createdAt);
             const diff = Math.round((D - start) / C.DAY_MS);
-            if (diff <= 0) return null;                     // loan starts on/after this date
+            if (diff <= 0) return null;
 
             const kBefore = Math.max(0, Math.min(tenure, Math.ceil(diff / step) - 1));
             const dueToday = (diff % step === 0) && (diff / step) <= tenure;
@@ -276,61 +334,62 @@
             const arrears = Math.min(remainingBefore, Math.max(0, kBefore * emi - paidBefore));
             const dueAmt = Math.max(0, demand - arrears);
             const info = C.computeDefaulterInfo(loan, before, D);
-            return { demand, arrears, dueAmt, info };
+            return { demand, arrears, dueAmt, info, type };
         }
 
         function render() {
             const D = selectedDate();
             const Diso = C.toISO(D);
 
-            // payments grouped per loan once
             const byLoan = {};
             payments.forEach(p => { (byLoan[p.loan_id] = byLoan[p.loan_id] || []).push(p); });
 
-            let demandTotal = 0, arrearsTotal = 0, dueTotal = 0;
+            rowsCache = [];
+            let demandTotal = 0, arrearsTotal = 0, dueTotal = 0, penaltyOutstanding = 0;
             const stage = { 1: { n: 0, amt: 0 }, 2: { n: 0, amt: 0 }, 3: { n: 0, amt: 0 }, 4: { n: 0, amt: 0 } };
-            let penaltyOutstanding = 0;
+
             loans.forEach(loan => {
                 const lp = (byLoan[loan.loan_id] || []).filter(p => C.paymentBelongsToLoan(p, loan));
                 const d = demandFor(loan, lp, D);
                 if (!d) return;
+                const collected = lp.filter(p => dayOf(p) === Diso).reduce((s, p) => s + amt(p.amount_paid), 0);
+                const balance = Math.max(0, d.demand - collected);
+                rowsCache.push({ loan, d, collected, balance, agent: C.activeAssignmentFor(assignments, loan) });
                 demandTotal += d.demand; arrearsTotal += d.arrears; dueTotal += d.dueAmt;
-                if (d.info) {
-                    stage[d.info.stage].n++;
-                    stage[d.info.stage].amt += d.info.totalDue;
-                    penaltyOutstanding += d.info.penalty;
-                }
+                if (d.info) { stage[d.info.stage].n++; stage[d.info.stage].amt += d.info.totalDue; penaltyOutstanding += d.info.penalty; }
             });
 
-            const dayPays = payments.filter(p => dayOf(p) === Diso);
-            const emiCollected = dayPays.reduce((s, p) => s + amt(p.amount_paid), 0);
-            const penCollected = dayPays.reduce((s, p) => s + amt(p.penalty_paid), 0);
+            dayPaysCache = payments.filter(p => dayOf(p) === Diso);
+            const emiCollected = dayPaysCache.reduce((s, p) => s + amt(p.amount_paid), 0);
+            const penCollected = dayPaysCache.reduce((s, p) => s + amt(p.penalty_paid), 0);
             const eff = demandTotal > 0 ? (emiCollected / demandTotal) * 100 : (emiCollected > 0 ? 100 : 0);
-            const gap = Math.max(0, demandTotal - emiCollected);
+            const gap = rowsCache.reduce((s, r) => s + r.balance, 0);
 
+            const tap = '<span class="tap">Click to see list</span>';
             document.getElementById('mainCards').innerHTML = `
-                <div class="card"><h4>Due on this date</h4><div class="v">${C.rupees(dueTotal)}</div></div>
-                <div class="card red"><h4>Arrears brought forward</h4><div class="v red">${C.rupees(arrearsTotal)}</div></div>
-                <div class="card gold"><h4>Total demand</h4><div class="v">${C.rupees(demandTotal)}</div></div>
-                <div class="card green"><h4>EMI collected</h4><div class="v green">${C.rupees(emiCollected)}</div><small>${dayPays.length} payment(s)</small></div>
-                <div class="card green"><h4>Penalty collected</h4><div class="v green">${C.rupees(penCollected)}</div></div>
-                <div class="card red"><h4>Still to collect</h4><div class="v red">${C.rupees(gap)}</div></div>
-                <div class="card ${eff >= 80 ? 'green' : 'red'}" style="grid-column: span 2;">
+                <div class="card click" onclick="openList('due')"><h4>Due on this date</h4><div class="v">${C.rupees(dueTotal)}</div>${tap}</div>
+                <div class="card click red" onclick="openList('arrears')"><h4>Arrears brought forward</h4><div class="v red">${C.rupees(arrearsTotal)}</div>${tap}</div>
+                <div class="card click gold" onclick="openList('demand')"><h4>Total demand</h4><div class="v">${C.rupees(demandTotal)}</div>${tap}</div>
+                <div class="card click green" onclick="openList('emi')"><h4>EMI collected</h4><div class="v green">${C.rupees(emiCollected)}</div><small>${dayPaysCache.length} payment(s)</small>${tap}</div>
+                <div class="card click green" onclick="openList('penalty')"><h4>Penalty collected</h4><div class="v green">${C.rupees(penCollected)}</div>${tap}</div>
+                <div class="card click red" onclick="openList('pending')"><h4>Still to collect</h4><div class="v red">${C.rupees(gap)}</div>${tap}</div>
+                <div class="card click ${eff >= 80 ? 'green' : 'red'}" style="grid-column: span 2;" onclick="openList('demand')">
                     <h4>Collection Efficiency</h4>
                     <div class="v ${eff >= 80 ? 'green' : 'red'}">${eff.toFixed(1)}%</div>
                     <div class="eff-bar"><div class="eff-fill" style="width:${Math.min(100, eff)}%; ${eff < 80 ? 'background:#C53030;' : ''}"></div></div>
+                    ${tap}
                 </div>`;
 
             document.getElementById('stageChips').innerHTML = [1, 2, 3, 4].map(s => {
                 const i = C.STAGE_INFO[s];
-                return `<span class="chip" style="background:${i.color};">${i.label} - ${i.text}: ${stage[s].n} (${C.rupees(stage[s].amt)})</span>`;
+                return `<span class="chip click" style="background:${i.color};" onclick="openList('stage${s}')">${i.label} - ${i.text}: ${stage[s].n} (${C.rupees(stage[s].amt)})</span>`;
             }).join('') + `<span class="chip" style="background:#475569;">Penalty outstanding (calculated): ${C.rupees(penaltyOutstanding)}</span>`;
 
-            renderAgents(dayPays);
-            renderModes(dayPays);
+            renderAgents(dayPaysCache);
+            renderModes(dayPaysCache);
             renderCash(Diso);
             renderHandovers();
-            renderPayments(dayPays);
+            renderPayments(dayPaysCache);
         }
 
         function collectorKey(p) {
@@ -347,17 +406,18 @@
                 const k = collectorKey(p);
                 const o = map[k.key] = map[k.key] || { name: k.name, n: 0, emi: 0, pen: 0, cash: 0 };
                 o.n++; o.emi += amt(p.amount_paid); o.pen += amt(p.penalty_paid);
-                if (String(p.payment_mode || '').toLowerCase() === 'cash') o.cash += amt(p.amount_paid) + amt(p.penalty_paid);
+                if (/cash/i.test(String(p.payment_mode || ''))) o.cash += amt(p.amount_paid) + amt(p.penalty_paid);
             });
             const rows = Object.values(map).sort((a, b) => (b.emi + b.pen) - (a.emi + a.pen));
-            document.getElementById('agentBody').innerHTML = rows.length ? rows.map(o => `<tr>
+            document.getElementById('agentBody').innerHTML = rows.length ? rows.map((o, i) => `<tr>
+                <td data-label="S.No">${i + 1}</td>
                 <td data-label="Agent"><strong>${C.esc(o.name)}</strong></td>
                 <td data-label="Payments">${o.n}</td>
                 <td data-label="EMI collected" class="money">${C.rupees(o.emi)}</td>
                 <td data-label="Penalty collected" class="money">${C.rupees(o.pen)}</td>
                 <td data-label="Total" class="money" style="color:#2F855A;">${C.rupees(o.emi + o.pen)}</td>
                 <td data-label="of which Cash" class="money">${C.rupees(o.cash)}</td></tr>`).join('')
-                : '<tr><td colspan="6" class="empty">No payments on this date.</td></tr>';
+                : '<tr><td colspan="7" class="empty">No payments on this date.</td></tr>';
         }
 
         function renderModes(dayPays) {
@@ -380,7 +440,7 @@
                 if (dayOf(p) > Diso) return;
                 if (!/cash/i.test(String(p.payment_mode || ''))) return;
                 const ph = C.last10(p.collected_by_phone);
-                if (!ph) return;                                  // admin / old entries are not "agent cash"
+                if (!ph) return;
                 const o = map[ph] = map[ph] || { name: p.collected_by || ph, phone: ph, cash: 0, handed: 0 };
                 o.cash += amt(p.amount_paid) + amt(p.penalty_paid);
                 if (p.collected_by) o.name = p.collected_by;
@@ -396,28 +456,31 @@
             document.getElementById('cashBody').innerHTML = rows.length ? rows.map((o, i) => {
                 const pending = o.cash - o.handed;
                 return `<tr>
+                    <td data-label="S.No">${i + 1}</td>
                     <td data-label="Agent"><strong>${C.esc(o.name)}</strong><br><small style="color:#64748b;">${C.esc(o.phone)}</small></td>
                     <td data-label="Cash collected" class="money">${C.rupees(o.cash)}</td>
                     <td data-label="Handed over" class="money">${C.rupees(o.handed)}</td>
                     <td data-label="Pending with agent" class="money" style="color:${pending > 0.5 ? '#C53030' : '#2F855A'};">${C.rupees(pending)}</td>
                     <td data-label="Action">${IS_ADMIN ? `<button class="btn btn-gold" onclick="openHandover(${i})"><i class="fas fa-plus"></i> Record handover</button>` : '-'}</td></tr>`;
-            }).join('') : '<tr><td colspan="5" class="empty">No agent cash collections recorded yet.</td></tr>';
+            }).join('') : '<tr><td colspan="6" class="empty">No agent cash collections recorded yet.</td></tr>';
         }
 
         function renderHandovers() {
             const rows = handovers.slice().sort((a, b) => C.parseFlexibleDate(b.handover_date) - C.parseFlexibleDate(a.handover_date) || new Date(b.$createdAt) - new Date(a.$createdAt)).slice(0, 15);
-            document.getElementById('handoverBody').innerHTML = rows.length ? rows.map(h => `<tr>
+            document.getElementById('handoverBody').innerHTML = rows.length ? rows.map((h, i) => `<tr>
+                <td data-label="S.No">${i + 1}</td>
                 <td data-label="Date">${C.formatIndianDate(h.handover_date)}</td>
                 <td data-label="Agent">${C.esc(h.agent_name || h.agent_phone)}</td>
                 <td data-label="Amount" class="money">${C.rupees(h.amount)}</td>
                 <td data-label="Received by">${C.esc(h.received_by || '-')}</td>
                 <td data-label="Note">${C.esc(h.note || '')}</td></tr>`).join('')
-                : '<tr><td colspan="5" class="empty">No handovers recorded yet.</td></tr>';
+                : '<tr><td colspan="6" class="empty">No handovers recorded yet.</td></tr>';
         }
 
         function renderPayments(dayPays) {
             const rows = dayPays.slice().sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
-            document.getElementById('payBody').innerHTML = rows.length ? rows.map(p => `<tr>
+            document.getElementById('payBody').innerHTML = rows.length ? rows.map((p, i) => `<tr class="rowclick" onclick="openDetailForPayment(${i})">
+                <td data-label="S.No">${i + 1}</td>
                 <td data-label="Receipt"><strong>${C.esc(p.payment_id)}</strong></td>
                 <td data-label="Borrower">${C.esc(p.borrower_name)}</td>
                 <td data-label="Loan">${C.esc(p.loan_id)}</td>
@@ -425,10 +488,275 @@
                 <td data-label="Penalty" class="money">${C.rupees(p.penalty_paid)}</td>
                 <td data-label="Mode">${C.esc(p.payment_mode || '-')}</td>
                 <td data-label="Collected by">${C.esc(collectorKey(p).name)}</td></tr>`).join('')
-                : '<tr><td colspan="7" class="empty">No payments on this date.</td></tr>';
+                : '<tr><td colspan="8" class="empty">No payments on this date.</td></tr>';
+            window.__payRows = rows;
+        }
+        function openDetailForPayment(i) { const p = (window.__payRows || [])[i]; if (p) openDetailForPaymentRecord(p); }
+
+        /* ================= LIST MODAL (click on a box) ================= */
+        const typeLabel = r => r.d.type === 'daily' ? 'Daily' : 'Weekly';
+        const agentLabel = r => r.agent ? (r.agent.agent_name || r.agent.agent_phone) : 'Not assigned';
+        const stageLabel = r => r.d.info ? C.STAGE_INFO[r.d.info.stage].label : '-';
+
+        const LOAN_COLS = [
+            { h: 'Loan ID',      v: r => r.loan.loan_id },
+            { h: 'Borrower',     v: r => r.loan.borrower_name },
+            { h: 'Mobile',       v: r => C.last10(r.loan.phone_number) },
+            { h: 'Type',         v: typeLabel },
+            { h: 'EMI',          v: r => amt(r.loan.installment_amount), money: true },
+            { h: 'Due on date',  v: r => r.d.dueAmt,   money: true, sum: true },
+            { h: 'Arrears',      v: r => r.d.arrears,  money: true, sum: true },
+            { h: 'Demand',       v: r => r.d.demand,   money: true, sum: true },
+            { h: 'Collected',    v: r => r.collected,  money: true, sum: true },
+            { h: 'Balance',      v: r => r.balance,    money: true, sum: true },
+            { h: 'Days overdue', v: r => r.d.info ? r.d.info.overdueDays : 0 },
+            { h: 'Stage',        v: stageLabel },
+            { h: 'Agent',        v: agentLabel }
+        ];
+        const PAY_COLS = [
+            { h: 'Receipt',      v: p => p.payment_id },
+            { h: 'Borrower',     v: p => p.borrower_name },
+            { h: 'Loan ID',      v: p => p.loan_id },
+            { h: 'EMI',          v: p => amt(p.amount_paid),   money: true, sum: true },
+            { h: 'Penalty',      v: p => amt(p.penalty_paid),  money: true, sum: true },
+            { h: 'Mode',         v: p => p.payment_mode || '-' },
+            { h: 'Collected by', v: p => collectorKey(p).name }
+        ];
+
+        function openList(key) {
+            const D = selectedDate();
+            const dateText = C.formatIndianDate(D);
+            let title, kind = 'loans', rows, cols = LOAN_COLS, sortFn = null;
+
+            if (key === 'due')            { title = 'Due on ' + dateText;                       rows = rowsCache.filter(r => r.d.dueAmt > 0.5); sortFn = (a, b) => b.d.dueAmt - a.d.dueAmt; }
+            else if (key === 'arrears')   { title = 'Arrears brought forward - ' + dateText;    rows = rowsCache.filter(r => r.d.arrears > 0.5); sortFn = (a, b) => b.d.arrears - a.d.arrears; }
+            else if (key === 'demand')    { title = 'Total demand - ' + dateText;               rows = rowsCache.filter(r => r.d.demand > 0.5); sortFn = (a, b) => b.d.demand - a.d.demand; }
+            else if (key === 'pending')   { title = 'Still to collect - ' + dateText;           rows = rowsCache.filter(r => r.balance > 0.5); sortFn = (a, b) => b.balance - a.balance; }
+            else if (/^stage[1-4]$/.test(key)) {
+                const s = parseInt(key.slice(5));
+                title = C.STAGE_INFO[s].label + ' (' + C.STAGE_INFO[s].text + ') - ' + dateText;
+                rows = rowsCache.filter(r => r.d.info && r.d.info.stage === s);
+                sortFn = (a, b) => b.d.info.overdueDays - a.d.info.overdueDays;
+            }
+            else if (key === 'emi')       { kind = 'payments'; cols = PAY_COLS; title = 'EMI collected - ' + dateText; rows = dayPaysCache.slice(); }
+            else if (key === 'penalty')   { kind = 'payments'; cols = PAY_COLS; title = 'Penalty collected - ' + dateText; rows = dayPaysCache.filter(p => amt(p.penalty_paid) > 0); }
+            else return;
+
+            if (sortFn) rows.sort(sortFn);
+            currentList = { key, title, kind, cols, rows, dateText };
+
+            const sums = {};
+            cols.forEach((c, ci) => { if (c.sum) sums[ci] = rows.reduce((s, r) => s + c.v(r), 0); });
+            const sumText = cols.map((c, ci) => c.sum ? `${c.h}: <strong>${C.rupees(sums[ci])}</strong>` : '').filter(Boolean).join(' &nbsp;|&nbsp; ');
+
+            document.getElementById('listTitle').textContent = title;
+            document.getElementById('listSub').innerHTML = `Date: <strong>${dateText}</strong> &nbsp;|&nbsp; Customers / entries: <strong>${rows.length}</strong>` + (sumText ? ` &nbsp;|&nbsp; ${sumText}` : '') +
+                `<br><small style="color:#64748b;">Click a row to see the full customer details.</small>`;
+
+            let html = '<table><thead><tr><th>S.No</th>' + cols.map(c => `<th>${C.esc(c.h)}</th>`).join('') + '</tr></thead><tbody>';
+            if (!rows.length) html += `<tr><td colspan="${cols.length + 1}" class="empty">Nothing to show.</td></tr>`;
+            rows.forEach((r, i) => {
+                html += `<tr class="rowclick" onclick="openDetailFromList(${i})"><td>${i + 1}</td>` +
+                    cols.map(c => { const v = c.v(r); return `<td class="${c.money ? 'money' : ''}">${C.esc(c.money ? C.rupees(v) : v)}</td>`; }).join('') + '</tr>';
+            });
+            if (rows.length) {
+                html += '<tr class="total"><td></td>' + cols.map((c, ci) => `<td>${c.sum ? C.rupees(sums[ci]) : (ci === 0 ? 'TOTAL' : '')}</td>`).join('') + '</tr>';
+            }
+            html += '</tbody></table>';
+            document.getElementById('listTableBox').innerHTML = html;
+            document.getElementById('listModal').style.display = 'flex';
         }
 
-        /* ---------- cash handover ---------- */
+        function openDetailFromList(i) {
+            if (!currentList) return;
+            const r = currentList.rows[i];
+            if (!r) return;
+            if (currentList.kind === 'loans') openDetail(r.loan);
+            else openDetailForPaymentRecord(r);
+        }
+
+        function openDetailForPaymentRecord(p) {
+            const loan = loans.find(l => l.loan_id === p.loan_id && C.normText(l.borrower_name) === C.normText(p.borrower_name))
+                      || loans.find(l => l.loan_id === p.loan_id);
+            if (!loan) { alert('The loan of this payment was not found (it may have been deleted).'); return; }
+            openDetail(loan);
+        }
+
+        function listFileName(ext) {
+            const t = (currentList ? currentList.title : 'list').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            return 'VelFinCorp_' + t + '.' + ext;
+        }
+
+        function downloadListCSV() {
+            if (!currentList || !currentList.rows.length) { alert('Nothing to export.'); return; }
+            const { cols, rows } = currentList;
+            const head = ['S.No'].concat(cols.map(c => c.h));
+            const body = rows.map((r, i) => [i + 1].concat(cols.map(c => c.v(r))));
+            const csv = [head].concat(body).map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = listFileName('csv');
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        }
+
+        function listHtmlForPrint() {
+            return `<div style="font-family:Arial,sans-serif; padding:6px;">
+                <h2 style="margin:0 0 4px 0; color:#0F1D36;">VEL FIN CORP - ${C.esc(currentList.title)}</h2>
+                ${document.getElementById('listSub').innerHTML.replace(/<small[\s\S]*?<\/small>/, '')}
+                ${document.getElementById('listTableBox').innerHTML.replace(/class="rowclick"/g, '')}
+                <div style="font-size:10px; color:#64748b; margin-top:8px;">Generated on ${new Date().toLocaleString('en-IN')}</div></div>`;
+        }
+
+        function downloadListPDF() {
+            if (!currentList) return;
+            const holder = document.createElement('div');
+            holder.style.cssText = 'font-size:11px;';
+            holder.innerHTML = '<style>table{width:100%;border-collapse:collapse;font-size:10px;} th,td{border:1px solid #cbd5e1;padding:4px 5px;text-align:left;} th{background:#0F1D36;color:#fff;} tr.total td{background:#f1f5f9;font-weight:bold;}</style>' + listHtmlForPrint();
+            html2pdf().from(holder).set({
+                margin: 8, filename: listFileName('pdf'),
+                image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: currentList.cols.length > 8 ? 'landscape' : 'portrait' }
+            }).save();
+        }
+
+        function printList() {
+            if (!currentList) return;
+            const w = window.open('', '_blank');
+            if (!w) { alert('Please allow pop-ups to print.'); return; }
+            w.document.write('<html><head><title>' + C.esc(currentList.title) + '</title><style>body{font-family:Arial,sans-serif;font-size:12px;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #999;padding:5px;text-align:left;} th{background:#0F1D36;color:#fff;} tr.total td{background:#eee;font-weight:bold;}</style></head><body>' + listHtmlForPrint() + '</body></html>');
+            w.document.close();
+            w.focus();
+            setTimeout(() => w.print(), 400);
+        }
+
+        /* ================= DETAIL MODAL (click on a customer) ================= */
+        function findBorrowerProfile(loan) {
+            const nm = C.normText(loan.borrower_name), ph = C.last10(loan.phone_number);
+            const phoneMatch = b => ph && (C.last10(b.phone_number) === ph || C.last10(b.whatsapp_number) === ph);
+            return borrowers.find(b => C.normText(b.full_name) === nm && phoneMatch(b)) || borrowers.find(b => C.normText(b.full_name) === nm) || null;
+        }
+
+        function openDetail(loan) {
+            detailLoan = loan;
+            const D = selectedDate(), Diso = C.toISO(D);
+            const lpAll = payments.filter(p => C.paymentBelongsToLoan(p, loan)).sort((a, b) => C.parseFlexibleDate(a.payment_date || a.$createdAt) - C.parseFlexibleDate(b.payment_date || b.$createdAt));
+            const lpUpTo = lpAll.filter(p => dayOf(p) <= Diso);
+            const row = rowsCache.find(r => r.loan.$id === loan.$id);
+            const info = C.computeDefaulterInfo(loan, lpUpTo, D);
+            const profile = findBorrowerProfile(loan);
+            const agent = C.activeAssignmentFor(assignments, loan);
+            const fups = C.followupsForLoan(followups, loan);
+
+            const emi = amt(loan.installment_amount), total = amt(loan.loan_amount);
+            const paidUpTo = lpUpTo.reduce((s, p) => s + amt(p.amount_paid), 0);
+            const penPaidUpTo = lpUpTo.reduce((s, p) => s + amt(p.penalty_paid), 0);
+            let tenure = 10; const tm = String(loan.tenure || '').match(/\d+/); if (tm) tenure = parseInt(tm[0]);
+            const paidInst = emi > 0 ? Math.min(tenure, Math.floor((paidUpTo + 0.01) / emi)) : 0;
+            const mobile = C.last10(loan.phone_number);
+            const addr = profile ? [profile.address, profile.city, profile.state, profile.pincode].filter(Boolean).join(', ') : '-';
+            const isDaily = String(loan.loan_type || '').toLowerCase().includes('daily');
+            const kv = (k, v) => `<div><div class="k">${C.esc(k)}</div><div class="v">${v}</div></div>`;
+
+            let html = `<div style="font-family:Arial,sans-serif;">
+              <h2 style="margin:0; color:#0F1D36;">${C.esc(loan.borrower_name)}</h2>
+              <div style="font-size:13px; color:#64748b; margin-bottom:6px;">${C.esc(loan.loan_id)} &middot; ${C.isPersonalLoan(loan) ? 'Personal Loan' : 'Credit Vault'} &middot; Status: <strong>${C.esc(loan.status || '-')}</strong> &middot; As on <strong>${C.formatIndianDate(D)}</strong></div>
+
+              <div class="dsec">Borrower</div>
+              <div class="dgrid">
+                ${kv('Borrower ID', C.esc(profile ? profile.borrower_id : '-'))}
+                ${kv('Mobile', C.esc(mobile || '-'))}
+                ${kv('WhatsApp', C.esc(profile ? profile.whatsapp_number : '-'))}
+                ${kv('Occupation', C.esc(profile ? [profile.occupation, profile.job_nature].filter(Boolean).join(' - ') : '-'))}
+                ${kv('Address', C.esc(addr))}
+                ${kv('Nominee', C.esc(profile ? (profile.nominee_name || '-') + (profile.nominee_contact ? ' (' + profile.nominee_contact + ')' : '') : '-'))}
+              </div>
+
+              <div class="dsec">Loan</div>
+              <div class="dgrid">
+                ${kv('Product', C.esc([loan.loan_category, loan.product_name].filter(Boolean).join(' - ') || '-'))}
+                ${kv('Frequency / Tenure', C.esc((isDaily ? 'Daily' : 'Weekly') + ' | ' + (loan.tenure || tenure)))}
+                ${kv('Started on', C.formatIndianDate(loan.loan_date || loan.$createdAt))}
+                ${kv('EMI', C.rupees(emi))}
+                ${kv('Total payable', C.rupees(total))}
+                ${kv('Paid so far (EMI)', C.rupees(paidUpTo))}
+                ${kv('Balance to pay', C.rupees(Math.max(0, total - paidUpTo)))}
+                ${kv('Installments paid', paidInst + ' / ' + tenure)}
+                ${kv('Issued by', C.esc((loan.issued_by || 'Admin') + (loan.retailer_code ? ' (' + loan.retailer_code + ')' : '')))}
+                ${kv('Penalty collected so far', C.rupees(penPaidUpTo))}
+              </div>`;
+
+            if (row) {
+                html += `<div class="dsec">Demand on ${C.formatIndianDate(D)}</div>
+                  <div class="dgrid">
+                    ${kv('Due on this date', C.rupees(row.d.dueAmt))}
+                    ${kv('Arrears brought forward', C.rupees(row.d.arrears))}
+                    ${kv('Total demand', C.rupees(row.d.demand))}
+                    ${kv('Collected on this date', C.rupees(row.collected))}
+                    ${kv('Balance still to collect', '<span style="color:#C53030;">' + C.rupees(row.balance) + '</span>')}
+                  </div>`;
+            }
+
+            if (info) {
+                const st = C.STAGE_INFO[info.stage];
+                html += `<div class="dsec">Overdue status (end of ${C.formatIndianDate(D)})</div>
+                  <div class="dgrid">
+                    ${kv('Stage', `<span class="badge" style="background:${st.color};">${st.label}</span> ${C.esc(st.text)}`)}
+                    ${kv('Days overdue', info.overdueDays)}
+                    ${kv('Missed installments', info.missed)}
+                    ${kv('Overdue amount', C.rupees(info.shortfall))}
+                    ${kv('Penalty (' + info.missed + ' x ' + C.rupees(info.penaltyEach) + ')', C.rupees(info.penalty))}
+                    ${kv('TOTAL TO PAY', '<span style="color:#C53030; font-size:16px;">' + C.rupees(info.totalDue) + '</span>')}
+                    ${kv('Last paid', info.lastPaid ? C.formatIndianDate(info.lastPaid) : 'Never')}
+                  </div>`;
+            } else {
+                html += `<div class="dsec">Overdue status</div><div style="font-size:13px; color:#2F855A; font-weight:700;">No overdue installments as on this date.</div>`;
+            }
+
+            html += `<div class="dsec">Agent & follow-ups</div>
+              <div style="font-size:13px; margin-bottom:6px;">Assigned agent: <strong>${agent ? C.esc((agent.agent_name || '') + ' (' + C.last10(agent.agent_phone) + ')') : 'Not assigned'}</strong></div>`;
+            if (fups.length) {
+                html += fups.slice(0, 8).map(f => {
+                    const auto = C.isAutoFollowup(f);
+                    const o = C.OUTCOMES[f.outcome] || { label: f.outcome, color: '#64748b' };
+                    return `<div class="hist-item"><strong>${C.formatIndianDate(f.followup_date)}</strong> - ${C.esc(auto ? 'Automatic WhatsApp' : (f.agent_name || f.agent_phone))}
+                        ${f.method ? '(' + C.esc(f.method) + ')' : ''} - <span style="color:${o.color}; font-weight:700;">${C.esc(auto ? f.outcome : o.label)}</span>
+                        ${f.promise_date ? ' | Promise: ' + C.formatIndianDate(f.promise_date) : ''}${f.note ? '<br><em>' + C.esc(f.note) + '</em>' : ''}</div>`;
+                }).join('');
+            } else html += '<div class="hist-item">No follow-ups recorded yet.</div>';
+
+            html += `<div class="dsec">Payment history (${lpAll.length})</div>
+              <div class="scroll"><table><thead><tr><th>S.No</th><th>Receipt</th><th>Date</th><th>EMI</th><th>Penalty</th><th>Mode</th><th>Collected by</th><th>Status</th></tr></thead><tbody>` +
+              (lpAll.length ? lpAll.map((p, i) => `<tr><td>${i + 1}</td><td>${C.esc(p.payment_id)}</td><td>${C.formatIndianDate(p.payment_date || p.$createdAt)}</td>
+                    <td class="money">${C.rupees(p.amount_paid)}</td><td class="money">${C.rupees(p.penalty_paid)}</td><td>${C.esc(p.payment_mode || '-')}</td>
+                    <td>${C.esc(collectorKey(p).name)}</td><td>${C.esc(p.delayed_details || 'On Time')}</td></tr>`).join('')
+                  : '<tr><td colspan="8" class="empty">No payments yet.</td></tr>') +
+              `</tbody></table></div></div>`;
+
+            html += `<div class="modal-actions" id="detailActions" style="justify-content:flex-start;">
+                ${mobile.length === 10 ? `<a class="btn btn-navy" style="text-decoration:none;" href="tel:+91${mobile}"><i class="fas fa-phone"></i> Call</a>` : ''}
+                ${info && mobile.length === 10 ? `<a class="btn btn-green" style="text-decoration:none; background:#25D366;" target="_blank" rel="noopener" href="${C.esc(C.waOverdueLink(loan, info))}"><i class="fab fa-whatsapp"></i> WhatsApp</a>` : ''}
+              </div>`;
+
+            document.getElementById('detailPrint').innerHTML = html;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function downloadDetailPDF() {
+            const src = document.getElementById('detailPrint');
+            const holder = document.createElement('div');
+            holder.innerHTML = '<style>.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:11px;} .dgrid .k{color:#64748b;font-size:9px;text-transform:uppercase;font-weight:bold;} .dgrid .v{font-weight:bold;color:#0F1D36;margin-bottom:3px;} .dsec{font-size:13px;font-weight:bold;color:#0F1D36;margin:12px 0 5px;border-bottom:1px solid #cbd5e1;padding-bottom:3px;} table{width:100%;border-collapse:collapse;font-size:9.5px;} th,td{border:1px solid #cbd5e1;padding:3px 4px;text-align:left;} th{background:#0F1D36;color:#fff;} .hist-item{border:1px solid #e2e8f0;padding:4px 6px;margin-bottom:4px;font-size:10px;} .badge{padding:2px 7px;border-radius:10px;color:#fff;font-size:10px;font-weight:bold;}</style>' +
+                src.innerHTML.replace(/<div class="modal-actions"[\s\S]*$/, '</div>');
+            const name = (detailLoan ? detailLoan.borrower_name + '_' + detailLoan.loan_id : 'customer').replace(/[^a-zA-Z0-9]+/g, '_');
+            html2pdf().from(holder).set({
+                margin: 10, filename: 'VelFinCorp_' + name + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).save();
+        }
+
+        /* ================= cash handover ================= */
         function openHandover(i) {
             const o = (window.__cashRows || [])[i];
             if (!o) return;
