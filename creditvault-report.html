@@ -135,6 +135,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>S.No</th>
                             <th>Loan ID</th>
                             <th>Borrower Name</th>
                             <th>Phone Number</th>
@@ -148,7 +149,7 @@
                         </tr>
                     </thead>
                     <tbody id="reportTableBody">
-                        <tr><td colspan="10" style="text-align: center; color: #64748b;">Loading Credit Vault Reports...</td></tr>
+                        <tr><td colspan="11" style="text-align: center; color: #64748b;">Loading Credit Vault Reports...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -300,7 +301,7 @@
                     return id && !id.startsWith("VPL") && cat !== "Personal";
                 });
 
-                allCreditVaultLoans.sort((a, b) => parseFlexibleDate(b.loan_date || b.$createdAt) - parseFlexibleDate(a.loan_date || a.$createdAt));
+                allCreditVaultLoans.sort((a, b) => (parseFlexibleDate(b.loan_date || b.$createdAt) - parseFlexibleDate(a.loan_date || a.$createdAt)) || (new Date(b.$createdAt) - new Date(a.$createdAt)));
                 renderTable(allCreditVaultLoans);
             } catch (err) {
                 console.error("Error loading Credit Vault reports:", err);
@@ -354,11 +355,12 @@
             const tbody = document.getElementById('reportTableBody');
             if (loans && loans.length > 0) {
                 tbody.innerHTML = '';
-                loans.forEach(loan => {
+                loans.forEach((loan, idx) => {
                     const payStatus = getPaymentStatusInfo(loan);
                     const tr = document.createElement('tr');
                     tr.onclick = () => showLoanDetails(loan);
                     tr.innerHTML = `
+                        <td>${idx + 1}</td>
                         <td><strong>${loan.loan_id || '-'}</strong></td>
                         <td>${loan.borrower_name || '-'}</td>
                         <td>${loan.phone_number || '-'}</td>
@@ -373,7 +375,7 @@
                     tbody.appendChild(tr);
                 });
             } else {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #64748b;">No matching Credit Vault Loans found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #64748b;">No matching Credit Vault Loans found.</td></tr>';
             }
         }
 
