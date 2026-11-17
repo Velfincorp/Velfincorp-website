@@ -132,10 +132,12 @@
                         <th>Amount Paid (₹)</th>
                         <th>Payment Date</th>
                         <th>Mode</th>
+                        <th>Penalty (₹)</th>
+                        <th>Collected By</th>
                     </tr>
                 </thead>
                 <tbody id="allPaymentsTableBody">
-                    <tr><td colspan="8" style="text-align: center;">Loading payments from database...</td></tr>
+                    <tr><td colspan="10" style="text-align: center;">Loading payments from database...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -211,6 +213,12 @@
             return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
         }
 
+        function collectedByText(p) {
+            const n = String(p.collected_by || '').trim();
+            if (!n) return '<span style="color:#94a3b8;">Not recorded</span>';
+            return n.replace(/</g, '&lt;') + (p.collected_by_phone ? '<br><small style="color:#64748b;">' + p.collected_by_phone + '</small>' : '');
+        }
+
         function paymentNumber(p) {
             return parseInt(String(p.payment_id || '').split('/')[1], 10) || 0;
         }
@@ -244,7 +252,7 @@
                 allBorrowersData = borrowersRes.documents || [];
 
                 if (!allPaymentsData || allPaymentsData.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No payment records found in database.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No payment records found in database.</td></tr>';
                     return;
                 }
 
@@ -258,7 +266,7 @@
                 renderTable(allPaymentsData);
             } catch(error) {
                 console.error("Error loading payments report:", error);
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--danger);">Error loading data: ${error.message}</td></tr>`;
             }
         }
 
@@ -267,7 +275,7 @@
             tbody.innerHTML = '';
 
             if (payments.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No matching payments found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No matching payments found.</td></tr>';
                 document.getElementById('summaryLine').innerHTML = '';
                 return;
             }
@@ -293,6 +301,8 @@
                     <td>₹${p.amount_paid || '0.00'}</td>
                     <td>${formatIndianDate(p.payment_date)}</td>
                     <td>${p.payment_mode || '-'}</td>
+                    <td>₹${p.penalty_paid || '0.00'}</td>
+                    <td>${collectedByText(p)}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -320,6 +330,8 @@
                     <tr><td>Remaining Installment</td><td>${p.remaining_installment || '-'}</td></tr>
                     <tr><td>Payment Date</td><td>${formattedDate}</td></tr>
                     <tr><td>Payment Mode</td><td>${p.payment_mode || '-'}</td></tr>
+                    <tr><td>Penalty / Late Fee Collected</td><td>₹${p.penalty_paid || '0.00'}</td></tr>
+                    <tr><td>Collected By</td><td>${collectedByText(p)}</td></tr>
                     <tr><td>Delayed Details</td><td>${p.delayed_details || 'On Time'}</td></tr>
 
                     <tr><th colspan="2" style="background: var(--navy); color: white; text-align: center;">Borrower Details</th></tr>
@@ -341,7 +353,7 @@
                 const loanId = (p.loan_id || '').toLowerCase();
                 const borrower = findBorrowerForPayment(p);
                 const borrowerId = (borrower && borrower.borrower_id ? borrower.borrower_id : '').toLowerCase();
-                return name.includes(input) || phone.includes(input) || payId.includes(input) || loanId.includes(input) || borrowerId.includes(input);
+                return name.includes(input) || phone.includes(input) || payId.includes(input) || loanId.includes(input) || borrowerId.includes(input) || String(p.collected_by || '').toLowerCase().includes(input);
             });
             renderTable(filtered);
         }
