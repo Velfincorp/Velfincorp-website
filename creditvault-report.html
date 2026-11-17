@@ -457,10 +457,11 @@
                             <td style="font-weight:bold; color:#2F855A;">₹${parseFloat(p.amount_paid || 0).toFixed(2)}</td>
                             <td>${p.payment_mode || '-'}</td>
                             <td style="font-weight:bold; color:${(p.delayed_details && p.delayed_details !== 'On Time') ? '#C53030' : '#2F855A'};">${p.delayed_details || 'On Time'}</td>
+                            <td>${p.collected_by || '-'}</td>
                         </tr>`;
                 });
             } else {
-                paymentsRowsHtml = `<tr><td colspan="6" style="color:#64748b;">No payments recorded yet.</td></tr>`;
+                paymentsRowsHtml = `<tr><td colspan="7" style="color:#64748b;">No payments recorded yet.</td></tr>`;
             }
 
             modalBody.innerHTML = `
@@ -502,7 +503,7 @@
                 <div style="font-family:'Cinzel',serif; font-weight:bold; color:var(--navy); margin:15px 0 8px 0;">Payment Collection History (${loanPayments.length} Payments)</div>
                 <table class="history-table">
                     <thead>
-                        <tr><th>Inst #</th><th>Receipt ID</th><th>Paid Date</th><th>Amount Paid</th><th>Mode</th><th>Delay / Status</th></tr>
+                        <tr><th>Inst #</th><th>Receipt ID</th><th>Paid Date</th><th>Amount Paid</th><th>Mode</th><th>Delay / Status</th><th>Collected By</th></tr>
                     </thead>
                     <tbody>${paymentsRowsHtml}</tbody>
                 </table>
