@@ -452,6 +452,7 @@
                     alert("Personal Loan saved to database, but WhatsApp dispatch failed: " + fnErr.message);
                 }
 
+                await sendPortalLoginMessage(borrowerName, finalMobile);
                 document.getElementById('personalLoanForm').reset();
                 document.getElementById('Document_Charge').value = 50;
                 generateNextPersonalLoanId();
@@ -462,6 +463,29 @@
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Submit Personal Loan & Send Welcome Message";
+            }
+        }
+
+        /* Sends the customer his portal login details (only on his FIRST loan, and only when the feature is switched on in db.js) */
+        async function sendPortalLoginMessage(borrowerName, mobileWith91) {
+            const F = window.VFC_FEATURES || {};
+            if (!F.PORTAL_LOGIN_MESSAGE) return;
+            try {
+                const m10 = window.vfcLast10(mobileWith91);
+                const sameBorrower = allLoans.filter(l =>
+                    String(l.borrower_name || '').trim().toLowerCase() === String(borrowerName || '').trim().toLowerCase() &&
+                    window.vfcLast10(l.phone_number) === m10);
+                if (sameBorrower.length > 1) return;              // not his first loan - he already has the login details
+                const comps = { body_1: String(borrowerName), body_2: m10 };
+                const payload = {
+                    mobile: '91' + m10, phone: '91' + m10, to: '91' + m10, recipient: '91' + m10,
+                    template_name: F.PORTAL_LOGIN_TEMPLATE, templateName: F.PORTAL_LOGIN_TEMPLATE,
+                    components: comps, customComponents: comps
+                };
+                const res = await window.appwriteFunctions.createExecution('6adb02310009b131da2d', JSON.stringify(payload));
+                if (res && res.status === 'failed') alert('Loan saved. Portal login message could NOT be sent: ' + (res.errors || res.responseBody || 'template not approved?'));
+            } catch (e) {
+                console.warn('Portal login message error:', e);
             }
         }
 
