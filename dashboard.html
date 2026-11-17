@@ -191,10 +191,11 @@
                         <th>Role</th>
                         <th>Password</th>
                         <th>Allowed Modules</th>
+                        <th>Send Login</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
-                    <tr><td colspan="7" style="text-align:center;">Loading from Cloud...</td></tr>
+                    <tr><td colspan="8" style="text-align:center;">Loading from Cloud...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -350,7 +351,7 @@
 
                 tbody.innerHTML = '';
                 if (cloudUserDocs.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
                     return;
                 }
 
@@ -389,6 +390,7 @@
                         <td><span style="text-transform: uppercase; font-weight: 800; color: #0F1D36;">${role}</span></td>
                         <td><span style="font-size: 14px; font-weight: 800; color: #b91c1c;">${pass}</span></td>
                         <td>${perms.length} Modules</td>
+                        <td><a href="${window.vfcCredentialsLink(doc.show_room_name || dispName, role, phone, pass)}" target="_blank" rel="noopener" style="background:#25D366;color:#fff;text-decoration:none;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;white-space:nowrap;"><i class="fab fa-whatsapp"></i> Send</a></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -484,6 +486,9 @@
                     alert(`Access successfully created in Cloud for ${userName} (${userId}) with ${permissions.length} module permissions!`);
                 }
 
+                if (confirm('Send the login details to ' + userId + ' on WhatsApp now?')) {
+                    window.open(window.vfcCredentialsLink(userName || (existingDoc ? existingDoc.show_room_name : ''), userRole, userId, userPass), '_blank');
+                }
                 document.getElementById('newUserName').value = '';
                 document.getElementById('newUserCity').value = '';
                 document.getElementById('newUserId').value = '';
