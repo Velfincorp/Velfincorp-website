@@ -205,6 +205,22 @@
         </div>
     </div>
 
+
+    <!-- Login details -> WhatsApp -->
+    <div id="credModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:5000;">
+        <div style="background:#fff; width:500px; max-width:94%; max-height:92vh; overflow-y:auto; padding:24px; border-radius:12px; border-top:5px solid #0F1D36;">
+            <h3 style="font-family:'Cinzel',serif; color:#0F1D36; margin:0 0 6px 0;"><i class="fas fa-check-circle" style="color:#2F855A;"></i> Saved successfully</h3>
+            <div id="credInfo" style="font-size:13px; color:#475569; margin-bottom:10px;"></div>
+            <div style="font-size:12px; font-weight:700; color:#0F1D36; margin-bottom:5px;">Message that will be sent:</div>
+            <pre id="credText" style="white-space:pre-wrap; background:#f1f5f9; padding:12px; border-radius:8px; font-family:inherit; font-size:13px; line-height:1.6; margin:0;"></pre>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
+                <a id="credWa" target="_blank" rel="noopener" style="background:#25D366; color:#fff; text-decoration:none; padding:11px 16px; border-radius:8px; font-weight:700; font-size:14px;"><i class="fab fa-whatsapp"></i> Send on WhatsApp</a>
+                <button type="button" onclick="copyCredText()" style="background:#0F1D36; color:#fff; border:none; padding:11px 16px; border-radius:8px; font-weight:700; cursor:pointer;">Copy text</button>
+                <button type="button" onclick="document.getElementById('credModal').style.display='none'" style="background:#e2e8f0; color:#0F1D36; border:none; padding:11px 16px; border-radius:8px; font-weight:700; cursor:pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const RETAILERS_COLLECTION_ID = (window.VFC_DB && VFC_DB.RETAILERS_ID) ? VFC_DB.RETAILERS_ID : '6ada05fd0007206813cf';
         let cachedRecords = [];
@@ -343,7 +359,7 @@
                 );
                 cachedRecords.push(createdDoc);
 
-                alert((userType === 'retailer' ? "Retailer" : "Staff") + " registered & saved to Cloud Database successfully!\nCode: " + uniqueCode);
+                showCredentialModal(payload.show_room_name, userType, mobile, password, uniqueCode);
 
                 document.getElementById('registrationForm').reset();
                 toggleFormFields();
@@ -354,6 +370,19 @@
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Details';
             }
+        }
+
+        function showCredentialModal(name, role, mobile, password, code) {
+            const text = window.vfcCredentialsText(name, role, mobile, password);
+            document.getElementById('credInfo').innerHTML = '<strong>' + String(name).replace(/</g, '&lt;') + '</strong> (' + role + ') - Code: ' + code + ' - Mobile: ' + mobile;
+            document.getElementById('credText').textContent = text;
+            document.getElementById('credWa').href = window.vfcCredentialsLink(name, role, mobile, password);
+            document.getElementById('credModal').style.display = 'flex';
+        }
+        function copyCredText() {
+            const t = document.getElementById('credText').textContent;
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => alert('Copied!'));
+            else prompt('Copy this text:', t);
         }
 
         function handleLogout() {
