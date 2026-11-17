@@ -106,6 +106,32 @@ window.vfcFindBorrowersByMobile = async function(mobile) {
     return a.concat(b).filter(d => (seen.has(d.$id) ? false : (seen.add(d.$id), true)));
 };
 
+/* ===== Feature switches ===== */
+window.VFC_FEATURES = {
+    // Send the customer a WhatsApp with portal login details when his FIRST loan starts.
+    // Turn this to true ONLY after the MSG91 template "vel_fin_portal_login" shows Approved.
+    PORTAL_LOGIN_MESSAGE: false,
+    PORTAL_LOGIN_TEMPLATE: 'vel_fin_portal_login'
+};
+
+/* ===== WhatsApp message with login details for a Retailer / Staff (opens WhatsApp, text already typed) ===== */
+window.vfcCredentialsText = function(name, role, mobile, password) {
+    const isStaff = String(role).toLowerCase() === 'staff';
+    return `வணக்கம் ${String(name || '').trim()},\n\n` +
+           `Vel Fin Corp ${isStaff ? 'பணியாளர்' : 'பார்ட்னர்'} போர்ட்டலில் உங்கள் கணக்கு தயாராகிவிட்டது.\n\n` +
+           `இணையதளம்: https://velfincorp.com/login.html\n` +
+           `Role: ${isStaff ? 'Staff / Collection Agent' : 'Retailer / Showroom Partner'}\n` +
+           `Username: ${window.vfcLast10(mobile)}\n` +
+           `Password: ${password}\n\n` +
+           `இந்த விவரங்களை வேறு யாருடனும் பகிர வேண்டாம்.\n` +
+           `உதவிக்கு: +91 9486886293\n\n` +
+           `நன்றி,\nTeam Vel Fin Corp`;
+};
+window.vfcCredentialsLink = function(name, role, mobile, password) {
+    const m = window.vfcLast10(mobile);
+    return 'https://wa.me/91' + m + '?text=' + encodeURIComponent(window.vfcCredentialsText(name, role, mobile, password));
+};
+
 // Strict Global Role-Based Security & Back-Forward Cache (bfcache) Protection
 (function() {
     const publicPages = ['index.html', 'login.html', 'contact.html', ''];
