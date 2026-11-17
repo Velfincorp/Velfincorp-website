@@ -362,6 +362,7 @@
             dayPaysCache = payments.filter(p => dayOf(p) === Diso);
             const emiCollected = dayPaysCache.reduce((s, p) => s + amt(p.amount_paid), 0);
             const penCollected = dayPaysCache.reduce((s, p) => s + amt(p.penalty_paid), 0);
+            const penAllTotal = payments.filter(p => dayOf(p) <= Diso).reduce((s, p) => s + amt(p.penalty_paid), 0);
             const eff = demandTotal > 0 ? (emiCollected / demandTotal) * 100 : (emiCollected > 0 ? 100 : 0);
             const gap = rowsCache.reduce((s, r) => s + r.balance, 0);
 
@@ -372,6 +373,7 @@
                 <div class="card click gold" onclick="openList('demand')"><h4>Total demand</h4><div class="v">${C.rupees(demandTotal)}</div>${tap}</div>
                 <div class="card click green" onclick="openList('emi')"><h4>EMI collected</h4><div class="v green">${C.rupees(emiCollected)}</div><small>${dayPaysCache.length} payment(s)</small>${tap}</div>
                 <div class="card click green" onclick="openList('penalty')"><h4>Penalty collected</h4><div class="v green">${C.rupees(penCollected)}</div>${tap}</div>
+                <div class="card click green" onclick="openList('penaltyAll')"><h4>Penalty collected - till this date</h4><div class="v green">${C.rupees(penAllTotal)}</div><small>all days up to ${C.formatIndianDate(D)}</small>${tap}</div>
                 <div class="card click red" onclick="openList('pending')"><h4>Still to collect</h4><div class="v red">${C.rupees(gap)}</div>${tap}</div>
                 <div class="card click ${eff >= 80 ? 'green' : 'red'}" style="grid-column: span 2;" onclick="openList('demand')">
                     <h4>Collection Efficiency</h4>
@@ -513,6 +515,16 @@
             { h: 'Stage',        v: stageLabel },
             { h: 'Agent',        v: agentLabel }
         ];
+        const PAY_COLS_DATE = [
+            { h: 'Date',         v: p => C.formatIndianDate(p.payment_date || p.$createdAt) },
+            { h: 'Receipt',      v: p => p.payment_id },
+            { h: 'Borrower',     v: p => p.borrower_name },
+            { h: 'Loan ID',      v: p => p.loan_id },
+            { h: 'Penalty',      v: p => amt(p.penalty_paid),  money: true, sum: true },
+            { h: 'EMI',          v: p => amt(p.amount_paid),   money: true, sum: true },
+            { h: 'Mode',         v: p => p.payment_mode || '-' },
+            { h: 'Collected by', v: p => collectorKey(p).name }
+        ];
         const PAY_COLS = [
             { h: 'Receipt',      v: p => p.payment_id },
             { h: 'Borrower',     v: p => p.borrower_name },
@@ -540,6 +552,13 @@
             }
             else if (key === 'emi')       { kind = 'payments'; cols = PAY_COLS; title = 'EMI collected - ' + dateText; rows = dayPaysCache.slice(); }
             else if (key === 'penalty')   { kind = 'payments'; cols = PAY_COLS; title = 'Penalty collected - ' + dateText; rows = dayPaysCache.filter(p => amt(p.penalty_paid) > 0); }
+            else if (key === 'penaltyAll') {
+                kind = 'payments'; cols = PAY_COLS_DATE;
+                title = 'Penalty collected - all days up to ' + dateText;
+                const Diso2 = C.toISO(D);
+                rows = payments.filter(p => amt(p.penalty_paid) > 0 && dayOf(p) <= Diso2)
+                               .sort((a, b) => C.parseFlexibleDate(b.payment_date || b.$createdAt) - C.parseFlexibleDate(a.payment_date || a.$createdAt) || new Date(b.$createdAt) - new Date(a.$createdAt));
+            }
             else return;
 
             if (sortFn) rows.sort(sortFn);
@@ -549,8 +568,15 @@
             cols.forEach((c, ci) => { if (c.sum) sums[ci] = rows.reduce((s, r) => s + c.v(r), 0); });
             const sumText = cols.map((c, ci) => c.sum ? `${c.h}: <strong>${C.rupees(sums[ci])}</strong>` : '').filter(Boolean).join(' &nbsp;|&nbsp; ');
 
+            let extraText = '';
+            if (key === 'penaltyAll' && rows.length) {
+                const byDate = {};
+                rows.forEach(p => { const d = dayOf(p); byDate[d] = (byDate[d] || 0) + amt(p.penalty_paid); });
+                extraText = '<br><strong>Date-wise:</strong> ' + Object.keys(byDate).sort().reverse().slice(0, 15)
+                    .map(d => `${C.formatIndianDate(d)}: <strong>${C.rupees(byDate[d])}</strong>`).join(' &nbsp;|&nbsp; ');
+            }
             document.getElementById('listTitle').textContent = title;
-            document.getElementById('listSub').innerHTML = `Date: <strong>${dateText}</strong> &nbsp;|&nbsp; Customers / entries: <strong>${rows.length}</strong>` + (sumText ? ` &nbsp;|&nbsp; ${sumText}` : '') +
+            document.getElementById('listSub').innerHTML = `Date: <strong>${dateText}</strong> &nbsp;|&nbsp; Customers / entries: <strong>${rows.length}</strong>` + (sumText ? ` &nbsp;|&nbsp; ${sumText}` : '') + extraText +
                 `<br><small style="color:#64748b;">Click a row to see the full customer details.</small>`;
 
             let html = '<table><thead><tr><th>S.No</th>' + cols.map(c => `<th>${C.esc(c.h)}</th>`).join('') + '</tr></thead><tbody>';
