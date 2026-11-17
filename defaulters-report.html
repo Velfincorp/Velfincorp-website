@@ -64,7 +64,7 @@
         .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
         .filters input, .filters select { flex: 1; min-width: 150px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; box-sizing: border-box; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { padding: 10px 12px; border: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
+        th, td { padding: 9px 9px; border: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
         th { background: var(--navy); color: #fff; font-family: 'Cinzel', serif; font-size: 12px; white-space: nowrap; }
         tbody tr:hover { background: #f8fafc; }
         .badge { display: inline-block; padding: 4px 10px; border-radius: 14px; color: #fff; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
@@ -176,10 +176,8 @@
                             <th>S.No</th>
                             <th>Loan</th>
                             <th>Borrower</th>
-                            <th>Type / EMI</th>
-                            <th>Missed</th>
-                            <th>Days</th>
-                            <th>Overdue Amount</th>
+                            <th>Missed / Days</th>
+                            <th>Overdue</th>
                             <th>Penalty</th>
                             <th>Total Due</th>
                             <th>Stage</th>
@@ -187,7 +185,7 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="tbody"><tr><td colspan="12" class="empty">Loading...</td></tr></tbody>
+                    <tbody id="tbody"><tr><td colspan="10" class="empty">Loading...</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -246,7 +244,7 @@
 
         async function loadDefaulters() {
             const tbody = document.getElementById('tbody');
-            tbody.innerHTML = '<tr><td colspan="12" class="empty"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="empty"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
             const warnings = [];
             try {
                 const [loans, payments, assigns, fups, staffDocs] = await Promise.all([
@@ -278,7 +276,7 @@
                 applyFilters();
             } catch (err) {
                 console.error(err);
-                tbody.innerHTML = `<tr><td colspan="12" class="empty" style="color:#C53030;">Error: ${C.esc(err.message)}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="empty" style="color:#C53030;">Error: ${C.esc(err.message)}</td></tr>`;
             }
         }
 
@@ -365,7 +363,7 @@
         function renderTable(list) {
             const tbody = document.getElementById('tbody');
             if (!list.length) {
-                tbody.innerHTML = '<tr><td colspan="12" class="empty"><i class="fas fa-check-circle" style="color:#2F855A;"></i> No overdue accounts for this filter.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="empty"><i class="fas fa-check-circle" style="color:#2F855A;"></i> No overdue accounts for this filter.</td></tr>';
                 return;
             }
             tbody.innerHTML = list.map((x, idx) => {
@@ -374,15 +372,13 @@
                 const wa = C.waOverdueLink(l, i);
                 return `<tr>
                     <td data-label="S.No" style="font-weight:700;">${idx + 1}</td>
-                    <td data-label="Loan"><div style="text-align:left;"><strong>${C.esc(l.loan_id)}</strong><br><small class="sub">${x.personal ? 'Personal' : 'Credit Vault'} | Last paid: ${i.lastPaid ? C.formatIndianDate(i.lastPaid) : 'Never'}</small></div></td>
+                    <td data-label="Loan"><div style="text-align:left;"><strong>${C.esc(l.loan_id)}</strong><br><small class="sub">${x.personal ? 'Personal' : 'Credit Vault'} &middot; ${i.type === 'daily' ? 'Daily' : 'Weekly'} ${C.rupees(i.emi)}<br>Last paid: ${i.lastPaid ? C.formatIndianDate(i.lastPaid) : 'Never'}</small></div></td>
                     <td data-label="Borrower"><div style="text-align:left;">${C.esc(l.borrower_name)}<br><small class="sub">${C.esc(mobile || l.phone_number || '-')}</small></div></td>
-                    <td data-label="Type / EMI">${i.type === 'daily' ? 'Daily' : 'Weekly'} &middot; <span class="money">${C.rupees(i.emi)}</span></td>
-                    <td data-label="Missed" style="font-weight:800;">${i.missed}</td>
-                    <td data-label="Days overdue" style="font-weight:800; color:#C53030;">${i.overdueDays}</td>
-                    <td data-label="Overdue amount" class="money">${C.rupees(i.shortfall)}</td>
-                    <td data-label="Penalty" class="money">${C.rupees(i.penalty)} <small class="sub">(${i.missed} x ${C.rupees(i.penaltyEach)})</small></td>
+                    <td data-label="Missed / Days"><strong>${i.missed}</strong> missed<br><span style="color:#C53030; font-weight:800;">${i.overdueDays} day${i.overdueDays === 1 ? '' : 's'}</span></td>
+                    <td data-label="Overdue" class="money">${C.rupees(i.shortfall)}</td>
+                    <td data-label="Penalty" class="money">${C.rupees(i.penalty)}<br><small class="sub">(${i.missed} x ${C.rupees(i.penaltyEach)})</small></td>
                     <td data-label="Total due" class="money" style="color:#C53030;">${C.rupees(i.totalDue)}</td>
-                    <td data-label="Stage"><span class="badge" style="background:${st.color};">${st.label}</span> <small class="sub">${st.text}</small></td>
+                    <td data-label="Stage"><span class="badge" style="background:${st.color};">${st.label}</span><br><small class="sub">${st.text}</small></td>
                     <td data-label="Agent / Follow-up"><div style="text-align:left;">${agentCell(x)}</div></td>
                     <td data-label="Actions" style="white-space:nowrap;">
                         ${mobile.length === 10 ? `<a class="act call" href="tel:+91${mobile}" title="Call"><i class="fas fa-phone"></i></a>` : ''}
