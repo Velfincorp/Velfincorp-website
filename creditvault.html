@@ -486,6 +486,7 @@
                     </div>
                     <div class="form-group">
                         <label>Borrowers Details *</label>
+                        <input type="text" id="borrowerFilter" placeholder="Type to search name / ID / mobile..." oninput="populateBorrowersDropdown()" autocomplete="off" style="margin-bottom:8px;">
                         <select id="Borrowers_Details" onchange="checkActiveBorrowerLoan()" required>
                             <option value="">-Select Borrower-</option>
                         </select>
@@ -1166,6 +1167,15 @@
                 filteredBorrowers = allBorrowers;
             }
 
+            // newest / last edited borrower FIRST, and optional "type to search"
+            filteredBorrowers = filteredBorrowers.slice().sort((a, b) => new Date(b.$updatedAt || b.$createdAt) - new Date(a.$updatedAt || a.$createdAt));
+            const bq = (document.getElementById('borrowerFilter') ? document.getElementById('borrowerFilter').value : '').toLowerCase().trim();
+            if (bq) {
+                filteredBorrowers = filteredBorrowers.filter(b =>
+                    String(b.full_name || '').toLowerCase().includes(bq) || String(b.borrower_id || '').toLowerCase().includes(bq) ||
+                    String(b.phone_number || '').includes(bq) || String(b.whatsapp_number || '').includes(bq));
+            }
+
             if (filteredBorrowers.length > 0) {
                 borrowerSelect.innerHTML = '<option value="">-Select Borrower-</option>';
                 filteredBorrowers.forEach(b => {
@@ -1532,6 +1542,14 @@
                 }
 
                 await sendPortalLoginMessage(borrowerName, finalMobile);
+                if (issuedBy === 'Retailer') {
+                    await sendRetailerPayableMessage({
+                        retailerName: (document.getElementById('selectedRetailerName') || {}).value || retailerCode,
+                        borrowerName, loanId,
+                        product: (productCategory || '') + (productName ? ' - ' + productName : ''),
+                        price, down: downPayment, payable: disbursedBalance
+                    });
+                }
                 document.getElementById('creditVaultForm').reset();
                 document.getElementById('calcSummaryBox').style.display = 'none';
                 document.getElementById('dpMsg').className = 'dp-msg';
@@ -1570,6 +1588,31 @@
                 if (res && res.status === 'failed') alert('Loan saved. Portal login message could NOT be sent: ' + (res.errors || res.responseBody || 'template not approved?'));
             } catch (e) {
                 console.warn('Portal login message error:', e);
+            }
+        }
+
+        /* Tells the RETAILER how much will be paid to him for this loan (only when switched on in db.js and the MSG91 template is approved) */
+        async function sendRetailerPayableMessage(info) {
+            const F = window.VFC_FEATURES || {};
+            if (!F.RETAILER_PAYABLE_MESSAGE) return;
+            try {
+                const m = String(document.getElementById('retailerSearchInput').value || '').match(/\((\d{10})\)\s*$/);
+                const phone = m ? m[1] : '';
+                if (!phone) { console.warn('Retailer WhatsApp number not found - message not sent'); return; }
+                const n = v => window.vfcRupeeText(v);
+                const comps = {
+                    body_1: String(info.retailerName), body_2: String(info.borrowerName), body_3: String(info.loanId), body_4: String(info.product),
+                    body_5: n(info.price), body_6: n(info.down), body_7: n(info.payable)
+                };
+                const payload = {
+                    mobile: '91' + phone, phone: '91' + phone, to: '91' + phone, recipient: '91' + phone,
+                    template_name: F.RETAILER_PAYABLE_TEMPLATE, templateName: F.RETAILER_PAYABLE_TEMPLATE,
+                    components: comps, customComponents: comps
+                };
+                const res = await window.appwriteFunctions.createExecution('6adb02310009b131da2d', JSON.stringify(payload));
+                if (res && res.status === 'failed') alert('Loan saved. The retailer message could NOT be sent: ' + (res.errors || res.responseBody || 'template not approved?'));
+            } catch (e) {
+                console.warn('Retailer message error:', e);
             }
         }
 
