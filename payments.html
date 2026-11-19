@@ -94,6 +94,7 @@
             <h2>VEL FIN CORP</h2>
             <div class="subtitle">Payment Collection & Receipt</div>
 
+            <div id="assignedNote" style="display:none; background:#fffbeb; border:1px solid #f59e0b; color:#92400e; padding:10px 14px; border-radius:6px; font-size:13px; margin-bottom:18px;"></div>
             <form id="paymentForm" onsubmit="validatePayment(event)">
                 <div class="form-row">
                     <div class="form-group">
@@ -197,6 +198,10 @@
             const n = new Date();
             return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
         }
+
+        // Collection agents (staff who have "My Collection List") can record payments ONLY for the loans assigned to them
+        const COLLECTOR_PERMS = (() => { try { return JSON.parse(sessionStorage.getItem('velfincorp_permissions') || '[]'); } catch (e) { return []; } })();
+        const RESTRICT_TO_ASSIGNED = sessionStorage.getItem('velfincorp_role') === 'staff' && COLLECTOR_PERMS.includes('my-collection.html');
 
         // who is collecting (taken from the login)
         const COLLECTOR_ROLE = sessionStorage.getItem('velfincorp_role');
@@ -320,6 +325,19 @@
                 const response = await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.LOANS_ID);
                 allLoansList = response.documents || [];
                 allActiveLoans = allLoansList.filter(loan => loan.status === 'ACTIVE');
+
+                if (RESTRICT_TO_ASSIGNED) {
+                    let assigns = [];
+                    try { assigns = (await fetchAllDocs(VFC_DB.DB_ID, VFC_DB.ASSIGNMENTS_ID)).documents || []; } catch (e) { assigns = []; }
+                    const mine = assigns.filter(a => a.status === 'ACTIVE' && String(a.agent_phone || '').replace(/\D/g, '').slice(-10) === COLLECTOR_PHONE);
+                    const key = v => String(v || '').trim().toLowerCase().slice(0, 50);
+                    allActiveLoans = allActiveLoans.filter(l => mine.some(a => a.loan_id === l.loan_id && key(a.borrower_name) === key(l.borrower_name)));
+                    const note = document.getElementById('assignedNote');
+                    if (note) {
+                        note.style.display = 'block';
+                        note.innerHTML = '<i class="fas fa-info-circle"></i> You can record payments only for the loans <strong>assigned to you</strong> (' + allActiveLoans.length + ' loan' + (allActiveLoans.length === 1 ? '' : 's') + ').';
+                    }
+                }
 
                 const counts = {};
                 allLoansList.forEach(l => { if (l.loan_id) counts[l.loan_id] = (counts[l.loan_id] || 0) + 1; });
@@ -580,9 +598,14 @@
                 const finalMobile = "91" + cleanMobile;
 
                 // Correct loan-type wording: Personal vs Credit Vault
+                // Personal loan -> "Personal Loan (Weekly)" ; Credit Vault -> "Home Appliance (LG nano 4K TV)" (the product the customer bought)
                 let loanTypeDisp = loanType;
-                if (['weekly', 'daily', 'monthly'].includes(String(loanType).toLowerCase())) {
-                    loanTypeDisp = (isPersonalLoan(loan) ? "Personal Loan (" : "Credit Vault Loan (") + loanType + ")";
+                if (isPersonalLoan(loan)) {
+                    loanTypeDisp = "Personal Loan (" + loanType + ")";
+                } else {
+                    const cat = String(loan.loan_category || '').trim();
+                    const prod = String(loan.product_name || '').replace(/\s+/g, ' ').trim();
+                    loanTypeDisp = (cat && prod) ? `${cat} (${prod})` : (prod || cat || ("Credit Vault Loan (" + loanType + ")"));
                 }
 
                 let templateName = "";
