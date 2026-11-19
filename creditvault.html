@@ -1578,7 +1578,7 @@
                     String(l.borrower_name || '').trim().toLowerCase() === String(borrowerName || '').trim().toLowerCase() &&
                     window.vfcLast10(l.phone_number) === m10);
                 if (sameBorrower.length > 1) return;              // not his first loan - he already has the login details
-                const comps = { body_1: String(borrowerName), body_2: m10 };
+                const comps = { body_1: String(borrowerName) };
                 const payload = {
                     mobile: '91' + m10, phone: '91' + m10, to: '91' + m10, recipient: '91' + m10,
                     template_name: F.PORTAL_LOGIN_TEMPLATE, templateName: F.PORTAL_LOGIN_TEMPLATE,
