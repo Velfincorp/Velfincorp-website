@@ -94,6 +94,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Borrowers Details *</label>
+                        <input type="text" id="borrowerFilter" placeholder="Type to search name / ID / mobile..." oninput="renderBorrowerOptions()" autocomplete="off" style="margin-bottom:8px;">
                         <select id="Borrowers_Details" onchange="checkActiveBorrowerLoan()" required>
                             <option value="">-Loading Borrowers-</option>
                         </select>
@@ -210,23 +211,32 @@
                 allBorrowers = borrowersResp.documents || [];
                 generateNextPersonalLoanId();
 
-                if (allBorrowers.length > 0) {
-                    borrowerSelect.innerHTML = '<option value="">-Select Borrower-</option>';
-                    allBorrowers.forEach(b => {
-                        const opt = document.createElement('option');
-                        opt.value = b.full_name;
-                        opt.dataset.phone = b.whatsapp_number || b.phone_number || '';
-                        opt.textContent = `${b.full_name} (${b.borrower_id})`;
-                        borrowerSelect.appendChild(opt);
-                    });
-                } else {
-                    borrowerSelect.innerHTML = '<option value="">-No Borrowers Found-</option>';
-                }
+                renderBorrowerOptions();
             } catch (e) {
                 console.error("Error loading initial data:", e);
                 generateNextPersonalLoanId();
                 borrowerSelect.innerHTML = '<option value="">-Error Loading Borrowers-</option>';
             }
+        }
+
+        // newest / last edited borrower FIRST, with optional "type to search"
+        function renderBorrowerOptions() {
+            const sel = document.getElementById('Borrowers_Details');
+            if (!allBorrowers.length) { sel.innerHTML = '<option value="">-No Borrowers Found-</option>'; return; }
+            const q = (document.getElementById('borrowerFilter').value || '').toLowerCase().trim();
+            let list = allBorrowers.slice().sort((a, b) => new Date(b.$updatedAt || b.$createdAt) - new Date(a.$updatedAt || a.$createdAt));
+            if (q) {
+                list = list.filter(b => String(b.full_name || '').toLowerCase().includes(q) || String(b.borrower_id || '').toLowerCase().includes(q) ||
+                                        String(b.phone_number || '').includes(q) || String(b.whatsapp_number || '').includes(q));
+            }
+            sel.innerHTML = list.length ? '<option value="">-Select Borrower-</option>' : '<option value="">-No match-</option>';
+            list.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.full_name;
+                opt.dataset.phone = b.whatsapp_number || b.phone_number || '';
+                opt.textContent = `${b.full_name} (${b.borrower_id})`;
+                sel.appendChild(opt);
+            });
         }
 
         /* FIX: use the HIGHEST existing number + 1 (never count + 1) */
@@ -381,7 +391,15 @@
                     tenure: tenure,
                     status: loanStatus,
                     loan_date: isoDate,
-                    loan_category: "Personal"
+                    loan_category: "Personal",
+                    // personal loans have no retailer / product: store clean empty values (avoids odd default values like "255")
+                    issued_by: "Admin",
+                    retailer_code: "",
+                    product_name: "",
+                    imei_number_1: "",
+                    imei_number_2: "",
+                    product_price: "0",
+                    down_payment: "0"
                 };
 
                 // Save with a fresh Loan ID; if the ID is already taken (conflict), refresh and try again
@@ -476,7 +494,7 @@
                     String(l.borrower_name || '').trim().toLowerCase() === String(borrowerName || '').trim().toLowerCase() &&
                     window.vfcLast10(l.phone_number) === m10);
                 if (sameBorrower.length > 1) return;              // not his first loan - he already has the login details
-                const comps = { body_1: String(borrowerName), body_2: m10 };
+                const comps = { body_1: String(borrowerName) };
                 const payload = {
                     mobile: '91' + m10, phone: '91' + m10, to: '91' + m10, recipient: '91' + m10,
                     template_name: F.PORTAL_LOGIN_TEMPLATE, templateName: F.PORTAL_LOGIN_TEMPLATE,
