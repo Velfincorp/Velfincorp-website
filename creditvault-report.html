@@ -129,6 +129,11 @@
                     <option value="PAID">PAID (On Time)</option>
                     <option value="OVERDUE">OVERDUE</option>
                 </select>
+                <select id="retailerPayFilter" onchange="filterTable()">
+                    <option value="">-Retailer payment: All-</option>
+                    <option value="pending">Retailer payment PENDING</option>
+                    <option value="paid">Retailer payment PAID</option>
+                </select>
             </div>
 
             <div style="overflow-x: auto;">
@@ -146,10 +151,11 @@
                             <th>EMI (₹)</th>
                             <th>Tenure</th>
                             <th>Payment Status & Delay</th>
+                            <th>Retailer Pay</th>
                         </tr>
                     </thead>
                     <tbody id="reportTableBody">
-                        <tr><td colspan="11" style="text-align: center; color: #64748b;">Loading Credit Vault Reports...</td></tr>
+                        <tr><td colspan="12" style="text-align: center; color: #64748b;">Loading Credit Vault Reports...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -371,11 +377,12 @@
                         <td>₹${parseFloat(loan.installment_amount || 0).toLocaleString('en-IN')}</td>
                         <td>${loan.tenure || '-'}</td>
                         <td><span style="color: ${payStatus.color}; font-weight: bold;">${payStatus.displayText}</span></td>
+                        <td>${loan.issued_by === 'Retailer' ? (loan.retailer_paid_on ? '<span style="color:#2F855A; font-weight:bold;">Paid ' + formatIndianDate(loan.retailer_paid_on) + '</span>' : '<span style="color:#DD6B20; font-weight:bold;">Pending</span>') : '-'}</td>
                     `;
                     tbody.appendChild(tr);
                 });
             } else {
-                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #64748b;">No matching Credit Vault Loans found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; color: #64748b;">No matching Credit Vault Loans found.</td></tr>';
             }
         }
 
@@ -396,8 +403,10 @@
                 const matchesDate = !dateQuery || toISODate(loan.loan_date || loan.$createdAt) === dateQuery;
                 const matchesCategory = !categoryQuery || loan.loan_category === categoryQuery;
                 const matchesStatus = !statusQuery || loan.status === statusQuery || payStatus === statusQuery;
+                const rpQuery = document.getElementById('retailerPayFilter').value;
+                const matchesRetailerPay = !rpQuery || (rpQuery === 'pending' ? (loan.issued_by === 'Retailer' && !loan.retailer_paid_on) : !!loan.retailer_paid_on);
 
-                return matchesSearch && matchesDate && matchesCategory && matchesStatus;
+                return matchesSearch && matchesDate && matchesCategory && matchesStatus && matchesRetailerPay;
             });
 
             renderTable(filtered);
@@ -508,8 +517,128 @@
                     <tbody>${paymentsRowsHtml}</tbody>
                 </table>
             `;
+            renderRetailerPayBox(loan);
             modal.style.display = 'flex';
             modal.classList.add('open');
+        }
+
+
+        /* ================= Retailer payment (amount payable to the retailer, paid status, WhatsApp messages) ================= */
+        let retailersCache = null;
+        const IS_ADMIN_USER = sessionStorage.getItem('velfincorp_role') === 'admin';
+
+        async function getRetailers() {
+            if (retailersCache) return retailersCache;
+            try {
+                const all = await window.vfcFetchAll(VFC_DB.RETAILERS_ID);
+                retailersCache = all.filter(d => String(d.user_type || '').toLowerCase() === 'retailer')
+                    .map(d => ({ name: d.show_room_name || '', city: d.city || '', phone: String(d.whatsapp_number || '').replace(/\D/g, '').slice(-10) }));
+            } catch (e) { console.warn('Retailers could not be read', e); retailersCache = []; }
+            return retailersCache;
+        }
+
+        function waLinkTo(phone, text) { return 'https://wa.me/91' + phone + '?text=' + encodeURIComponent(text); }
+        function escHtml(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+        async function renderRetailerPayBox(loan) {
+            const modalBody = document.getElementById('modalBody');
+            const old = document.getElementById('retailerPayBox');
+            if (old) old.remove();
+            if (loan.issued_by !== 'Retailer') return;
+
+            modalBody.insertAdjacentHTML('beforeend', '<div id="retailerPayBox" style="margin-top:20px; padding:14px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc;"><strong>Retailer payment</strong> - loading...</div>');
+            const box = document.getElementById('retailerPayBox');
+
+            const price = parseFloat(loan.product_price || 0), down = parseFloat(loan.down_payment || 0);
+            const payable = parseFloat(loan.disbursed_amount || (price > down ? price - down : 0));
+            const code = String(loan.retailer_code || '').toUpperCase();
+            const matches = (await getRetailers()).filter(r => window.vfcRetailerCode(r) === code);
+            const product = (loan.loan_category || '') + (loan.product_name ? ' - ' + loan.product_name : '');
+            const paid = !!loan.retailer_paid_on;
+
+            window.__rp = { loan, payable, matches, product, price, down };
+
+            let html = `<div style="font-weight:800; color:#0F1D36; margin-bottom:8px;">Retailer payment (code ${escHtml(code)})</div>`;
+            if (!matches.length) {
+                html += `<div style="color:#C53030; font-size:13px;">The retailer for code <strong>${escHtml(code)}</strong> was not found in Retailers & Staff, so no WhatsApp number is available.</div>`;
+            } else {
+                html += matches.length > 1
+                    ? `<div style="margin-bottom:8px; font-size:13px;">Select retailer: <select id="rpPick" style="padding:6px;">${matches.map((r, i) => `<option value="${i}">${escHtml(r.name)} (${escHtml(r.phone)})</option>`).join('')}</select></div>`
+                    : `<div style="font-size:13px; margin-bottom:6px;">Retailer: <strong>${escHtml(matches[0].name)}</strong> (${escHtml(matches[0].phone)})</div>`;
+            }
+            html += `<div style="font-size:13px; line-height:1.8;">
+                Product price: <strong>₹${window.vfcRupeeText(price)}</strong> &nbsp;|&nbsp; Down payment: <strong>₹${window.vfcRupeeText(down)}</strong><br>
+                Amount payable to retailer: <strong style="color:#C53030; font-size:15px;">₹${window.vfcRupeeText(payable)}</strong><br>
+                Status: ${paid ? `<strong style="color:#2F855A;">PAID on ${formatIndianDate(loan.retailer_paid_on)}</strong> | UTR: <strong>${escHtml(loan.retailer_utr || '-')}</strong>` : '<strong style="color:#DD6B20;">PENDING</strong>'}
+            </div>`;
+            html += `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+                ${matches.length ? `<button type="button" onclick="sendPayableToRetailer()" style="background:#25D366; color:#fff; border:none; padding:9px 14px; border-radius:6px; font-weight:700; cursor:pointer;"><i class="fab fa-whatsapp"></i> Send payable message to retailer</button>` : ''}
+                ${paid && matches.length ? `<button type="button" onclick="sendPaidToRetailer()" style="background:#2B6CB0; color:#fff; border:none; padding:9px 14px; border-radius:6px; font-weight:700; cursor:pointer;"><i class="fab fa-whatsapp"></i> Send paid message again</button>` : ''}
+                ${(!paid && IS_ADMIN_USER) ? `<button type="button" onclick="document.getElementById('rpPaidForm').style.display='block'" style="background:#0F1D36; color:#fff; border:none; padding:9px 14px; border-radius:6px; font-weight:700; cursor:pointer;"><i class="fas fa-check"></i> Mark as paid to retailer</button>` : ''}
+            </div>
+            <div id="rpPaidForm" style="display:none; margin-top:12px; padding:12px; background:#fff; border:1px solid #e2e8f0; border-radius:8px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <label style="font-size:13px;">Paid on<br><input type="date" id="rpDate" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></label>
+                    <label style="font-size:13px;">UTR / Transaction no.<br><input type="text" id="rpUtr" placeholder="e.g. 4123xxxxxxx" style="padding:8px; border:1px solid #cbd5e1; border-radius:6px;"></label>
+                    <button type="button" onclick="saveRetailerPaid()" style="align-self:flex-end; background:#2F855A; color:#fff; border:none; padding:9px 14px; border-radius:6px; font-weight:700; cursor:pointer;">Save</button>
+                </div>
+            </div>`;
+            box.innerHTML = html;
+            const d = document.getElementById('rpDate');
+            if (d) { const t = new Date(); d.value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; }
+        }
+
+        function pickedRetailer() {
+            const rp = window.__rp;
+            const sel = document.getElementById('rpPick');
+            return rp.matches[sel ? parseInt(sel.value) : 0];
+        }
+
+        function sendPayableToRetailer() {
+            const rp = window.__rp, r = pickedRetailer();
+            if (!r) return;
+            const text = window.vfcRetailerPayableText(r.name, rp.loan.borrower_name, rp.loan.loan_id, rp.product, rp.price, rp.down, rp.payable);
+            window.open(waLinkTo(r.phone, text), '_blank');
+        }
+
+        async function sendPaidToRetailer() {
+            const rp = window.__rp, r = pickedRetailer();
+            if (!r) return;
+            const loan = rp.loan;
+            const dateText = formatIndianDate(loan.retailer_paid_on);
+            const F = window.VFC_FEATURES || {};
+            if (F.RETAILER_PAID_MESSAGE) {
+                try {
+                    const comps = { body_1: r.name, body_2: loan.loan_id, body_3: loan.borrower_name, body_4: window.vfcRupeeText(rp.payable), body_5: loan.retailer_utr || '-', body_6: dateText };
+                    const payload = { mobile: '91' + r.phone, phone: '91' + r.phone, to: '91' + r.phone, recipient: '91' + r.phone,
+                        template_name: F.RETAILER_PAID_TEMPLATE, templateName: F.RETAILER_PAID_TEMPLATE, components: comps, customComponents: comps };
+                    const res = await window.appwriteFunctions.createExecution('6adb02310009b131da2d', JSON.stringify(payload));
+                    if (res && res.status === 'failed') throw new Error(res.errors || res.responseBody || 'failed');
+                    alert('Paid message sent to ' + r.name + '.');
+                    return;
+                } catch (e) { alert('Automatic message failed (' + e.message + '). Opening WhatsApp instead.'); }
+            }
+            const text = window.vfcRetailerPaidText(r.name, loan.loan_id, loan.borrower_name, rp.payable, loan.retailer_utr || '-', dateText);
+            window.open(waLinkTo(r.phone, text), '_blank');
+        }
+
+        async function saveRetailerPaid() {
+            const rp = window.__rp;
+            const date = document.getElementById('rpDate').value;
+            const utr = document.getElementById('rpUtr').value.trim();
+            if (!date) { alert('Please choose the date.'); return; }
+            if (!utr) { alert('Please enter the UTR / transaction number.'); return; }
+            try {
+                await window.appwriteDatabases.updateDocument(VFC_DB.DB_ID, VFC_DB.LOANS_ID, rp.loan.$id, { retailer_paid_on: date, retailer_utr: utr });
+                rp.loan.retailer_paid_on = date;
+                rp.loan.retailer_utr = utr;
+                await renderRetailerPayBox(rp.loan);
+                if (window.__rp.matches.length && confirm('Saved. Send the "payment sent" message to the retailer now?')) sendPaidToRetailer();
+                if (typeof filterTable === 'function') filterTable();
+            } catch (e) {
+                console.error(e);
+                alert('Could not save: ' + e.message + '\n(Check that the columns retailer_paid_on and retailer_utr exist in Live_Loans.)');
+            }
         }
 
         function downloadPDF() {
