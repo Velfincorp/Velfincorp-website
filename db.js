@@ -111,15 +111,15 @@ window.VFC_FEATURES = {
     // Send the customer a WhatsApp with portal login details when his FIRST loan starts.
     // Turn this to true ONLY after the MSG91 template "vel_fin_portal_login" shows Approved.
     PORTAL_LOGIN_MESSAGE: false,
-    PORTAL_LOGIN_TEMPLATE: 'vel_fin_portal_login',
+    PORTAL_LOGIN_TEMPLATE: 'vel_fin_portal_access',
 
     // Message to the RETAILER when his Credit Vault loan is saved ("amount payable to you").
     // Turn to true only after the MSG91 template below shows Approved.
-    RETAILER_PAYABLE_MESSAGE: false,
+    RETAILER_PAYABLE_MESSAGE: true,
     RETAILER_PAYABLE_TEMPLATE: 'vel_fin_retailer_payable',
 
     // Message to the RETAILER when you mark the money as paid (with UTR).
-    RETAILER_PAID_MESSAGE: false,
+    RETAILER_PAID_MESSAGE: true,
     RETAILER_PAID_TEMPLATE: 'vel_fin_retailer_paid'
 };
 
