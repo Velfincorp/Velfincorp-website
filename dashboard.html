@@ -163,6 +163,12 @@
 
             <div class="permissions-group">
                 <div style="font-weight: bold; font-size: 13px; color: var(--navy); margin-bottom: 8px;">Select Allowed Access Modules:</div>
+                <div style="margin-bottom: 12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                    <span style="font-size:12px; color:#64748b;">Quick presets:</span>
+                    <button type="button" onclick="applyPreset('agent')" style="background:#C5A059;color:#0F1D36;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Collection Agent</button>
+                    <button type="button" onclick="applyPreset('office')" style="background:#0F1D36;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Office Staff</button>
+                    <span style="font-size:11.5px; color:#64748b;">Collection Agent = Staff with "My Collection List" ticked: sees and collects only the loans assigned to him.</span>
+                </div>
                 <label><input type="checkbox" name="perm" value="borrowers-details.html" checked> Borrower Details</label>
                 <label><input type="checkbox" name="perm" value="creditvault.html" checked> Credit Vault Loan</label>
                 <label><input type="checkbox" name="perm" value="personalloan.html"> Personal Loan</label>
@@ -192,10 +198,11 @@
                         <th>Password</th>
                         <th>Allowed Modules</th>
                         <th>Send Login</th>
+                        <th>Edit</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
-                    <tr><td colspan="8" style="text-align:center;">Loading from Cloud...</td></tr>
+                    <tr><td colspan="9" style="text-align:center;">Loading from Cloud...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -351,7 +358,7 @@
 
                 tbody.innerHTML = '';
                 if (cloudUserDocs.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#64748b;">No staff or retailers created yet.</td></tr>`;
                     return;
                 }
 
@@ -391,6 +398,7 @@
                         <td><span style="font-size: 14px; font-weight: 800; color: #b91c1c;">${pass}</span></td>
                         <td>${perms.length} Modules</td>
                         <td><a href="${window.vfcCredentialsLink(doc.show_room_name || dispName, role, phone, pass)}" target="_blank" rel="noopener" style="background:#25D366;color:#fff;text-decoration:none;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:700;white-space:nowrap;"><i class="fab fa-whatsapp"></i> Send</a></td>
+                        <td><button type="button" onclick="editUser(${index})" style="background:#0F1D36;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;"><i class="fas fa-edit"></i> Edit</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -400,6 +408,31 @@
             } catch (e) {
                 console.error("Error loading users from Cloud:", e);
             }
+        }
+
+        function applyPreset(kind) {
+            document.getElementById('newUserRole').value = 'staff';
+            const agent = ['my-collection.html', 'payments.html'];
+            const office = ['borrowers-details.html', 'creditvault.html', 'personalloan.html', 'payments.html', 'creditvault-report.html', 'personalloan-report.html', 'allpayments-report.html'];
+            const set = kind === 'agent' ? agent : office;
+            document.querySelectorAll('input[name="perm"]').forEach(cb => { cb.checked = set.includes(cb.value); });
+        }
+
+        function editUser(i) {
+            const d = cloudUserDocs[i];
+            if (!d) return;
+            document.getElementById('newUserName').value = d.show_room_name || '';
+            document.getElementById('newUserCity').value = (d.city && d.city !== '-') ? d.city : '';
+            document.getElementById('newUserId').value = d.whatsapp_number || '';
+            document.getElementById('newUserPass').value = d.password || '';
+            const role = String(d.user_type || 'retailer').toLowerCase();
+            document.getElementById('newUserRole').value = role;
+            const perms = (role === 'staff' && d.address && d.address.includes('.html')) ? d.address.split(',').map(x => x.trim()) : [];
+            document.querySelectorAll('input[name="perm"]').forEach(cb => {
+                cb.checked = role === 'staff' ? perms.includes(cb.value) : (cb.value === 'borrowers-details.html' || cb.value === 'creditvault.html');
+            });
+            document.getElementById('newUserName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            alert('Details loaded into the form above. Change what you need (name, password, role, modules) and press "Create / Update User Access & Save".');
         }
 
         async function generateCredential() {
@@ -438,9 +471,10 @@
                 if (existingDoc) {
                     const updatePayload = {
                         user_type: userRole,
-                        password: userPass,
-                        address: permissions.join(',')
+                        password: userPass
                     };
+                    // staff: the permission list is kept in the "address" field. A retailer's real address must NOT be overwritten.
+                    if (userRole === 'staff') updatePayload.address = permissions.join(',');
                     if (userName) updatePayload.show_room_name = userName;
                     if (userCity) updatePayload.city = userCity;
 
