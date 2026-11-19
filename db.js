@@ -111,7 +111,44 @@ window.VFC_FEATURES = {
     // Send the customer a WhatsApp with portal login details when his FIRST loan starts.
     // Turn this to true ONLY after the MSG91 template "vel_fin_portal_login" shows Approved.
     PORTAL_LOGIN_MESSAGE: false,
-    PORTAL_LOGIN_TEMPLATE: 'vel_fin_portal_login'
+    PORTAL_LOGIN_TEMPLATE: 'vel_fin_portal_login',
+
+    // Message to the RETAILER when his Credit Vault loan is saved ("amount payable to you").
+    // Turn to true only after the MSG91 template below shows Approved.
+    RETAILER_PAYABLE_MESSAGE: false,
+    RETAILER_PAYABLE_TEMPLATE: 'vel_fin_retailer_payable',
+
+    // Message to the RETAILER when you mark the money as paid (with UTR).
+    RETAILER_PAID_MESSAGE: false,
+    RETAILER_PAID_TEMPLATE: 'vel_fin_retailer_paid'
+};
+
+/* 3-letter retailer code (same rule as the Credit Vault / Borrower forms) */
+window.vfcRetailerCode = function(r) {
+    const rawShop = String(r.name || '').replace(/\(.*\)/g, '').trim();
+    const rawCity = String(r.city || '').trim();
+    const shopWords = rawShop.split(/\s+/).filter(Boolean);
+    if (rawShop.toLowerCase().includes('vinayaga')) return 'KSV';
+    if (rawShop.toLowerCase().includes('kamala')) return 'PKM';
+    if (rawCity && rawCity !== '-' && shopWords.length >= 2) return (rawCity[0] + shopWords[0][0] + shopWords[1][0]).toUpperCase();
+    if (shopWords.length >= 3) return (shopWords[0][0] + shopWords[1][0] + shopWords[2][0]).toUpperCase();
+    if (shopWords.length === 2) return (shopWords[0].substring(0, 2) + shopWords[1][0]).toUpperCase();
+    return rawShop.substring(0, 3).toUpperCase() || 'RET';
+};
+
+/* Retailer messages (professional Tamil wording) */
+window.vfcRupeeText = function(n) { return Math.round(Number(n) || 0).toLocaleString('en-IN'); };
+window.vfcRetailerPayableText = function(retailerName, customer, loanId, product, price, down, payable) {
+    return `வணக்கம் ${retailerName},\n\nஉங்கள் விற்பனைக்கான கடன் அங்கீகரிக்கப்பட்டுள்ளது.\n\n` +
+           `வாடிக்கையாளர்: ${customer}\nகடன் எண்: ${loanId}\nபொருள்: ${product}\n` +
+           `பொருளின் விலை: ₹${window.vfcRupeeText(price)}\nடவுன் பேமெண்ட்: ₹${window.vfcRupeeText(down)}\n` +
+           `உங்களுக்குச் செலுத்த வேண்டிய தொகை: ₹${window.vfcRupeeText(payable)}\n\n` +
+           `இத்தொகை உங்கள் வங்கிக் கணக்கிற்கு அனுப்பப்படும்போது மீண்டும் தெரிவிக்கப்படும். உதவிக்கு: +91 9486886293\n\nநன்றி,\nTeam Vel Fin Corp`;
+};
+window.vfcRetailerPaidText = function(retailerName, loanId, customer, amount, utr, dateText) {
+    return `வணக்கம் ${retailerName},\n\nஉங்களுக்குச் செலுத்த வேண்டிய தொகை உங்கள் வங்கிக் கணக்கிற்கு அனுப்பப்பட்டுள்ளது.\n\n` +
+           `கடன் எண்: ${loanId}\nவாடிக்கையாளர்: ${customer}\nஅனுப்பிய தொகை: ₹${window.vfcRupeeText(amount)}\n` +
+           `பரிவர்த்தனை எண் (UTR): ${utr}\nதேதி: ${dateText}\n\nஉதவிக்கு: +91 9486886293\n\nநன்றி,\nTeam Vel Fin Corp`;
 };
 
 /* ===== WhatsApp message with login details for a Retailer / Staff (opens WhatsApp, text already typed) ===== */
@@ -195,7 +232,8 @@ window.vfcCredentialsLink = function(name, role, mobile, password) {
         const items = [
             { href: 'defaulters-report.html', icon: 'fa-exclamation-triangle', label: 'Defaulters Report' },
             { href: 'my-collection.html',     icon: 'fa-clipboard-list',       label: 'My Collection List' },
-            { href: 'collection-dashboard.html', icon: 'fa-chart-pie',          label: 'Daily Collection' }
+            { href: 'collection-dashboard.html', icon: 'fa-chart-pie',          label: 'Daily Collection' },
+            { href: 'noc.html',                icon: 'fa-certificate',          label: 'NOC / Loan Closure' }
         ];
         let anchor = menu.querySelector('a[href="allpayments-report.html"]');
         let after = (anchor && anchor.parentElement && anchor.parentElement.parentElement === menu) ? anchor.parentElement : null;
