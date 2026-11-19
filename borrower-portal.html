@@ -175,7 +175,8 @@
             const s = summarizeLoan(loan, loanPayments);
             const sorted = loanPayments.slice().sort((a, b) => parseFlexibleDate(a.payment_date || a.$createdAt) - parseFlexibleDate(b.payment_date || b.$createdAt));
             const percent = s.tenure > 0 ? Math.min(100, Math.round((s.paidInst / s.tenure) * 100)) : 0;
-            const product = [loan.loan_category, loan.product_name].filter(Boolean).join(' - ');
+            const isPersonalP = String(loan.loan_category || '').trim() === 'Personal' || String(loan.loan_id || '').toUpperCase().startsWith('VPL');
+            const product = isPersonalP ? 'Personal Loan' : [loan.loan_category, loan.product_name].filter(Boolean).join(' - ');
             const typeText = (loan.loan_type || 'Weekly') + ' | ' + (loan.tenure || (s.tenure + ' installments'));
 
             let payBox = '';
