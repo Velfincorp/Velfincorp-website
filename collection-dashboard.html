@@ -701,7 +701,7 @@
 
               <div class="dsec">Loan</div>
               <div class="dgrid">
-                ${kv('Product', C.esc([loan.loan_category, loan.product_name].filter(Boolean).join(' - ') || '-'))}
+                ${kv('Product', C.esc(C.isPersonalLoan(loan) ? 'Personal Loan' : ([loan.loan_category, loan.product_name].filter(Boolean).join(' - ') || '-')))}
                 ${kv('Frequency / Tenure', C.esc((isDaily ? 'Daily' : 'Weekly') + ' | ' + (loan.tenure || tenure)))}
                 ${kv('Started on', C.formatIndianDate(loan.loan_date || loan.$createdAt))}
                 ${kv('EMI', C.rupees(emi))}
@@ -709,7 +709,7 @@
                 ${kv('Paid so far (EMI)', C.rupees(paidUpTo))}
                 ${kv('Balance to pay', C.rupees(Math.max(0, total - paidUpTo)))}
                 ${kv('Installments paid', paidInst + ' / ' + tenure)}
-                ${kv('Issued by', C.esc((loan.issued_by || 'Admin') + (loan.retailer_code ? ' (' + loan.retailer_code + ')' : '')))}
+                ${kv('Issued by', C.esc(C.isPersonalLoan(loan) ? 'Admin' : ((loan.issued_by || 'Admin') + (loan.retailer_code ? ' (' + loan.retailer_code + ')' : ''))))}
                 ${kv('Penalty collected so far', C.rupees(penPaidUpTo))}
               </div>`;
 
