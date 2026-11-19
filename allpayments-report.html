@@ -118,6 +118,22 @@
         <div class="header-title">VEL FIN CORP - ALL PAYMENTS REPORT</div>
         
         <input type="text" id="searchInput" class="search-box" placeholder="Search by Borrower Name, Phone, Borrower ID, Loan ID or Payment ID..." onkeyup="filterTable()">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+            <select id="fCollector" onchange="filterTable()" style="flex:1; min-width:160px; padding:10px; border:1px solid #cbd5e1; border-radius:6px;"><option value="">-All collectors-</option></select>
+            <select id="fMode" onchange="filterTable()" style="flex:1; min-width:140px; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">
+                <option value="">-All modes-</option><option value="cash">Cash</option><option value="upi">UPI</option><option value="bank">Bank Transfer</option>
+            </select>
+            <select id="fCategory" onchange="filterTable()" style="flex:1; min-width:150px; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">
+                <option value="">-Personal & Credit Vault-</option><option value="personal">Personal Loan</option><option value="vault">Credit Vault</option>
+            </select>
+            <select id="fPenalty" onchange="filterTable()" style="flex:1; min-width:150px; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">
+                <option value="">-All payments-</option><option value="penalty">Penalty collected only</option>
+            </select>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#475569;">From <input type="date" id="fFrom" onchange="filterTable()" style="padding:9px; border:1px solid #cbd5e1; border-radius:6px;"></label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#475569;">To <input type="date" id="fTo" onchange="filterTable()" style="padding:9px; border:1px solid #cbd5e1; border-radius:6px;"></label>
+            <button type="button" onclick="clearFilters()" style="background:#e2e8f0; color:#0F1D36; border:none; padding:10px 14px; border-radius:6px; font-weight:700; cursor:pointer;">Clear</button>
+            <button type="button" onclick="exportPaymentsCSV()" style="background:#2F855A; color:#fff; border:none; padding:10px 14px; border-radius:6px; font-weight:700; cursor:pointer;"><i class="fas fa-file-csv"></i> CSV</button>
+        </div>
         <div class="summary-line" id="summaryLine"></div>
 
         <div class="table-container">
@@ -263,6 +279,7 @@
                     return paymentNumber(b) - paymentNumber(a);
                 });
 
+                buildCollectorOptions();
                 renderTable(allPaymentsData);
             } catch(error) {
                 console.error("Error loading payments report:", error);
@@ -344,18 +361,69 @@
             modal.classList.add('open');
         }
 
-        function filterTable() {
+        const isoOf = p => { const d = parseFlexibleDate(p.payment_date || p.$createdAt); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+        function isPersonalPayment(p) {
+            const loan = allLoansData.find(l => l.loan_id === p.loan_id);
+            return (loan && String(loan.loan_category || '').trim() === 'Personal') || String(p.loan_id || '').toUpperCase().startsWith('VPL');
+        }
+
+        function buildCollectorOptions() {
+            const names = {};
+            allPaymentsData.forEach(p => { const n = String(p.collected_by || '').trim(); if (n) names[n] = true; });
+            const sel = document.getElementById('fCollector');
+            sel.innerHTML = '<option value="">-All collectors-</option>' +
+                Object.keys(names).sort().map(n => `<option value="${n.replace(/"/g, '&quot;')}">${n.replace(/</g, '&lt;')}</option>`).join('') +
+                '<option value="__NONE__">Not recorded (old entries)</option>';
+        }
+
+        function currentFilteredPayments() {
             const input = document.getElementById('searchInput').value.toLowerCase().trim();
-            const filtered = allPaymentsData.filter(p => {
+            const collector = document.getElementById('fCollector').value;
+            const mode = document.getElementById('fMode').value;
+            const cat = document.getElementById('fCategory').value;
+            const pen = document.getElementById('fPenalty').value;
+            const from = document.getElementById('fFrom').value;
+            const to = document.getElementById('fTo').value;
+            return allPaymentsData.filter(p => {
                 const name = (p.borrower_name || '').toLowerCase();
                 const phone = (p.phone_number || '').toLowerCase();
                 const payId = (p.payment_id || '').toLowerCase();
                 const loanId = (p.loan_id || '').toLowerCase();
                 const borrower = findBorrowerForPayment(p);
                 const borrowerId = (borrower && borrower.borrower_id ? borrower.borrower_id : '').toLowerCase();
-                return name.includes(input) || phone.includes(input) || payId.includes(input) || loanId.includes(input) || borrowerId.includes(input) || String(p.collected_by || '').toLowerCase().includes(input);
+                const okSearch = !input || name.includes(input) || phone.includes(input) || payId.includes(input) || loanId.includes(input) || borrowerId.includes(input) || String(p.collected_by || '').toLowerCase().includes(input);
+                const cb = String(p.collected_by || '').trim();
+                const okCollector = !collector || (collector === '__NONE__' ? !cb : cb === collector);
+                const okMode = !mode || String(p.payment_mode || '').toLowerCase().includes(mode);
+                const okCat = !cat || (cat === 'personal' ? isPersonalPayment(p) : !isPersonalPayment(p));
+                const okPen = !pen || (parseFloat(p.penalty_paid) || 0) > 0;
+                const d = isoOf(p);
+                const okFrom = !from || d >= from;
+                const okTo = !to || d <= to;
+                return okSearch && okCollector && okMode && okCat && okPen && okFrom && okTo;
             });
-            renderTable(filtered);
+        }
+
+        function filterTable() { renderTable(currentFilteredPayments()); }
+
+        function clearFilters() {
+            ['searchInput', 'fCollector', 'fMode', 'fCategory', 'fPenalty', 'fFrom', 'fTo'].forEach(id => { document.getElementById(id).value = ''; });
+            filterTable();
+        }
+
+        function exportPaymentsCSV() {
+            const list = currentFilteredPayments();
+            if (!list.length) { alert('No payments to export.'); return; }
+            const head = ['S.No', 'Payment ID', 'Borrower', 'Loan ID', 'Phone', 'EMI Paid', 'Penalty', 'Date', 'Mode', 'Collected By'];
+            const rows = list.map((p, i) => [i + 1, p.payment_id, p.borrower_name, p.loan_id, p.phone_number, p.amount_paid, p.penalty_paid || '0', p.payment_date, p.payment_mode, p.collected_by || 'Not recorded']);
+            const csv = [head].concat(rows).map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'Payments_' + new Date().toISOString().slice(0, 10) + '.csv';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(a.href), 2000);
         }
 
         function downloadPDF() {
