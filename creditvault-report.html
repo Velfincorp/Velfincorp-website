@@ -517,6 +517,7 @@
                     <tbody>${paymentsRowsHtml}</tbody>
                 </table>
             `;
+            window.vfcAddPhotoSide(modalBody, matchedBorrower.customer_photo, loan.borrower_name);
             renderRetailerPayBox(loan);
             modal.style.display = 'flex';
             modal.classList.add('open');
@@ -641,8 +642,9 @@
             }
         }
 
-        function downloadPDF() {
+        async function downloadPDF() {
             const element = document.getElementById('printableArea');
+            await window.vfcHydratePhotos(element);
             const actions = element.querySelector('.modal-actions');
             actions.style.display = 'none';
             let fileName = "Credit_Vault_Loan_Profile.pdf";
