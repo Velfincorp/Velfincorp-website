@@ -169,6 +169,98 @@ window.vfcCredentialsLink = function(name, role, mobile, password) {
     return 'https://wa.me/91' + m + '?text=' + encodeURIComponent(window.vfcCredentialsText(name, role, mobile, password));
 };
 
+/* ===== Photos / documents: shared helpers (used by every report, the NOC and the collection pages) ===== */
+window.vfcFileUrl = function(fileId) {
+    if (!fileId || typeof fileId !== 'string' || !fileId.trim()) return '';
+    try {
+        const r = window.appwriteStorage.getFileView(VFC_DB.DOCUMENTS_BUCKET_ID, fileId);
+        return (r && r.href) ? r.href : String(r);
+    } catch (e) { return ''; }
+};
+window.vfcFilePreviewUrl = function(fileId, w, h) {
+    if (!fileId || typeof fileId !== 'string' || !fileId.trim()) return '';
+    try {
+        const r = window.appwriteStorage.getFilePreview(VFC_DB.DOCUMENTS_BUCKET_ID, fileId, w, h);
+        return (r && r.href) ? r.href : String(r);
+    } catch (e) { return window.vfcFileUrl(fileId); }
+};
+
+/* photo -> small JPEG data URL (so it is also captured in PDFs). '' if it cannot be loaded. Cached. */
+const vfcPhotoCache = {};
+window.vfcPhotoDataUrl = async function(fileId, maxDim) {
+    if (!fileId || typeof fileId !== 'string') return '';
+    maxDim = maxDim || 500;
+    const key = fileId + '|' + maxDim;
+    if (vfcPhotoCache[key] !== undefined) return vfcPhotoCache[key];
+    let out = '';
+    try {
+        const res = await fetch(window.vfcFileUrl(fileId));
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const blob = await res.blob();
+        const objUrl = URL.createObjectURL(blob);
+        out = await new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+                    const c = document.createElement('canvas');
+                    c.width = Math.max(1, Math.round(img.naturalWidth * scale));
+                    c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    resolve(c.toDataURL('image/jpeg', 0.85));
+                } catch (e) { resolve(''); }
+                URL.revokeObjectURL(objUrl);
+            };
+            img.onerror = () => { URL.revokeObjectURL(objUrl); resolve(''); };
+            img.src = objUrl;
+        });
+    } catch (e) { console.warn('Photo could not be loaded:', e); out = ''; }
+    vfcPhotoCache[key] = out;
+    return out;
+};
+
+/* <img> for a stored photo (or a dashed "No photo" box). opts.thumb = small preview first, full photo as fallback. */
+window.vfcPhotoTag = function(fileId, w, h, opts) {
+    opts = opts || {};
+    const box = 'width:' + w + 'px; height:' + h + 'px; object-fit:cover; border:2px solid #0F1D36; border-radius:6px; background:#f1f5f9; flex-shrink:0;';
+    if (!fileId || typeof fileId !== 'string' || !fileId.trim()) {
+        return '<div style="' + box + ' display:flex; align-items:center; justify-content:center; font-size:10px; color:#94a3b8; text-align:center; border-style:dashed;">No<br>photo</div>';
+    }
+    const full = window.vfcFileUrl(fileId);
+    const first = opts.thumb ? window.vfcFilePreviewUrl(fileId, w * 2, h * 2) : full;
+    return '<img data-fid="' + fileId + '" src="' + first + '" loading="lazy" alt="Photo" style="' + box + '" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'' + full + '\';}">';
+};
+
+/* make every photo inside root PDF-safe (data URLs). Call (and await) before html2pdf. */
+window.vfcHydratePhotos = async function(root) {
+    if (!root) return;
+    const imgs = Array.from(root.querySelectorAll('img[data-fid]'));
+    await Promise.all(imgs.map(async img => {
+        const d = await window.vfcPhotoDataUrl(img.dataset.fid, 500);
+        if (d) img.src = d;
+    }));
+};
+
+/* put the customer photo on the SIDE of whatever is already inside a modal body */
+window.vfcAddPhotoSide = function(container, fileId, caption) {
+    if (!container) return;
+    const inner = container.innerHTML;
+    const cap = caption ? '<div style="font-size:11px; color:#475569; margin-top:5px; word-break:break-word;">' + String(caption).replace(/</g, '&lt;') + '</div>' : '';
+    container.innerHTML = '<div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">' +
+        '<div style="flex:0 0 130px; text-align:center;">' + window.vfcPhotoTag(fileId, 120, 150) + cap + '</div>' +
+        '<div style="flex:1; min-width:300px; overflow-x:auto;">' + inner + '</div></div>';
+    window.vfcHydratePhotos(container);
+};
+
+window.vfcFindBorrowerProfile = function(list, name, phone) {
+    const nm = String(name || '').trim().toLowerCase();
+    const ph = window.vfcLast10(phone);
+    const phoneMatch = b => ph && (window.vfcLast10(b.phone_number) === ph || window.vfcLast10(b.whatsapp_number) === ph);
+    return (list || []).find(b => String(b.full_name || '').trim().toLowerCase() === nm && phoneMatch(b))
+        || (list || []).find(b => String(b.full_name || '').trim().toLowerCase() === nm)
+        || null;
+};
+
 // Strict Global Role-Based Security & Back-Forward Cache (bfcache) Protection
 (function() {
     const publicPages = ['index.html', 'login.html', 'contact.html', ''];
