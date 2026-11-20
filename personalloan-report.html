@@ -517,11 +517,13 @@
                     <tbody>${paymentsRowsHtml}</tbody>
                 </table>
             `;
+            window.vfcAddPhotoSide(modalBody, matchedBorrower.customer_photo, loan.borrower_name);
             modal.style.display = 'flex';
         }
 
-        function downloadPDF() {
+        async function downloadPDF() {
             const element = document.getElementById('printableArea');
+            await window.vfcHydratePhotos(element);
             const actions = element.querySelector('.modal-actions');
             actions.style.display = 'none';
             let fileName = "Personal_Loan_Profile.pdf";
