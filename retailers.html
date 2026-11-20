@@ -166,6 +166,26 @@
                         <label>IFSC Code</label>
                         <input type="text" id="ifscCode" placeholder="11 character IFSC code" maxlength="11" style="text-transform: uppercase;">
                     </div>
+
+                    <div style="margin:18px 0 8px; padding:12px; background:#fffbeb; border:1px solid #f59e0b; border-radius:8px; font-size:13px; color:#92400e;">
+                        <strong>KYC documents are compulsory for every new Retailer / Showroom.</strong> Take the photos now with the phone camera.
+                    </div>
+                    <div class="form-group">
+                        <label>Owner - Live Photo (take now) *</label>
+                        <input type="file" id="retLivePhoto" accept="image/*" capture="user">
+                    </div>
+                    <div class="form-group">
+                        <label>Owner standing in front of the shop NAME BOARD *</label>
+                        <input type="file" id="retShopPhoto" accept="image/*" capture="environment">
+                    </div>
+                    <div class="form-group">
+                        <label>Aadhaar Card - Front *</label>
+                        <input type="file" id="retAadhaarFront" accept="image/*,application/pdf">
+                    </div>
+                    <div class="form-group">
+                        <label>Aadhaar Card - Back *</label>
+                        <input type="file" id="retAadhaarBack" accept="image/*,application/pdf">
+                    </div>
                 </div>
 
                 <div id="staffFields" style="display: none;">
@@ -180,6 +200,30 @@
                     <div class="form-group">
                         <label>Password / PIN *</label>
                         <input type="text" id="staffPass" placeholder="Enter login password (e.g., Vel@2026)">
+                    </div>
+                    <div class="form-group">
+                        <label>Native Place / Village, District *</label>
+                        <input type="text" id="staffCity" placeholder="e.g. Pappireddipatti, Dharmapuri">
+                    </div>
+                    <div class="form-group">
+                        <label>Aadhaar Number *</label>
+                        <input type="text" id="staffAadhaar" placeholder="12 digit Aadhaar number" maxlength="12" oninput="this.value = this.value.replace(/\D/g, '').substring(0, 12)">
+                    </div>
+
+                    <div style="margin:18px 0 8px; padding:12px; background:#fffbeb; border:1px solid #f59e0b; border-radius:8px; font-size:13px; color:#92400e;">
+                        <strong>KYC documents are compulsory for every new Staff / Collection Agent.</strong> Take the photo now with the phone camera.
+                    </div>
+                    <div class="form-group">
+                        <label>Staff - Live Photo (take now) *</label>
+                        <input type="file" id="staffLivePhoto" accept="image/*" capture="user">
+                    </div>
+                    <div class="form-group">
+                        <label>Aadhaar Card - Front *</label>
+                        <input type="file" id="staffAadhaarFront" accept="image/*,application/pdf">
+                    </div>
+                    <div class="form-group">
+                        <label>Aadhaar Card - Back *</label>
+                        <input type="file" id="staffAadhaarBack" accept="image/*,application/pdf">
                     </div>
 
                     <div class="permissions-group">
@@ -301,6 +345,23 @@
                     if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) { alert("IFSC code வடிவம் சரியில்லை (11 எழுத்துகள், எ.கா. SBIN0001234)!"); return; }
                 }
 
+                // ---- KYC documents are compulsory for every NEW retailer / showroom / staff ----
+                const kycIds = userType === 'retailer'
+                    ? ['retLivePhoto', 'retShopPhoto', 'retAadhaarFront', 'retAadhaarBack']
+                    : ['staffLivePhoto', 'staffAadhaarFront', 'staffAadhaarBack'];
+                const kycNames = { retLivePhoto: 'Owner Live Photo', retShopPhoto: 'Owner photo in front of the shop name board', retAadhaarFront: 'Aadhaar Front', retAadhaarBack: 'Aadhaar Back',
+                                   staffLivePhoto: 'Staff Live Photo', staffAadhaarFront: 'Aadhaar Front', staffAadhaarBack: 'Aadhaar Back' };
+                for (const id of kycIds) {
+                    const el = document.getElementById(id);
+                    if (!el.files || el.files.length === 0) { alert('"' + kycNames[id] + '" இணைக்கப்படவில்லை. புதிய பதிவுக்கு அது கட்டாயம்!'); return; }
+                }
+                if (userType === 'retailer') {
+                    if (document.getElementById('aadharNumber').value.trim().length !== 12) { alert('Aadhaar எண் (12 இலக்கம்) கட்டாயம்!'); return; }
+                } else {
+                    if (document.getElementById('staffCity').value.trim().length < 3) { alert('Staff-ன் சொந்த ஊர் (Native place) கட்டாயம்!'); return; }
+                    if (document.getElementById('staffAadhaar').value.trim().length !== 12) { alert('Aadhaar எண் 12 இலக்கங்கள் இருக்க வேண்டும்!'); return; }
+                }
+
                 // ---- Fresh data from the cloud, then duplicate checks ----
                 try { cachedRecords = await window.vfcFetchAll(RETAILERS_COLLECTION_ID); } catch (e) {}
 
@@ -313,6 +374,11 @@
                 updateAutoCode();
                 const uniqueCode = document.getElementById('userCode').value;
                 let payload;
+
+                // upload the documents (photos are compressed first)
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading documents...';
+                const up = {};
+                for (const id of kycIds) { up[id] = await uploadKycFile(id); }
 
                 if (userType === 'retailer') {
                     payload = {
@@ -329,7 +395,11 @@
                         pan_number: document.getElementById('panNumber').value.trim().toUpperCase() || "-",
                         aadhaar_number: document.getElementById('aadharNumber').value.trim() || "-",
                         bank_account_number: document.getElementById('accountNumber').value.trim() || "-",
-                        ifsc_code: document.getElementById('ifscCode').value.trim().toUpperCase() || "-"
+                        ifsc_code: document.getElementById('ifscCode').value.trim().toUpperCase() || "-",
+                        live_photo: up.retLivePhoto,
+                        shop_photo: up.retShopPhoto,
+                        aadhaar_front: up.retAadhaarFront,
+                        aadhaar_back: up.retAadhaarBack
                     };
                 } else {
                     const permissions = Array.from(document.querySelectorAll('input[name="perm"]:checked')).map(cb => cb.value);
@@ -341,13 +411,17 @@
                         whatsapp_number: mobile,
                         password: password,
                         email: "-",
-                        city: "-",
+                        city: document.getElementById('staffCity').value.trim(),
                         address: permissions.join(','),
                         gst_number: "-",
                         pan_number: "-",
-                        aadhaar_number: "-",
+                        aadhaar_number: document.getElementById('staffAadhaar').value.trim(),
                         bank_account_number: "-",
-                        ifsc_code: "-"
+                        ifsc_code: "-",
+                        live_photo: up.staffLivePhoto,
+                        shop_photo: "",
+                        aadhaar_front: up.staffAadhaarFront,
+                        aadhaar_back: up.staffAadhaarBack
                     };
                 }
 
@@ -365,11 +439,45 @@
                 toggleFormFields();
             } catch (err) {
                 console.error("Error saving to Appwrite:", err);
-                alert("Cloud Database save failed: " + err.message);
+                if (/unknown attribute|invalid document structure/i.test(String(err.message || ''))) {
+                    alert("Appwrite → Retailers/Staffs table-ல் இந்த 4 columns இல்லை: live_photo, shop_photo, aadhaar_front, aadhaar_back (ஒவ்வொன்றும் String, size 50, Required இல்லை). அவற்றைச் சேர்த்த பிறகு மீண்டும் முயற்சி செய்யவும்.\n\n" + err.message);
+                } else {
+                    alert("Cloud Database save failed: " + err.message);
+                }
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Details';
             }
+        }
+
+        // photos are shrunk before upload (fast on mobile data); PDFs are uploaded as they are
+        async function compressImageIfNeeded(file) {
+            if (!file || !file.type.startsWith('image/') || file.size <= 250 * 1024) return file;
+            return new Promise(resolve => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    const maxDim = 1200;
+                    let w = img.width, h = img.height;
+                    if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+                    else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+                    const c = document.createElement('canvas');
+                    c.width = w; c.height = h;
+                    c.getContext('2d').drawImage(img, 0, 0, w, h);
+                    c.toBlob(b => resolve(b ? new File([b], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }) : file), 'image/jpeg', 0.72);
+                };
+                img.onerror = () => resolve(file);
+                img.src = url;
+            });
+        }
+
+        async function uploadKycFile(inputId) {
+            const input = document.getElementById(inputId);
+            if (!input || !input.files || input.files.length === 0) return '';
+            const optimized = await compressImageIfNeeded(input.files[0]);
+            const uploaded = await window.appwriteStorage.createFile(VFC_DB.DOCUMENTS_BUCKET_ID, window.AppwriteID.unique(), optimized);
+            return uploaded.$id;
         }
 
         function showCredentialModal(name, role, mobile, password, code) {
