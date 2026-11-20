@@ -766,11 +766,13 @@
               </div>`;
 
             document.getElementById('detailPrint').innerHTML = html;
+            window.vfcAddPhotoSide(document.getElementById('detailPrint'), profile ? profile.customer_photo : '', loan.borrower_name);
             document.getElementById('detailModal').style.display = 'flex';
         }
 
-        function downloadDetailPDF() {
+        async function downloadDetailPDF() {
             const src = document.getElementById('detailPrint');
+            await window.vfcHydratePhotos(src);
             const holder = document.createElement('div');
             holder.innerHTML = '<style>.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:11px;} .dgrid .k{color:#64748b;font-size:9px;text-transform:uppercase;font-weight:bold;} .dgrid .v{font-weight:bold;color:#0F1D36;margin-bottom:3px;} .dsec{font-size:13px;font-weight:bold;color:#0F1D36;margin:12px 0 5px;border-bottom:1px solid #cbd5e1;padding-bottom:3px;} table{width:100%;border-collapse:collapse;font-size:9.5px;} th,td{border:1px solid #cbd5e1;padding:3px 4px;text-align:left;} th{background:#0F1D36;color:#fff;} .hist-item{border:1px solid #e2e8f0;padding:4px 6px;margin-bottom:4px;font-size:10px;} .badge{padding:2px 7px;border-radius:10px;color:#fff;font-size:10px;font-weight:bold;}</style>' +
                 src.innerHTML.replace(/<div class="modal-actions"[\s\S]*$/, '</div>');
