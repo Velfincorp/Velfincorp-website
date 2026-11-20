@@ -462,6 +462,7 @@
                     </tr>
                 </table>
             `;
+            window.vfcAddPhotoSide(modalBody, photoId, borrower.full_name);
             modal.style.display = 'flex';
         }
 
@@ -611,8 +612,9 @@
             renderBorrowerRows(filtered);
         }
 
-        function downloadPDF() {
+        async function downloadPDF() {
             const element = document.getElementById('printableArea');
+            await window.vfcHydratePhotos(element);
             const actions = element.querySelector('.modal-actions');
             actions.style.display = 'none';
 
