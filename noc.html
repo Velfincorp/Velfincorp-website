@@ -200,17 +200,11 @@
             return borrowers.find(b => C.normText(b.full_name) === nm && phoneMatch(b)) || borrowers.find(b => C.normText(b.full_name) === nm) || null;
         }
 
-        // photo -> data URL (so it is also included in the PDF). Returns '' if it cannot be loaded.
+        // photo for the certificate: compressed data URL (works in the PDF); if that fails, the direct link (shows on screen / print)
         async function loadPhotoDataUrl(fileId) {
             if (!fileId || typeof fileId !== 'string') return '';
-            try {
-                const u = window.appwriteStorage.getFileView(VFC_DB.DOCUMENTS_BUCKET_ID, fileId);
-                const href = (u && u.href) ? u.href : String(u);
-                const res = await fetch(href);
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const blob = await res.blob();
-                return await new Promise(resolve => { const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.onerror = () => resolve(''); fr.readAsDataURL(blob); });
-            } catch (e) { console.warn('Photo could not be loaded', e); return ''; }
+            const d = await window.vfcPhotoDataUrl(fileId, 600);
+            return d || window.vfcFileUrl(fileId);
         }
 
         function certificateHtml(r, profile, photo) {
