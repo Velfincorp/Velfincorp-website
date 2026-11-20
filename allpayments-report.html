@@ -357,6 +357,7 @@
                     <tr><td>Phone Number</td><td>${p.phone_number || '-'}</td></tr>
                 </table>
             `;
+            window.vfcAddPhotoSide(modalBody, borrower ? borrower.customer_photo : '', p.borrower_name);
             modal.style.display = 'flex';
             modal.classList.add('open');
         }
@@ -426,8 +427,9 @@
             setTimeout(() => URL.revokeObjectURL(a.href), 2000);
         }
 
-        function downloadPDF() {
+        async function downloadPDF() {
             const element = document.getElementById('printableArea');
+            await window.vfcHydratePhotos(element);
             const actions = element.querySelector('.modal-actions');
             actions.style.display = 'none';
 
