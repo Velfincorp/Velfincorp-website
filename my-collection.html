@@ -360,9 +360,12 @@
             return `
             <div class="cl-card ${cls}">
                 <div class="cl-head">
-                    <div>
-                        <div class="cl-name">${idx + 1}. ${C.esc(l.borrower_name)}</div>
-                        <div class="cl-id">${C.esc(l.loan_id)} &middot; ${i.type === 'daily' ? 'Daily' : 'Weekly'} &middot; ${C.isPersonalLoan(l) ? 'Personal' : 'Credit Vault'}${IS_ADMIN ? ' &middot; Agent: ' + C.esc(it.a.agent_name || it.a.agent_phone) : ''}</div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        ${window.vfcPhotoTag(p ? p.customer_photo : '', 58, 72, { thumb: true })}
+                        <div>
+                            <div class="cl-name">${idx + 1}. ${C.esc(l.borrower_name)}</div>
+                            <div class="cl-id">${C.esc(l.loan_id)} &middot; ${i.type === 'daily' ? 'Daily' : 'Weekly'} &middot; ${C.isPersonalLoan(l) ? 'Personal' : 'Credit Vault'}${IS_ADMIN ? ' &middot; Agent: ' + C.esc(it.a.agent_name || it.a.agent_phone) : ''}</div>
+                        </div>
                     </div>
                     <span class="badge" style="background:${st.color};">${st.label}</span>
                 </div>
