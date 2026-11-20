@@ -228,6 +228,7 @@
         let staffList = [];
         let assignments = [];
         let followups = [];
+        let borrowers = [];
         let assignTarget = null;
 
         function showWarnings(list) {
@@ -247,15 +248,17 @@
             tbody.innerHTML = '<tr><td colspan="10" class="empty"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
             const warnings = [];
             try {
-                const [loans, payments, assigns, fups, staffDocs] = await Promise.all([
+                const [loans, payments, assigns, fups, staffDocs, borrowerDocs] = await Promise.all([
                     window.vfcFetchAll(VFC_DB.LOANS_ID),
                     window.vfcFetchAll(VFC_DB.PAYMENTS_ID),
                     safeFetch(VFC_DB.ASSIGNMENTS_ID, 'Assignments table', warnings),
                     safeFetch(VFC_DB.FOLLOWUPS_ID, 'Follow-ups table', warnings),
-                    IS_ADMIN ? safeFetch(VFC_DB.RETAILERS_ID, 'Staff list', warnings) : Promise.resolve([])
+                    IS_ADMIN ? safeFetch(VFC_DB.RETAILERS_ID, 'Staff list', warnings) : Promise.resolve([]),
+                    safeFetch(VFC_DB.BORROWERS_ID, 'Borrower list', warnings)
                 ]);
                 assignments = assigns;
                 followups = fups;
+                borrowers = borrowerDocs;
                 staffList = staffDocs
                     .filter(d => String(d.user_type || '').toLowerCase() === 'staff')
                     .map(d => ({ name: d.show_room_name || d.whatsapp_number, phone: C.last10(d.whatsapp_number) }));
@@ -269,7 +272,8 @@
                     const agent = C.activeAssignmentFor(assignments, loan);
                     const lastFu = C.latestHumanFollowup(followups, loan);
                     const promise = C.promiseStatus(lastFu, true, today);
-                    allDefaulters.push({ loan, info, personal: C.isPersonalLoan(loan), agent, lastFu, promise });
+                    const profile = window.vfcFindBorrowerProfile(borrowers, loan.borrower_name, loan.phone_number);
+                    allDefaulters.push({ loan, info, personal: C.isPersonalLoan(loan), agent, lastFu, promise, profile });
                 });
                 showWarnings(warnings);
                 renderRules();
@@ -373,7 +377,7 @@
                 return `<tr>
                     <td data-label="S.No" style="font-weight:700;">${idx + 1}</td>
                     <td data-label="Loan"><div style="text-align:left;"><strong>${C.esc(l.loan_id)}</strong><br><small class="sub">${x.personal ? 'Personal' : 'Credit Vault'} &middot; ${i.type === 'daily' ? 'Daily' : 'Weekly'} ${C.rupees(i.emi)}<br>Last paid: ${i.lastPaid ? C.formatIndianDate(i.lastPaid) : 'Never'}</small></div></td>
-                    <td data-label="Borrower"><div style="text-align:left;">${C.esc(l.borrower_name)}<br><small class="sub">${C.esc(mobile || l.phone_number || '-')}</small></div></td>
+                    <td data-label="Borrower"><div style="display:flex; gap:8px; align-items:center; text-align:left;">${window.vfcPhotoTag(x.profile ? x.profile.customer_photo : '', 44, 54, { thumb: true })}<div>${C.esc(l.borrower_name)}<br><small class="sub">${C.esc(mobile || l.phone_number || '-')}</small></div></div></td>
                     <td data-label="Missed / Days"><strong>${i.missed}</strong> missed<br><span style="color:#C53030; font-weight:800;">${i.overdueDays} day${i.overdueDays === 1 ? '' : 's'}</span></td>
                     <td data-label="Overdue" class="money">${C.rupees(i.shortfall)}</td>
                     <td data-label="Penalty" class="money">${C.rupees(i.penalty)}<br><small class="sub">(${i.missed} x ${C.rupees(i.penaltyEach)})</small></td>
@@ -466,7 +470,7 @@
                 .filter(a => a.loan_id === x.loan.loan_id && C.nameKey(a.borrower_name) === C.nameKey(x.loan.borrower_name))
                 .sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
 
-            let html = `<div style="font-size:13px; margin-bottom:12px;"><strong>${C.esc(x.loan.borrower_name)}</strong> (${C.esc(x.loan.loan_id)})</div>`;
+            let html = `<div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; font-size:13px;">${window.vfcPhotoTag(x.profile ? x.profile.customer_photo : '', 80, 100, { thumb: true })}<div><strong>${C.esc(x.loan.borrower_name)}</strong><br>${C.esc(x.loan.loan_id)}</div></div>`;
             html += `<div style="font-weight:700; color:#0F1D36; margin:8px 0;">Agent assignments</div>`;
             html += assigns.length ? assigns.map(a => `<div class="hist-item"><strong>${C.esc(a.agent_name || a.agent_phone)}</strong> - ${C.esc(a.status)}<br><small class="sub">${C.formatIndianDate(a.assigned_on)} by ${C.esc(a.assigned_by || '-')}${a.note ? ' | ' + C.esc(a.note) : ''}</small></div>`).join('')
                                    : '<div class="hist-item">No agent assigned yet.</div>';
