@@ -1550,6 +1550,7 @@
                         price, down: downPayment, payable: disbursedBalance
                     });
                 }
+                offerPortalLoginDialog(borrowerName, finalMobile);
                 document.getElementById('creditVaultForm').reset();
                 document.getElementById('calcSummaryBox').style.display = 'none';
                 document.getElementById('dpMsg').className = 'dp-msg';
@@ -1566,6 +1567,18 @@
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Submit Credit Vault Loan & Send Welcome Message";
             }
+        }
+
+        /* After the customer's FIRST loan: show his portal username / password (taken from his saved details) ready to send on WhatsApp */
+        function offerPortalLoginDialog(borrowerName, mobileWith91) {
+            try {
+                const m10 = window.vfcLast10(mobileWith91);
+                const nm = String(borrowerName || '').trim().toLowerCase();
+                const same = allLoans.filter(l => String(l.borrower_name || '').trim().toLowerCase() === nm && window.vfcLast10(l.phone_number) === m10);
+                if (same.length > 1) return;                       // not his first loan
+                const b = window.vfcFindBorrowerProfile(allBorrowers, borrowerName, m10);
+                if (b) window.vfcShowPortalLoginDialog(b);
+            } catch (e) { console.warn('Portal login dialog error:', e); }
         }
 
         /* Sends the customer his portal login details (only on his FIRST loan, and only when the feature is switched on in db.js) */
