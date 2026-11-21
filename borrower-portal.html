@@ -305,10 +305,14 @@
                 const ids = Array.from(new Set(borrowers.map(b => b.borrower_id).filter(Boolean)));
                 const multiNames = names.length > 1;
 
+                const photoOwner = borrowers.find(b => b.customer_photo && String(b.customer_photo).trim()) || null;
                 let html = `
-                    <div class="welcome">
-                        <div class="name">Welcome, ${esc(names.join(' / '))}</div>
-                        <div class="sub">Borrower ID: ${esc(ids.join(', ') || '-')} &nbsp;|&nbsp; Mobile: ${esc(loggedInUser)}</div>
+                    <div class="welcome" style="display:flex; align-items:center; gap:14px;">
+                        ${window.vfcPhotoTag(photoOwner ? photoOwner.customer_photo : '', 72, 90)}
+                        <div>
+                            <div class="name">Welcome, ${esc(names.join(' / '))}</div>
+                            <div class="sub">Borrower ID: ${esc(ids.join(', ') || '-')} &nbsp;|&nbsp; Mobile: ${esc(loggedInUser)}</div>
+                        </div>
                     </div>`;
 
                 if (!loans.length) {
@@ -321,6 +325,7 @@
                 }
 
                 portalContent.innerHTML = html;
+                window.vfcHydratePhotos(portalContent);      // makes the photo PDF-safe in the background
                 renderQRCodes();
                 document.getElementById('actionButtons').style.display = 'flex';
             } catch (err) {
@@ -353,8 +358,9 @@
             window.location.replace('login.html');
         }
 
-        function downloadPDF() {
+        async function downloadPDF() {
             const element = document.getElementById('printableArea');
+            await window.vfcHydratePhotos(element);
             const actions = document.getElementById('actionButtons');
             actions.style.display = 'none';
 
