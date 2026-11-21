@@ -228,7 +228,18 @@ window.vfcPhotoTag = function(fileId, w, h, opts) {
     }
     const full = window.vfcFileUrl(fileId);
     const first = opts.thumb ? window.vfcFilePreviewUrl(fileId, w * 2, h * 2) : full;
-    return '<img data-fid="' + fileId + '" src="' + first + '" loading="lazy" alt="Photo" style="' + box + '" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'' + full + '\';}">';
+    return '<img data-fid="' + fileId + '" src="' + first + '" loading="lazy" alt="Photo" style="' + box + '" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'' + full + '\';}else{window.vfcPhotoFailed(this);}">';
+};
+
+/* If the photo file cannot be opened at all (no permission / deleted), show a clear box instead of a broken-image icon */
+window.vfcPhotoFailed = function(img) {
+    try {
+        const d = document.createElement('div');
+        d.style.cssText = 'width:' + (img.style.width || '90px') + '; height:' + (img.style.height || '110px') + '; border:2px dashed #C53030; border-radius:6px; background:#fef2f2; display:flex; align-items:center; justify-content:center; font-size:10px; color:#C53030; text-align:center; flex-shrink:0;';
+        d.title = 'The photo file could not be opened (storage permission, or the file was deleted).';
+        d.innerHTML = 'Photo<br>not<br>available';
+        img.replaceWith(d);
+    } catch (e) {}
 };
 
 /* make every photo inside root PDF-safe (data URLs). Call (and await) before html2pdf. */
