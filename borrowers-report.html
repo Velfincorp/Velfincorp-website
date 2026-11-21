@@ -146,6 +146,7 @@
             <div class="modal-header">
                 <span id="modalTitleText">Borrower Full Profile & Payment History</span>
                 <div class="modal-actions">
+                    <button class="btn-edit" style="background-color:#25D366;" onclick="sendPortalLogin()"><i class="fab fa-whatsapp"></i> Portal Login</button>
                     <button class="btn-edit" onclick="enableEditMode()"><i class="fas fa-edit"></i> Edit Profile</button>
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
                     <button class="btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
@@ -464,6 +465,10 @@
             `;
             window.vfcAddPhotoSide(modalBody, photoId, borrower.full_name);
             modal.style.display = 'flex';
+        }
+
+        function sendPortalLogin() {
+            window.vfcShowPortalLoginDialog(currentBorrower);
         }
 
         function enableEditMode() {
