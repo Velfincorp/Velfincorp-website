@@ -261,6 +261,69 @@ window.vfcFindBorrowerProfile = function(list, name, phone) {
         || null;
 };
 
+/* ===== Customer portal login details (same rule as login.html) =====
+   username = 10-digit mobile number, password = date of birth DDMMYYYY
+   (the last 4 digits of the mobile are used only when no date of birth is saved for the borrower) */
+window.vfcDobToDDMMYYYY = function(dob) {
+    const str = String(dob || '').trim().split('T')[0];
+    const parts = str.split(/[-\/]/);
+    if (parts.length !== 3) return '';
+    let d, m, y;
+    if (parts[0].length === 4) { y = parts[0]; m = parts[1]; d = parts[2]; } else { d = parts[0]; m = parts[1]; y = parts[2]; }
+    if (!/^\d{1,2}$/.test(d) || !/^\d{1,2}$/.test(m) || !/^\d{4}$/.test(y)) return '';
+    return d.padStart(2, '0') + m.padStart(2, '0') + y;
+};
+window.vfcPortalCredentials = function(b) {
+    const username = window.vfcLast10(b.phone_number || b.whatsapp_number);
+    const dob = window.vfcDobToDDMMYYYY(b.dob);
+    if (dob) return { username: username, password: dob, scheme: 'DOB' };
+    return { username: username, password: username.slice(-4), scheme: 'LAST4' };
+};
+window.vfcPortalLoginText = function(name, c) {
+    const pwHint = c.scheme === 'DOB' ? 'உங்கள் பிறந்த தேதி, DDMMYYYY' : 'உங்கள் மொபைல் எண்ணின் கடைசி 4 இலக்கங்கள்';
+    return `வணக்கம் ${String(name || '').replace(/\s+/g, ' ').trim()},\n\n` +
+           `Vel Fin Corp-ல் உங்கள் கடன் கணக்கை இணையதளத்தில் பார்க்கலாம்.\n\n` +
+           `இணையதளம்: https://velfincorp.com/login.html\n` +
+           `Role: Borrower / Customer\n` +
+           `Username: ${c.username} (உங்கள் மொபைல் எண்)\n` +
+           `Password: ${c.password} (${pwHint})\n\n` +
+           `இங்கே உங்கள் EMI, நிலுவை, payment வரலாறு மற்றும் UPI மூலம் செலுத்தும் வசதி உள்ளது. இந்த விவரங்களை வேறு யாருடனும் பகிர வேண்டாம்.\n` +
+           `உதவிக்கு: +91 9486886293\n\nநன்றி,\nTeam Vel Fin Corp`;
+};
+
+/* A small pop-up that shows a ready WhatsApp message with "Send on WhatsApp" and "Copy text" */
+window.vfcShowWhatsAppDialog = function(title, text, link) {
+    const old = document.getElementById('vfcWaDialog');
+    if (old) old.remove();
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const ov = document.createElement('div');
+    ov.id = 'vfcWaDialog';
+    ov.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.55); z-index:9000; display:flex; align-items:center; justify-content:center; padding:12px;';
+    ov.innerHTML = '<div style="background:#fff; max-width:520px; width:100%; max-height:92vh; overflow:auto; border-radius:12px; border-top:5px solid #0F1D36; padding:20px; box-sizing:border-box;">' +
+        '<div style="font-weight:800; color:#0F1D36; font-size:16px; margin-bottom:8px;">' + esc(title) + '</div>' +
+        '<pre id="vfcWaText" style="white-space:pre-wrap; background:#f1f5f9; padding:12px; border-radius:8px; font-family:inherit; font-size:13px; line-height:1.6; margin:0;">' + esc(text) + '</pre>' +
+        '<div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">' +
+        '<a href="' + esc(link) + '" target="_blank" rel="noopener" style="background:#25D366; color:#fff; text-decoration:none; padding:11px 16px; border-radius:8px; font-weight:700; font-size:14px;">Send on WhatsApp</a>' +
+        '<button type="button" id="vfcWaCopy" style="background:#0F1D36; color:#fff; border:none; padding:11px 16px; border-radius:8px; font-weight:700; cursor:pointer;">Copy text</button>' +
+        '<button type="button" id="vfcWaClose" style="background:#e2e8f0; color:#0F1D36; border:none; padding:11px 16px; border-radius:8px; font-weight:700; cursor:pointer;">Close</button>' +
+        '</div></div>';
+    document.body.appendChild(ov);
+    document.getElementById('vfcWaClose').onclick = function() { ov.remove(); };
+    document.getElementById('vfcWaCopy').onclick = function() {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function() { alert('Copied!'); });
+        else prompt('Copy this text:', text);
+    };
+};
+
+window.vfcShowPortalLoginDialog = function(b) {
+    if (!b) { alert('Borrower details were not found.'); return; }
+    const c = window.vfcPortalCredentials(b);
+    if (c.username.length !== 10) { alert('This borrower has no valid 10-digit mobile number.'); return; }
+    const text = window.vfcPortalLoginText(b.full_name, c);
+    const sendTo = window.vfcLast10(b.whatsapp_number || b.phone_number);
+    window.vfcShowWhatsAppDialog('Send portal login details to ' + (b.full_name || 'customer'), text, 'https://wa.me/91' + sendTo + '?text=' + encodeURIComponent(text));
+};
+
 // Strict Global Role-Based Security & Back-Forward Cache (bfcache) Protection
 (function() {
     const publicPages = ['index.html', 'login.html', 'contact.html', ''];
